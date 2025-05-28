@@ -1,0 +1,251 @@
+class DemographicModel {
+  String? title;
+  String? firstName;
+  String? middleName;
+  String? lastName;
+  String? suffix;
+  String? prefferedFirstName;
+  String? dateOfBirth;
+  List<EmailModel>? email;
+  List<PhoneNumberModel>? phoneNumber;
+  List<AddressModel>? address;
+
+  DemographicModel({
+    this.title,
+    this.firstName,
+    this.middleName,
+    this.lastName,
+    this.suffix,
+    this.prefferedFirstName,
+    this.dateOfBirth,
+    this.email,
+    this.phoneNumber,
+    this.address,
+  });
+
+  factory DemographicModel.fromJson(Map<String, dynamic> json) {
+    return DemographicModel(
+      title: json['title'],
+      firstName: json['firstName'],
+      middleName: json['middleName'],
+      lastName: json['lastName'],
+      suffix: json['suffix'],
+      prefferedFirstName: json['prefferedFirstName'],
+      dateOfBirth: json['dateOfBirth'],
+      email: json['email'] != null
+          ? (json['email'] as List).map((i) => EmailModel.fromJson(i)).toList()
+          : null,
+      phoneNumber: json['phoneNumber'] != null
+          ? (json['phoneNumber'] as List)
+              .map((i) => PhoneNumberModel.fromJson(i))
+              .toList()
+          : null,
+      address: json['address'] != null
+          ? (json['address'] as List)
+              .map((i) => AddressModel.fromJson(i))
+              .toList()
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['title'] = this.title;
+    data['firstName'] = this.firstName;
+    data['middleName'] = this.middleName;
+    data['lastName'] = this.lastName;
+    data['suffix'] = this.suffix;
+    data['prefferedFirstName'] = this.prefferedFirstName;
+    data['dateOfBirth'] = this.dateOfBirth;
+    if (this.email != null) {
+      data['email'] = this.email!.map((v) => v.toJson()).toList();
+    }
+    if (this.phoneNumber != null) {
+      data['phoneNumber'] = this.phoneNumber!.map((v) => v.toJson()).toList();
+    }
+    if (this.address != null) {
+      data['address'] = this.address!.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class AddressModel {
+  int? randomNumberId;
+  int id;
+  String addressLine1;
+  String addressLine2;
+  String country;
+  String state;
+  String zipCode;
+  String city;
+  bool isPrimary;
+  bool isActive;
+
+  AddressModel({
+    this.randomNumberId,
+    this.id = 0,
+    this.addressLine1 = "",
+    this.addressLine2 = "",
+    this.country = "Select",
+    this.state = "Select",
+    this.zipCode = "",
+    this.city = "",
+    this.isPrimary = false,
+    this.isActive = true,
+  });
+
+  factory AddressModel.fromJson(Map<String, dynamic> json) {
+    return AddressModel(
+      id: json['id'],
+      addressLine1: json['addressLine1'],
+      addressLine2: json['addressLine2'],
+      country: json['country'],
+      state: json['state'],
+      zipCode: json['zipCode'],
+      city: json['city'],
+      isPrimary: json['isPrimary'],
+      isActive: json['isActive'] ?? true,
+      randomNumberId: json['randomNumberId'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['addressLine1'] = this.addressLine1;
+    data['addressLine2'] = this.addressLine2;
+    data['country'] = this.country;
+    data['state'] = this.state;
+    data['zipCode'] = this.zipCode;
+    data['city'] = this.city;
+    data['isPrimary'] = this.isPrimary;
+    data['isActive'] = this.isActive;
+    data['randomNumberId'] = this.randomNumberId;
+    return data;
+  }
+}
+
+class EmailModel {
+  int? id;
+  String? emailAddress;
+  bool? isPrimary;
+  bool? isActive;
+
+  EmailModel({
+    this.id = 0,
+    this.emailAddress,
+    this.isPrimary,
+    this.isActive,
+  });
+
+  factory EmailModel.fromJson(Map<String, dynamic> json) {
+    return EmailModel(
+      id: json['id'],
+      emailAddress: json['emailAddress'],
+      isPrimary: json['isPrimary'],
+      isActive: json['isActive'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['emailAddress'] = this.emailAddress;
+    data['id'] = this.id;
+    data['isPrimary'] = this.isPrimary;
+    data['isActive'] = this.isActive;
+    return data;
+  }
+}
+
+class DropdownPersonalDetailModel {
+  String? valueListItem;
+
+  DropdownPersonalDetailModel({this.valueListItem});
+
+  DropdownPersonalDetailModel.fromJson(Map<String, dynamic> json) {
+    valueListItem = json['valueListItem'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['valueListItem'] = this.valueListItem;
+    return data;
+  }
+}
+
+class CountryModel {
+  String? countryName;
+  String? countryCode;
+
+  CountryModel({this.countryName, this.countryCode});
+
+  CountryModel.fromJson(Map<String, dynamic> json) {
+    countryName = json['countryName'];
+    countryCode = json['countryCode'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['countryName'] = this.countryName;
+    data['countryCode'] = this.countryCode;
+    return data;
+  }
+}
+
+class StateModel {
+  String? stateOrProvinceId;
+  String? stateOrProvinceName;
+
+  StateModel({this.stateOrProvinceId, this.stateOrProvinceName});
+
+  StateModel.fromJson(Map<String, dynamic> json) {
+    stateOrProvinceId = json['stateOrProvinceId'];
+    stateOrProvinceName = json['stateOrProvinceName'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['stateOrProvinceId'] = this.stateOrProvinceId;
+    data['stateOrProvinceName'] = this.stateOrProvinceName;
+    return data;
+  }
+}
+
+class PhoneNumberModel {
+  String? title;
+  String? number;
+  bool? isPrimary;
+  bool? isActive;
+  int? id;
+  int? randomNumberId;
+
+  PhoneNumberModel({
+    this.id = 0,
+    this.randomNumberId,
+    this.title,
+    this.number,
+    this.isPrimary,
+    this.isActive = true,
+  });
+
+  factory PhoneNumberModel.fromJson(Map<String, dynamic> json) {
+    return PhoneNumberModel(
+      title: json['title'],
+      number: json['number'],
+      isPrimary: json['isPrimary'],
+      id: json['id'],
+      isActive: json['isActive'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['title'] = this.title;
+    data['number'] = this.number;
+    data['isPrimary'] = this.isPrimary;
+    data['isActive'] = this.isActive ?? true;
+    return data;
+  }
+}
