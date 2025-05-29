@@ -58,7 +58,7 @@ export interface AppointmentReason {
     isNewPatientAppt?: boolean;
 }
 
-export interface NewCompanyData {
+export interface NewCompanyDataResponse {
     businessName?: string;
     locations?: Location[];
     customerNote?: string;
@@ -190,7 +190,7 @@ export interface VisitSummaryAttachment {
     attachmentFileSize?: number;
 }
 
-export interface ExistingAppointmentData {
+export class ExistingAppointmentData {
     locationId?: number;
     locationPhoneNumber?: string;
     locationName?: string;
@@ -203,6 +203,81 @@ export interface ExistingAppointmentData {
     slotDay?: string;
     slotDate?: string;
     slotYear?: string;
+
+    constructor({
+        locationId,
+        locationPhoneNumber,
+        locationName,
+        practicePersonId,
+        practicePersonName,
+        reasonId,
+        reasonName,
+        reasonForVisit,
+        slotTime,
+        slotDay,
+        slotDate,
+        slotYear
+    }: {
+        locationId?: number;
+        locationPhoneNumber?: string;
+        locationName?: string;
+        practicePersonId?: number;
+        practicePersonName?: string;
+        reasonId?: number;
+        reasonName?: string;
+        reasonForVisit?: string;
+        slotTime?: string;
+        slotDay?: string;
+        slotDate?: string;
+        slotYear?: string;
+    } = {}) {
+        this.locationId = locationId;
+        this.locationPhoneNumber = locationPhoneNumber;
+        this.locationName = locationName;
+        this.practicePersonId = practicePersonId;
+        this.practicePersonName = practicePersonName;
+        this.reasonId = reasonId;
+        this.reasonName = reasonName;
+        this.reasonForVisit = reasonForVisit;
+        this.slotTime = slotTime;
+        this.slotDay = slotDay;
+        this.slotDate = slotDate;
+        this.slotYear = slotYear;
+    }
+
+    static fromJson(json: { [key: string]: any }): ExistingAppointmentData {
+        const instance = new ExistingAppointmentData();
+        instance.locationId = json['locationId'];
+        instance.locationPhoneNumber = json['locationPhoneNumber'];
+        instance.locationName = json['locationName'];
+        instance.practicePersonId = json['practicePersonId'];
+        instance.practicePersonName = json['practicePersonName'];
+        instance.reasonId = json['reasonId'];
+        instance.reasonName = json['reasonName'];
+        instance.reasonForVisit = json['reasonForVisit'];
+        instance.slotTime = json['slotTime'];
+        instance.slotDay = json['slotDay'];
+        instance.slotDate = json['slotDate'];
+        instance.slotYear = json['slotYear'];
+        return instance;
+    }
+
+    toJson(): { [key: string]: any } {
+        const data: { [key: string]: any } = {};
+        data['locationId'] = this.locationId;
+        data['locationPhoneNumber'] = this.locationPhoneNumber;
+        data['locationName'] = this.locationName;
+        data['practicePersonId'] = this.practicePersonId;
+        data['practicePersonName'] = this.practicePersonName;
+        data['reasonId'] = this.reasonId;
+        data['reasonName'] = this.reasonName;
+        data['reasonForVisit'] = this.reasonForVisit;
+        data['slotTime'] = this.slotTime;
+        data['slotDay'] = this.slotDay;
+        data['slotDate'] = this.slotDate;
+        data['slotYear'] = this.slotYear;
+        return data;
+    }
 }
 
 // Model Classes
@@ -332,27 +407,9 @@ export class VisitSummaryAttachmentModel {
     }
 }
 
-export class ExistingAppointmentDataModel {
-    static fromJson(json: any): ExistingAppointmentData {
-        return {
-            locationId: json.locationId,
-            locationPhoneNumber: json.locationPhoneNumber,
-            locationName: json.locationName,
-            practicePersonId: json.practicePersonId,
-            practicePersonName: json.practicePersonName,
-            reasonId: json.reasonId,
-            reasonName: json.reasonName,
-            reasonForVisit: json.reasonForVisit,
-            slotTime: json.slotTime,
-            slotDay: json.slotDay,
-            slotDate: json.slotDate,
-            slotYear: json.slotYear
-        };
-    }
-}
 
 // Model Classes
-export class AppointmentModel {
+export class LatestAppointmentModel {
     static fromJson(json: any): LatestAppointment {
         return {
             appointmentDateTime: json.apptDateTime,
@@ -506,8 +563,8 @@ export class AppointmentReasonModel {
     }
 }
 
-export class NewCompanyDataModel {
-    static fromJson(json: any): NewCompanyData {
+export class NewCompanyDataResponse {
+    static fromJson(json: any): NewCompanyDataResponse {
         return {
             businessName: json.businessName,
             locations: json.locations ? json.locations.map((l: any) => LocationModel.fromJson(l)) : undefined,
@@ -518,7 +575,7 @@ export class NewCompanyDataModel {
         };
     }
 
-    static toJson(data: NewCompanyData): Record<string, any> {
+    static toJson(data: NewCompanyDataResponse): Record<string, any> {
         return {
             businessName: data.businessName,
             locations: data.locations?.map(l => LocationModel.toJson(l)),
@@ -530,47 +587,118 @@ export class NewCompanyDataModel {
     }
 }
 
-export class AppointmentTimeSlotModel {
-    static fromJson(json: any): AppointmentTimeSlot {
-        return {
-            resourceType: json.resourceType || "",
-            appointmentType: json.appointmentType || "",
-            apptStartDateTime: json.apptStartDateTime || "",
-            apptEndDateTime: json.apptEndDateTime || "",
-            reasonIds: json.reasonIds || "",
-            reasonName: json.reasonName || "",
-            resourceId: json.resourceId || "",
-            resourceName: json.resourceName || "",
-            providerName: json.providerName || "",
-            providerId: json.providerId || "",
-            locationId: json.locationId || "",
-            locationName: json.locationName || "",
-            appointmentId: json.appointmentId || ""
-        };
-    }
-
-    static toJson(slot: AppointmentTimeSlot): Record<string, any> {
-        return {
-            resourceType: slot.resourceType || "",
-            appointmentType: slot.appointmentType || "",
-            apptStartDateTime: slot.apptStartDateTime || "",
-            apptEndDateTime: slot.apptEndDateTime || "",
-            reasonIds: slot.reasonIds || "",
-            reasonName: slot.reasonName || "",
-            resourceId: slot.resourceId || "",
-            resourceName: slot.resourceName || "",
-            providerName: slot.providerName || "",
-            providerId: slot.providerId || "",
-            locationId: slot.locationId || "",
-            locationName: slot.locationName || "",
-            appointmentId: slot.appointmentId || ""
-        };
-    }
+export interface AppointmentTimeSlotModel {
+  resourceType: string | null;
+  appointmentType: string | null;
+  apptStartDateTime: string | null;
+  apptEndDateTime: string | null;
+  reasonIds: string | null;
+  reasonName: string | null;
+  resourceId: number | null;
+  resourceName: string | null;
+  providerName: string | null;
+  providerId: number | null;
+  locationId: string | null;
+  locationName: string | null;
+  appointmentId: number | null;
 }
 
-export interface ValidatePermissionForAppointment {
+export class AppointmentTimeSlotModel {
+  constructor(
+    resourceType: string | null,
+    appointmentType: string | null,
+    apptStartDateTime: string | null,
+    apptEndDateTime: string | null,
+    reasonIds: string | null,
+    reasonName: string | null,
+    resourceId: number | null,
+    resourceName: string | null,
+    providerName: string | null,
+    providerId: number | null,
+    locationId: string | null,
+    locationName: string | null,
+    appointmentId: number | null
+  ) {
+    this.resourceType = resourceType;
+    this.appointmentType = appointmentType;
+    this.apptStartDateTime = apptStartDateTime;
+    this.apptEndDateTime = apptEndDateTime;
+    this.reasonIds = reasonIds;
+    this.reasonName = reasonName;
+    this.resourceId = resourceId;
+    this.resourceName = resourceName;
+    this.providerName = providerName;
+    this.providerId = providerId;
+    this.locationId = locationId;
+    this.locationName = locationName;
+    this.appointmentId = appointmentId;
+  }
+
+  static fromJson(json: { [key: string]: any }): AppointmentTimeSlotModel {
+    return new AppointmentTimeSlotModel(
+      json['resourceType'] ?? null,
+      json['appointmentType'] ?? null,
+      json['apptStartDateTime'] ?? null,
+      json['apptEndDateTime'] ?? null,
+      json['reasonIds'] ?? null,
+      json['reasonName'] ?? null,
+      json['resourceId'] ?? null,
+      json['resourceName'] ?? null,
+      json['providerName'] ?? null,
+      json['providerId'] ?? null,
+      json['locationId'] ?? null,
+      json['locationName'] ?? null,
+      json['appointmentId'] ?? null
+    );
+  }
+
+  toJson(): { [key: string]: any } {
+    return {
+      resourceType: this.resourceType ?? null,
+      appointmentType: this.appointmentType ?? null,
+      apptStartDateTime: this.apptStartDateTime ?? null,
+      apptEndDateTime: this.apptEndDateTime ?? null,
+      reasonIds: this.reasonIds ?? null,
+      reasonName: this.reasonName ?? null,
+      resourceId: this.resourceId ?? null,
+      resourceName: this.resourceName ?? null,
+      providerName: this.providerName ?? null,
+      providerId: this.providerId ?? null,
+      locationId: this.locationId ?? null,
+      locationName: this.locationName ?? null,
+      appointmentId: this.appointmentId ?? null
+    };
+  }
+}
+
+export class ValidatePermissionForAppointment {
     access?: boolean;
     response?: string;
+
+    constructor({
+        access,
+        response
+    }: {
+        access?: boolean;
+        response?: string;
+    } = {}) {
+        this.access = access;
+        this.response = response;
+    }
+
+    static fromJson(json: { [key: string]: any }): ValidatePermissionForAppointment {
+        const instance = new ValidatePermissionForAppointment();
+        instance.access = json['access'];
+        instance.response = json['response'];
+        return instance;
+    }
+
+    toJson(): { [key: string]: any } {
+        const data: { [key: string]: any } = {};
+        data['access'] = this.access;
+        data['response'] = this.response;
+        return data;
+    }
 }
 
 export interface AppointmentBookingAllow {
@@ -612,21 +740,7 @@ export interface VisitSummaryTransmit {
     visitSummaryAttachmentList?: VisitSummaryAttachment[];
 }
 
-export class ValidatePermissionForAppointmentModel {
-    static fromJson(json: any): ValidatePermissionForAppointment {
-        return {
-            access: json.access,
-            response: json.response
-        };
-    }
 
-    static toJson(permission: ValidatePermissionForAppointment): Record<string, any> {
-        return {
-            access: permission.access,
-            response: permission.response
-        };
-    }
-}
 
 export class AppointmentBookingAllowModel {
     static fromJson(json: any): AppointmentBookingAllow {
@@ -717,4 +831,36 @@ export class VisitSummaryTransmitModel {
 
         return data;
     }
+}
+
+export class AppointmentDataPass {
+  locationId?: number;
+  practicePersonId?: number;
+  providerName?: string;
+  reasonId?: number;
+  reason?: string;
+  slotTime?: SlotTime;
+  reasonForVisit?: string;
+  apptId?: number;
+
+  constructor(
+    locationId?: number,
+    practicePersonId?: number,
+    providerName?: string,
+    reasonId?: number,
+    reason?: string,
+    slotTime?: SlotTime,
+    reasonForVisit?: string,
+    apptId?: number
+  ) {
+    this.locationId = locationId;
+    this.practicePersonId = practicePersonId;
+    this.providerName = providerName;
+    this.reasonId = reasonId;
+    this.reason = reason;
+    this.slotTime = slotTime;
+    this.reasonForVisit = reasonForVisit;
+    this.apptId = apptId;
+  }
+
 }

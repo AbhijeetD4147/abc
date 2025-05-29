@@ -1,251 +1,1455 @@
-class DemographicModel {
-  String? title;
-  String? firstName;
-  String? middleName;
-  String? lastName;
-  String? suffix;
-  String? prefferedFirstName;
-  String? dateOfBirth;
-  List<EmailModel>? email;
-  List<PhoneNumberModel>? phoneNumber;
-  List<AddressModel>? address;
+import 'dart:convert';
+import 'dart:io';
 
-  DemographicModel({
-    this.title,
-    this.firstName,
-    this.middleName,
-    this.lastName,
-    this.suffix,
-    this.prefferedFirstName,
-    this.dateOfBirth,
-    this.email,
-    this.phoneNumber,
-    this.address,
-  });
+import 'package:first_insight/main.dart';
+import 'package:first_insight/model/authentication/password_response_model.dart/update_password_response_model.dart';
+import 'package:first_insight/model/authentication/patient_account_history.dart';
+import 'package:first_insight/model/authentication/insert_auth_individual_model.dart';
+import 'package:first_insight/model/authentication/switch_user_portal_permission_model.dart';
+import 'package:first_insight/model/authentication/accept_terms_response_model.dart';
+import 'package:first_insight/model/authentication/terms_and_conditions/terms_condition_patient_response_model.dart';
+import 'package:first_insight/model/authentication/username_suggestion_model.dart';
+import 'package:first_insight/model/authentication/vendor_data_response_model.dart';
+import 'package:first_insight/model/patient_portal/AuthorizedIndividualDetailResponseModel.dart';
+import 'package:first_insight/model/patient_portal/AuthorizedPatientResponse.dart';
+import 'package:first_insight/model/patient_portal/ForgotPasswordGUIDVerificationResponseModel.dart';
+import 'package:first_insight/model/patient_portal/ForgotUpdatePasswordResponseModel.dart';
+import 'package:first_insight/model/patient_portal/ForgotUsernameGuidResponseModel.dart';
+import 'package:first_insight/model/patient_portal/LoginResponseModel.dart';
+import 'package:first_insight/model/patient_portal/PatientAvailabilityResponseModel.dart';
+import 'package:first_insight/model/patient_portal/ResetLinkSendResponse.dart';
+import 'package:first_insight/model/patient_portal/SaveUserResponse.dart';
+import 'package:first_insight/model/patient_portal/VerifyOtpResponseModel.dart';
+import 'package:first_insight/screens/authentication/authorized_individual/auth_user_login.dart';
+import 'package:first_insight/services/common/base_web_service.dart';
+import 'package:first_insight/utils/constants.dart';
+import 'package:first_insight/utils/global_params.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 
-  factory DemographicModel.fromJson(Map<String, dynamic> json) {
-    return DemographicModel(
-      title: json['title'],
-      firstName: json['firstName'],
-      middleName: json['middleName'],
-      lastName: json['lastName'],
-      suffix: json['suffix'],
-      prefferedFirstName: json['prefferedFirstName'],
-      dateOfBirth: json['dateOfBirth'],
-      email: json['email'] != null
-          ? (json['email'] as List).map((i) => EmailModel.fromJson(i)).toList()
-          : null,
-      phoneNumber: json['phoneNumber'] != null
-          ? (json['phoneNumber'] as List)
-              .map((i) => PhoneNumberModel.fromJson(i))
-              .toList()
-          : null,
-      address: json['address'] != null
-          ? (json['address'] as List)
-              .map((i) => AddressModel.fromJson(i))
-              .toList()
-          : null,
-    );
-  }
+class AuthenticationService {
+  String? loginHistory;
+  String? username;
+  int? ptCustomerId;
+  String? password;
+  var isAuthDeleted;
+  String? captchaCode;
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['title'] = this.title;
-    data['firstName'] = this.firstName;
-    data['middleName'] = this.middleName;
-    data['lastName'] = this.lastName;
-    data['suffix'] = this.suffix;
-    data['prefferedFirstName'] = this.prefferedFirstName;
-    data['dateOfBirth'] = this.dateOfBirth;
-    if (this.email != null) {
-      data['email'] = this.email!.map((v) => v.toJson()).toList();
+  SwitchUserPortalPermissionModel? switchUsersDetailResponse;
+
+  AuthUserDetail? authUserDetail;
+  NewPatientTermsResponseModel? newPatientTermsResponseModel;
+  ExistingPatientTermsResponseModel? existingPatientTermsResponseModel;
+  AuthorizedIndividualTermsResponseModel?
+      authorizedIndividualTermsResponseModel;
+  UsernameSuggestionModel? usernameSuggestionModel;
+  PatientAccountHistoryModel? patientAccountHistoryModel;
+  ForgotUpdatePasswordResponseModel? forgotUpdatePasswordResponseModel;
+  LoginResponseModel? loginResponseModel;
+  ForgotPasswordGUIDVerificationResponseModel?
+      forgotPasswordGUIDVerificationResponseModel;
+  PatientTermsResponseModel? patientTermsResponseModel;
+  AuthTermsResponseModel? authTermsResponseModel;
+  List<AuthorizedPatientResponse>? authorizedPatientList;
+  UpdatePasswordResponseModel? updatePasswordResponseModel;
+
+  UsernameGuidModel? usernameGuidModel;
+
+  PatientAvailabilityResponseModel? patientAvailabilityResponseModel;
+  InsertAuthorizedIndividualModel? insertAuthorizedIndividualModel;
+
+  String? messageCount;
+  String? healthSummaryUnreadCount;
+  String? appointmentUnreadCount;
+
+  Map<String, dynamic> _map = {};
+
+  Map<String, dynamic> get map => _map;
+
+  ResetLinkSendResponse? resetLinkForgotPasswordSendResponse;
+  ResetLinkSendResponse? resetLinkForgotUsernameSendResponse;
+
+  // var userId = "0";
+  SaveUserResponse? saveUserResponse;
+
+  var isSent = "false";
+
+  String? patientName;
+
+  var isAdded;
+
+  VerifyOtpResponseModel? verifyOtpResponseModel;
+  Map<String, String>? customerData;
+  var resendOtpResult;
+  String? dobAuthenticationResponse;
+  String? termsAcceptanceResponse;
+  String? authTermsAndConditionData;
+
+  int maximum_Calling_API_1 = 0;
+  int maximum_Calling_API_2 = 0;
+  int maximum_Calling_API_3 = 0;
+  int maximum_Calling_API_4 = 0;
+  int maximum_Calling_API_5 = 0;
+  int maximum_Calling_API_6 = 0;
+  int maximum_Calling_API_7 = 0;
+  int maximum_Calling_API_8 = 0;
+  int maximum_Calling_API_9 = 0;
+  int maximum_Calling_API_10 = 0;
+  int maximum_Calling_API_11 = 0;
+  int maximum_Calling_API_12 = 0;
+  int maximum_Calling_API_13 = 0;
+  int maximum_Calling_API_14 = 0;
+  int maximum_Calling_API_15 = 0;
+  int maximum_Calling_API_16 = 0;
+  int maximum_Calling_API_17 = 0;
+  int maximum_Calling_API_18 = 0;
+  int maximum_Calling_API_19 = 0;
+  int maximum_Calling_API_20 = 0;
+  int maximum_Calling_API_21 = 0;
+  int maximum_Calling_API_22 = 0;
+  int maximum_Calling_API_23 = 0;
+  int maximum_Calling_API_24 = 0;
+  int maximum_Calling_API_25 = 0;
+  int maximum_Calling_API_26 = 0;
+  int maximum_Calling_API_27 = 0;
+  int maximum_Calling_API_28 = 0;
+  int maximum_Calling_API_29 = 0;
+  int maximum_Calling_API_30 = 0;
+  int? response_Status_Code_API_1;
+  int? response_Status_Code_API_2;
+  int? response_Status_Code_API_3;
+  int? response_Status_Code_API_4;
+  int? response_Status_Code_API_5;
+  int? response_Status_Code_API_6;
+  int? response_Status_Code_API_7;
+  int? response_Status_Code_API_8;
+  int? response_Status_Code_API_9;
+  int? response_Status_Code_API_10;
+  int? response_Status_Code_API_11;
+  int? response_Status_Code_API_12;
+  int? response_Status_Code_API_13;
+  int? response_Status_Code_API_14;
+  int? response_Status_Code_API_15;
+  int? response_Status_Code_API_16;
+  int? response_Status_Code_API_17;
+  int? response_Status_Code_API_18;
+  int? response_Status_Code_API_19;
+  int? response_Status_Code_API_20;
+  int? response_Status_Code_API_21;
+  int? response_Status_Code_API_22;
+  int? response_Status_Code_API_23;
+  int? response_Status_Code_API_24;
+  int? response_Status_Code_API_25;
+  int? response_Status_Code_API_26;
+  int? response_Status_Code_API_27;
+  int? response_Status_Code_API_28;
+  int? response_Status_Code_API_29;
+  int? response_Status_Code_API_30;
+
+  //To Check OTP Entered By User
+  Future<void> checkOtp(
+      String userType, String authId, String otp, String callFrom) async {
+    if (userType == 'New_Patient_Account') {
+      customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+        'OwnerId': GlobalParams.PT_CUSTOMER_ID,
+        'OwnerType': userType,
+        'OTP': otp,
+      };
+    } else if (userType == "NEW_AUTH_INDIVIDUAL") {
+      customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+        'OwnerId': authId,
+        'OwnerType': userType,
+        'OTP': otp,
+      };
+    } else {
+      if (callFrom == "SignUpAsPatient") {
+        customerData = {
+          'PracticeName': GlobalParams.PRACTICE_NAME,
+          'UserId': GlobalParams.USER_ID,
+          'OwnerType': userType,
+          'OwnerId': GlobalParams.PT_CUSTOMER_ID,
+          'OTP': otp,
+          'CallFrom': "SignUpAsPatient",
+        };
+      } else {
+        customerData = {
+          'PracticeName': GlobalParams.PRACTICE_NAME,
+          'UserId': GlobalParams.USER_ID,
+          'OwnerType': userType,
+          'OwnerId': GlobalParams.PT_CUSTOMER_ID,
+          'OTP': otp,
+        };
+      }
     }
-    if (this.phoneNumber != null) {
-      data['phoneNumber'] = this.phoneNumber!.map((v) => v.toJson()).toList();
+    try {
+      String queryString = Uri(queryParameters: customerData).query;
+      String url = ApiPath.baseApi + 'api/PatientPortal/VerifyOTP';
+      var requestUrl = url + '?' + queryString;
+      Response response = await BaseWebService().getWebAPI(
+        requestUrl: requestUrl,
+        token: GlobalParams.TOKEN,
+        practiceName: GlobalParams.PRACTICE_NAME,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_1 = 205;
+      } else if (response.statusCode == 200) {
+        verifyOtpResponseModel =
+            await VerifyOtpResponseModel.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_1 = response.statusCode;
+      } else {
+        maximum_Calling_API_1 = maximum_Calling_API_1 + 1;
+        if (maximum_Calling_API_1 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await checkOtp(userType, authId, otp, callFrom);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await checkOtp(userType, authId, otp, callFrom);
+            });
+          }
+        } else {
+          response_Status_Code_API_1 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
     }
-    if (this.address != null) {
-      data['address'] = this.address!.map((v) => v.toJson()).toList();
+  }
+
+  //To Get Terms And Condition Text
+  Future<void> fetchTermsAndConditionData() async {
+    try {
+      Map<String, String> customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+      };
+      var queryString = Uri(queryParameters: customerData).query;
+      var url = ApiPath.baseApi + 'api/PatientPortal/GetTncText';
+      var requestUrl = url + '?' + queryString;
+      Response response =
+          await BaseWebService().getWebAPI(requestUrl: requestUrl);
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_2 = 205;
+      } else if (response.statusCode == 200) {
+        authTermsAndConditionData = response.body;
+        response_Status_Code_API_2 = response.statusCode;
+      } else {
+        maximum_Calling_API_2 = maximum_Calling_API_2 + 1;
+        if (maximum_Calling_API_2 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await fetchTermsAndConditionData();
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await fetchTermsAndConditionData();
+            });
+          }
+        } else {
+          response_Status_Code_API_2 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
     }
-    return data;
-  }
-}
-
-class AddressModel {
-  int? randomNumberId;
-  int id;
-  String addressLine1;
-  String addressLine2;
-  String country;
-  String state;
-  String zipCode;
-  String city;
-  bool isPrimary;
-  bool isActive;
-
-  AddressModel({
-    this.randomNumberId,
-    this.id = 0,
-    this.addressLine1 = "",
-    this.addressLine2 = "",
-    this.country = "Select",
-    this.state = "Select",
-    this.zipCode = "",
-    this.city = "",
-    this.isPrimary = false,
-    this.isActive = true,
-  });
-
-  factory AddressModel.fromJson(Map<String, dynamic> json) {
-    return AddressModel(
-      id: json['id'],
-      addressLine1: json['addressLine1'],
-      addressLine2: json['addressLine2'],
-      country: json['country'],
-      state: json['state'],
-      zipCode: json['zipCode'],
-      city: json['city'],
-      isPrimary: json['isPrimary'],
-      isActive: json['isActive'] ?? true,
-      randomNumberId: json['randomNumberId'] ?? 0,
-    );
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['addressLine1'] = this.addressLine1;
-    data['addressLine2'] = this.addressLine2;
-    data['country'] = this.country;
-    data['state'] = this.state;
-    data['zipCode'] = this.zipCode;
-    data['city'] = this.city;
-    data['isPrimary'] = this.isPrimary;
-    data['isActive'] = this.isActive;
-    data['randomNumberId'] = this.randomNumberId;
-    return data;
-  }
-}
-
-class EmailModel {
-  int? id;
-  String? emailAddress;
-  bool? isPrimary;
-  bool? isActive;
-
-  EmailModel({
-    this.id = 0,
-    this.emailAddress,
-    this.isPrimary,
-    this.isActive,
-  });
-
-  factory EmailModel.fromJson(Map<String, dynamic> json) {
-    return EmailModel(
-      id: json['id'],
-      emailAddress: json['emailAddress'],
-      isPrimary: json['isPrimary'],
-      isActive: json['isActive'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['emailAddress'] = this.emailAddress;
-    data['id'] = this.id;
-    data['isPrimary'] = this.isPrimary;
-    data['isActive'] = this.isActive;
-    return data;
-  }
-}
-
-class DropdownPersonalDetailModel {
-  String? valueListItem;
-
-  DropdownPersonalDetailModel({this.valueListItem});
-
-  DropdownPersonalDetailModel.fromJson(Map<String, dynamic> json) {
-    valueListItem = json['valueListItem'];
+  //To Send Credentials on Email Id
+  Future<void> sendCredentials(String emailId, int patientNumber) async {
+    Map<String, String> customerData = {
+      'PracticeName': GlobalParams.PRACTICE_NAME,
+      'EmailID': emailId,
+      'PatientNumber': patientNumber.toString(),
+    };
+    try {
+      var queryString = Uri(queryParameters: customerData).query;
+      var url = ApiPath.baseApi + 'api/PatientPortal/SendCredentialsToPatient';
+      var requestUrl = url + '?' + queryString;
+      Response response = await BaseWebService().getWebAPI(
+          requestUrl: requestUrl,
+          token: GlobalParams.TOKEN,
+          practiceName: GlobalParams.PRACTICE_NAME);
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_3 = 205;
+      } else if (response.statusCode == 200) {
+        isSent = await response.body;
+        response_Status_Code_API_3 = response.statusCode;
+      } else {
+        maximum_Calling_API_3 = maximum_Calling_API_3 + 1;
+        if (maximum_Calling_API_3 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await sendCredentials(emailId, patientNumber);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await sendCredentials(emailId, patientNumber);
+            });
+          }
+        } else {
+          response_Status_Code_API_3 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['valueListItem'] = this.valueListItem;
-    return data;
-  }
-}
+  Future<void> createUser(saveUserRequestModel) async {
+    try {
+      var url = ApiPath.baseApi +
+          'api/Users/SaveUser?PracticeName=${GlobalParams.PRACTICE_NAME}';
 
-class CountryModel {
-  String? countryName;
-  String? countryCode;
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: saveUserRequestModel,
+      );
 
-  CountryModel({this.countryName, this.countryCode});
-
-  CountryModel.fromJson(Map<String, dynamic> json) {
-    countryName = json['countryName'];
-    countryCode = json['countryCode'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['countryName'] = this.countryName;
-    data['countryCode'] = this.countryCode;
-    return data;
-  }
-}
-
-class StateModel {
-  String? stateOrProvinceId;
-  String? stateOrProvinceName;
-
-  StateModel({this.stateOrProvinceId, this.stateOrProvinceName});
-
-  StateModel.fromJson(Map<String, dynamic> json) {
-    stateOrProvinceId = json['stateOrProvinceId'];
-    stateOrProvinceName = json['stateOrProvinceName'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['stateOrProvinceId'] = this.stateOrProvinceId;
-    data['stateOrProvinceName'] = this.stateOrProvinceName;
-    return data;
-  }
-}
-
-class PhoneNumberModel {
-  String? title;
-  String? number;
-  bool? isPrimary;
-  bool? isActive;
-  int? id;
-  int? randomNumberId;
-
-  PhoneNumberModel({
-    this.id = 0,
-    this.randomNumberId,
-    this.title,
-    this.number,
-    this.isPrimary,
-    this.isActive = true,
-  });
-
-  factory PhoneNumberModel.fromJson(Map<String, dynamic> json) {
-    return PhoneNumberModel(
-      title: json['title'],
-      number: json['number'],
-      isPrimary: json['isPrimary'],
-      id: json['id'],
-      isActive: json['isActive'],
-    );
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_4 = 205;
+      } else if (response.statusCode == 200) {
+        saveUserResponse =
+            await SaveUserResponse.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_4 = response.statusCode;
+      } else {
+        maximum_Calling_API_4 = maximum_Calling_API_4 + 1;
+        if (maximum_Calling_API_4 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await createUser(saveUserRequestModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await createUser(saveUserRequestModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_4 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['title'] = this.title;
-    data['number'] = this.number;
-    data['isPrimary'] = this.isPrimary;
-    data['isActive'] = this.isActive ?? true;
-    return data;
+  Future<void> resetLinkForForgotUserName(resetLinkSendRequestModel) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/Users/ResetLinkForForgotUserName?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: resetLinkSendRequestModel,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_5 = 205;
+      } else if (response.statusCode == 200) {
+        resetLinkForgotUsernameSendResponse =
+            ResetLinkSendResponse.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_5 = response.statusCode;
+      } else {
+        maximum_Calling_API_5 = maximum_Calling_API_5 + 1;
+        if (maximum_Calling_API_5 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await resetLinkForForgotUserName(resetLinkSendRequestModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await resetLinkForForgotUserName(resetLinkSendRequestModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_5 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> resetLinkForForgotPassword(resetPasswordLinkRequestModel) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/Users/ResetLinkForForgotPassword?PracticeName=${GlobalParams.PRACTICE_NAME}';
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: resetPasswordLinkRequestModel,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_6 = 205;
+      } else if (response.statusCode == 200) {
+        resetLinkForgotPasswordSendResponse =
+            ResetLinkSendResponse.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_6 = response.statusCode;
+      } else {
+        maximum_Calling_API_6 = maximum_Calling_API_6 + 1;
+        if (maximum_Calling_API_6 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await resetLinkForForgotPassword(resetPasswordLinkRequestModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await resetLinkForForgotPassword(resetPasswordLinkRequestModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_6 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  static Future<void> generateToken() async {
+    try {
+      Response firstResponse = await get(
+        Uri.parse(ApiPath.baseApi + 'GetWelcomeformParamForAuthenticate'),
+        headers: {
+          "AccountId": GlobalParams.PRACTICE_NAME,
+          "SessionGuid": GlobalParams.SESSION_GUID
+        },
+      );
+      if (firstResponse.statusCode == 200) {
+        var vendorInterfaceData =
+            VendorDataResponseModel.fromJson(jsonDecode(firstResponse.body));
+
+        final customerData = jsonEncode({
+          "vendorId": vendorInterfaceData.vendorId,
+          "vendorPassword": vendorInterfaceData.vendorPassword,
+          "accountId": vendorInterfaceData.accountId
+        });
+
+        Response response = await post(
+          Uri.parse(ApiPath.baseApi + 'Authenticate'),
+          body: customerData,
+          headers: {
+            "content-type": "application/json",
+            "SessionGuid": GlobalParams.SESSION_GUID
+          },
+        );
+        GlobalParams.TOKEN = response.body;
+      } else {
+        print("Request failed with status code : ${firstResponse.statusCode}");
+      }
+    } on SocketException {
+      print("No internet Connection");
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> validatePatient(Map<String, dynamic>? customerData) async {
+    try {
+      var queryString = Uri(queryParameters: customerData).query;
+      var url =
+          ApiPath.baseApi + 'api/PatientPortal/PatientPortalPatientValidate';
+      var requestUrl = url + "?" + queryString;
+      var response = await BaseWebService().postWebAPI(
+        requestUrl: requestUrl,
+      );
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_7 = 205;
+      } else if (response.statusCode == 200) {
+        patientAvailabilityResponseModel =
+            await PatientAvailabilityResponseModel.fromJson(
+                jsonDecode(response.body));
+        response_Status_Code_API_7 = response.statusCode;
+      } else {
+        maximum_Calling_API_7 = maximum_Calling_API_7 + 1;
+        if (maximum_Calling_API_7 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await validatePatient(customerData);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await validatePatient(customerData);
+            });
+          }
+        } else {
+          response_Status_Code_API_7 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> verifyGuidForResetUsername(usernameModel) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/Users/ForgotUserNameGUIDVerification?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: usernameModel,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_8 = 205;
+      } else if (response.statusCode == 200) {
+        usernameGuidModel =
+            UsernameGuidModel.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_8 = response.statusCode;
+      } else {
+        maximum_Calling_API_8 = maximum_Calling_API_8 + 1;
+        if (maximum_Calling_API_8 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await verifyGuidForResetUsername(usernameModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await verifyGuidForResetUsername(usernameModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_8 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> getAuthPatientList() async {
+    var userId = GlobalParams.USER_ID;
+    try {
+      Map<String, String> customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+        'Userid': userId,
+      };
+      var url =
+          ApiPath.baseApi + 'api/PatientPortal/GetAuthorizedIndividualByUserId';
+
+      String queryString = Uri(queryParameters: customerData).query;
+
+      var requestUrl = url + '?' + queryString;
+
+      Response response = await BaseWebService().getWebAPI(
+          requestUrl: requestUrl,
+          token: GlobalParams.TOKEN,
+          practiceName: GlobalParams.PRACTICE_NAME);
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_9 = 205;
+      } else if (response.statusCode == 200) {
+        authorizedPatientList = parseMessage(response.body);
+        response_Status_Code_API_9 = response.statusCode;
+      } else {
+        maximum_Calling_API_9 = maximum_Calling_API_9 + 1;
+        if (maximum_Calling_API_9 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await getAuthPatientList();
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await getAuthPatientList();
+            });
+          }
+        } else {
+          response_Status_Code_API_9 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error.. : $e');
+    }
+  }
+
+  List<AuthorizedPatientResponse> parseMessage(String responseBody) {
+    final parsed = jsonDecode(responseBody);
+    return parsed
+        .map<AuthorizedPatientResponse>(
+            (json) => AuthorizedPatientResponse.fromJson(json))
+        .toList();
+  }
+
+  Future<void> verifyGuidForResetPassword(
+      forgotUsernameGuidRequestModel) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/Users/ForgotPasswordGUIDVerification?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: forgotUsernameGuidRequestModel,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_10 = 205;
+      } else if (response.statusCode == 200) {
+        forgotPasswordGUIDVerificationResponseModel =
+            ForgotPasswordGUIDVerificationResponseModel.fromJson(
+                jsonDecode(response.body));
+        response_Status_Code_API_10 = response.statusCode;
+      } else {
+        maximum_Calling_API_10 = maximum_Calling_API_10 + 1;
+        if (maximum_Calling_API_10 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await verifyGuidForResetPassword(forgotUsernameGuidRequestModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await verifyGuidForResetPassword(forgotUsernameGuidRequestModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_10 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> getCaptcha() async {
+    try {
+      Map<String, String> customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+      };
+
+      String queryString = Uri(queryParameters: customerData).query;
+      String url = ApiPath.baseApi + 'api/PatientPortal/GetCaptcha';
+      var requestUrl = url + '?' + queryString;
+      Response response = await BaseWebService().getWebAPI(
+          requestUrl: requestUrl,
+          token: GlobalParams.TOKEN,
+          practiceName: GlobalParams.PRACTICE_NAME);
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_11 = 205;
+      } else if (response.statusCode == 200) {
+        captchaCode = response.body;
+        response_Status_Code_API_11 = response.statusCode;
+      } else {
+        maximum_Calling_API_11 = maximum_Calling_API_11 + 1;
+        if (maximum_Calling_API_11 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await getCaptcha();
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await getCaptcha();
+            });
+          }
+        } else {
+          response_Status_Code_API_11 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> deleteAuthPatient(int authId) async {
+    var userId = GlobalParams.USER_ID;
+    try {
+      String url = ApiPath.baseApi +
+          'api/PatientPortal/DeleteAuthorizedIndividual?PracticeName=${GlobalParams.PRACTICE_NAME}&AuthId=$authId&UserId=$userId';
+
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_12 = 205;
+      } else if (response.statusCode == 200) {
+        isAuthDeleted = response.body;
+        response_Status_Code_API_12 = response.statusCode;
+      } else {
+        maximum_Calling_API_12 = maximum_Calling_API_12 + 1;
+        if (maximum_Calling_API_12 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await deleteAuthPatient(authId);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await deleteAuthPatient(authId);
+            });
+          }
+        } else {
+          response_Status_Code_API_12 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> getUsernameSuggestion(
+      String currentUsername, String userType, int authId) async {
+    try {
+      Map<String, dynamic> customerData = {};
+
+      if (userType == 'Auth') {
+        customerData = {
+          'PracticeName': GlobalParams.PRACTICE_NAME,
+          'UserName': currentUsername,
+          'UserType': userType,
+          'AuthId': authId.toString()
+        };
+      } else {
+        customerData = {
+          'PracticeName': GlobalParams.PRACTICE_NAME,
+          'PtCustomerId': GlobalParams.PT_CUSTOMER_ID,
+          'UserName': currentUsername,
+          'UserType': userType,
+          'AuthId': '0'
+        };
+      }
+
+      var queryString = Uri(queryParameters: customerData).query;
+
+      var url = ApiPath.baseApi + 'api/PatientPortal/GetSuggestedUserName';
+
+      var requestUrl = url + '?' + queryString;
+      var response = await BaseWebService().getWebAPI(
+          requestUrl: requestUrl,
+          token: GlobalParams.TOKEN,
+          practiceName: GlobalParams.PRACTICE_NAME);
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_13 = 205;
+      } else if (response.statusCode == 200) {
+        usernameSuggestionModel =
+            await UsernameSuggestionModel.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_13 = response.statusCode;
+      } else {
+        maximum_Calling_API_13 = maximum_Calling_API_13 + 1;
+        if (maximum_Calling_API_13 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await getUsernameSuggestion(currentUsername, userType, authId);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await getUsernameSuggestion(currentUsername, userType, authId);
+            });
+          }
+        } else {
+          response_Status_Code_API_13 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> addAuthPatient(Map customerData, String matchType) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/PatientPortal/InsertAuthorizedIndividual?PracticeName=${GlobalParams.PRACTICE_NAME}&MatchType=$matchType';
+
+      Response response = await BaseWebService()
+          .postWebAPI(requestUrl: url, dataModel: customerData);
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_14 = 205;
+      } else if (response.statusCode == 200) {
+        insertAuthorizedIndividualModel =
+            await InsertAuthorizedIndividualModel.fromJson(
+                jsonDecode(response.body));
+        response_Status_Code_API_14 = response.statusCode;
+      } else {
+        maximum_Calling_API_14 = maximum_Calling_API_14 + 1;
+        if (maximum_Calling_API_14 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await addAuthPatient(customerData, matchType);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await addAuthPatient(customerData, matchType);
+            });
+          }
+        } else {
+          response_Status_Code_API_14 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error :: $e');
+    }
+  }
+
+  Future<void> acceptTermForAuthPatient(
+      acceptTermsForAuthorizedIndividualRequestModel) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/PatientPortal/InsertTermsAndConditionsAuthorizedIndividual?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: acceptTermsForAuthorizedIndividualRequestModel,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_15 = 205;
+      } else if (response.statusCode == 200) {
+        authorizedIndividualTermsResponseModel =
+            AuthorizedIndividualTermsResponseModel.fromJson(
+                jsonDecode(response.body));
+        response_Status_Code_API_15 = response.statusCode;
+      } else {
+        maximum_Calling_API_15 = maximum_Calling_API_15 + 1;
+        if (maximum_Calling_API_15 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await acceptTermForAuthPatient(
+                acceptTermsForAuthorizedIndividualRequestModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await acceptTermForAuthPatient(
+                  acceptTermsForAuthorizedIndividualRequestModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_15 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> acceptTermsForExistingPatient(
+      existingPatientTermsRequestModel) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/PatientPortal/ExistingPatientSaveTermsAndConditions?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: existingPatientTermsRequestModel,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_16 = 205;
+      } else if (response.statusCode == 200) {
+        existingPatientTermsResponseModel =
+            ExistingPatientTermsResponseModel.fromJson(
+                jsonDecode(response.body));
+        response_Status_Code_API_16 = response.statusCode;
+      } else {
+        maximum_Calling_API_16 = maximum_Calling_API_16 + 1;
+        if (maximum_Calling_API_16 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await acceptTermsForExistingPatient(
+                existingPatientTermsRequestModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await acceptTermsForExistingPatient(
+                  existingPatientTermsRequestModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_16 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> getAuthUserDetail() async {
+    //Assume authId as ptCustomerId When Loggedin User Type is Auth as in future if signup as a patient we directly change usertype
+
+    var ptCustomerId = GlobalParams.PT_CUSTOMER_ID;
+    try {
+      customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+        'AuthId': ptCustomerId,
+      };
+      String queryString = Uri(queryParameters: customerData).query;
+
+      String url =
+          ApiPath.baseApi + 'api/PatientPortal/GetAuthIndividualDetailsById';
+
+      var requestUrl = url + '?' + queryString;
+      Response response = await BaseWebService().getWebAPI(
+          requestUrl: requestUrl,
+          token: GlobalParams.TOKEN,
+          practiceName: GlobalParams.PRACTICE_NAME);
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_17 = 205;
+      } else if (response.statusCode == 200) {
+        authUserDetail =
+            await AuthUserDetail.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_17 = response.statusCode;
+      } else {
+        maximum_Calling_API_17 = maximum_Calling_API_17 + 1;
+        if (maximum_Calling_API_17 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await getAuthUserDetail();
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await getAuthUserDetail();
+            });
+          }
+        } else {
+          response_Status_Code_API_17 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error ==> :: $e');
+    }
+  }
+
+  Future<void> acceptTermForNewPatient(newPatientTermsRequestModel) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/PatientPortal/CreatePatientPortalNewAccount?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: newPatientTermsRequestModel,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_18 = 205;
+      } else if (response.statusCode == 200) {
+        newPatientTermsResponseModel =
+            await NewPatientTermsResponseModel.fromJson(
+                jsonDecode(response.body));
+
+        if (newPatientTermsResponseModel!.status! == true) {
+          // For the Flow of Auth => Sign Up As Patient
+          if ((GlobalParams.USER_TYPE) != "Auth") {
+            GlobalParams.PT_CUSTOMER_ID =
+                newPatientTermsResponseModel!.ptCustomerid.toString();
+          }
+        }
+        response_Status_Code_API_18 = response.statusCode;
+      } else {
+        maximum_Calling_API_18 = maximum_Calling_API_18 + 1;
+        if (maximum_Calling_API_18 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await acceptTermForNewPatient(newPatientTermsRequestModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await acceptTermForNewPatient(newPatientTermsRequestModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_18 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> acceptTermForAuthSignupAsPatient(
+      newPatientTermsRequestModel) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/PatientPortal/CreatePatientPortalNewAccount?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: newPatientTermsRequestModel,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_19 = 205;
+      } else if (response.statusCode == 200) {
+        newPatientTermsResponseModel =
+            await NewPatientTermsResponseModel.fromJson(
+                jsonDecode(response.body));
+
+        if (newPatientTermsResponseModel!.status == true) {
+          GlobalParams.PT_CUSTOMER_ID =
+              newPatientTermsResponseModel!.ptCustomerid.toString();
+        }
+        response_Status_Code_API_19 = response.statusCode;
+      } else {
+        maximum_Calling_API_19 = maximum_Calling_API_19 + 1;
+        if (maximum_Calling_API_19 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await acceptTermForAuthSignupAsPatient(newPatientTermsRequestModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await acceptTermForAuthSignupAsPatient(
+                  newPatientTermsRequestModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_19 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> getResendSignUpEmailForAuthUser(String authId) async {
+    var userId = GlobalParams.USER_ID;
+
+    try {
+      Map<String, String> customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+        'AuthId': authId,
+        'UserId': userId,
+      };
+
+      String queryString = Uri(queryParameters: customerData).query;
+      String url = ApiPath.baseApi +
+          'api/PatientPortal/ResendSignUpEmailForAuthorizedIndividual';
+      var requestUrl = url + '?' + queryString;
+      var response = await BaseWebService().getWebAPI(
+          requestUrl: requestUrl,
+          token: GlobalParams.TOKEN,
+          practiceName: GlobalParams.PRACTICE_NAME);
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_20 = 205;
+      } else if (response.statusCode == 200) {
+        response_Status_Code_API_20 = response.statusCode;
+      } else {
+        maximum_Calling_API_20 = maximum_Calling_API_20 + 1;
+        if (maximum_Calling_API_20 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await getResendSignUpEmailForAuthUser(authId);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await getResendSignUpEmailForAuthUser(authId);
+            });
+          }
+        } else {
+          response_Status_Code_API_20 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> getSwitchUserDetail(Map<String, dynamic>? customerData) async {
+    var queryString = Uri(queryParameters: customerData).query;
+
+    var url = ApiPath.baseApi + 'api/PatientPortal/GetSwitchUsersDetails';
+
+    var requestUrl = url + '?' + queryString;
+    try {
+      var response = await BaseWebService().getWebAPI(
+          requestUrl: requestUrl,
+          token: GlobalParams.TOKEN,
+          practiceName: GlobalParams.PRACTICE_NAME);
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_21 = 205;
+      } else if (response.statusCode == 200) {
+        switchUsersDetailResponse =
+            await SwitchUserPortalPermissionModel.fromJson(
+                jsonDecode(response.body));
+        response_Status_Code_API_21 = response.statusCode;
+      } else {
+        maximum_Calling_API_21 = maximum_Calling_API_21 + 1;
+        if (maximum_Calling_API_21 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await getSwitchUserDetail(customerData);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await getSwitchUserDetail(customerData);
+            });
+          }
+        } else {
+          response_Status_Code_API_21 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error ==> :: $e');
+    }
+  }
+
+  Future<void> createAccountOld(Map loginModel) async {
+    try {
+      GlobalParams.SWITCH_USER_ID = "0";
+      String url = ApiPath.baseApi +
+          'api/Account/Login?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      var response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: loginModel,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_22 = 205;
+      } else if (response.statusCode == 200) {
+        loginResponseModel =
+            LoginResponseModel.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_22 = response.statusCode;
+        if (loginResponseModel!.userId! > 0) {
+          GlobalParams.USER_ID = loginResponseModel!.userId.toString();
+          GlobalParams.USER_TYPE = loginResponseModel!.userType!;
+          GlobalParams.PT_CUSTOMER_ID =
+              loginResponseModel!.ptCustomerID.toString();
+
+          if (loginResponseModel!.userType == "Auth") {
+            GlobalParams.PT_CUSTOMER_ID_For_Audit_Log =
+                loginResponseModel!.ptCustomerID.toString();
+            GlobalParams.isSettingIconMenuItemsAccess = false;
+            navigatorKey.currentState!.push(
+              MaterialPageRoute(
+                builder: (context) => AuthUserLogin(),
+              ),
+            );
+          } else {
+            GlobalParams.PT_CUSTOMER_ID_For_Audit_Log = "0";
+          }
+        }
+      } else {
+        maximum_Calling_API_22 = maximum_Calling_API_22 + 1;
+        if (maximum_Calling_API_22 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await createAccountOld(loginModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await createAccountOld(loginModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_22 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error ==> :: $e');
+    }
+  }
+
+  Future<void> checkPatientAccount(String id) async {
+    try {
+      Map<String, String> customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+        'PatientGuid': id,
+      };
+      String queryString = Uri(queryParameters: customerData).query;
+
+      String url =
+          ApiPath.baseApi + 'api/PatientPortal/CheckPatientIsUsedAccountOrNot';
+
+      var requestUrl = url + '?' + queryString;
+      Response response = await BaseWebService().getWebAPI(
+        requestUrl: requestUrl,
+        token: GlobalParams.TOKEN,
+        practiceName: GlobalParams.PRACTICE_NAME,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_23 = 205;
+      } else if (response.statusCode == 200) {
+        patientAccountHistoryModel =
+            PatientAccountHistoryModel.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_23 = response.statusCode;
+      } else {
+        maximum_Calling_API_23 = maximum_Calling_API_23 + 1;
+        if (maximum_Calling_API_23 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await checkPatientAccount(id);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await checkPatientAccount(id);
+            });
+          }
+        } else {
+          response_Status_Code_API_23 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error on appointment count :: $e');
+    }
+  }
+
+  Future<void> changePassword(passwordResetModel) async {
+    try {
+      String url = ApiPath.baseApi +
+          'api/Users/ForgotPasswordForChangePassword?PracticeName=${GlobalParams.PRACTICE_NAME}';
+      var response = await BaseWebService().postWebAPI(
+        dataModel: passwordResetModel,
+        requestUrl: url,
+      );
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_24 = 205;
+      } else if (response.statusCode == 200) {
+        forgotUpdatePasswordResponseModel =
+            await ForgotUpdatePasswordResponseModel.fromJson(
+                jsonDecode(response.body));
+        response_Status_Code_API_24 = response.statusCode;
+      } else {
+        maximum_Calling_API_24 = maximum_Calling_API_24 + 1;
+        if (maximum_Calling_API_24 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await updatePassword(passwordResetModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await updatePassword(passwordResetModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_24 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> login(Map loginModel) async {
+    GlobalParams.SWITCH_USER_ID = "0";
+    try {
+      String url = ApiPath.baseApi +
+          'api/Account/Login?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      var response = await BaseWebService().postWebAPI(
+        requestUrl: url,
+        dataModel: loginModel,
+      );
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_25 = 205;
+      } else if (response.statusCode == 200) {
+        loginResponseModel =
+            await LoginResponseModel.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_25 = response.statusCode;
+      } else {
+        maximum_Calling_API_25 = maximum_Calling_API_25 + 1;
+        if (maximum_Calling_API_25 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await login(loginModel);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await login(loginModel);
+            });
+          }
+        } else {
+          response_Status_Code_API_25 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> resendOtp(String userType, String authId) async {
+    try {
+      if (userType == 'New_Patient_Account') {
+        customerData = {
+          'PracticeName': GlobalParams.PRACTICE_NAME,
+          'OwnerId': GlobalParams.PT_CUSTOMER_ID,
+          'OwnerType': userType,
+        };
+      } else if (userType == "NEW_AUTH_INDIVIDUAL") {
+        customerData = {
+          'PracticeName': GlobalParams.PRACTICE_NAME,
+          'OwnerId': authId,
+          'OwnerType': userType,
+        };
+      } else {
+        customerData = {
+          'PracticeName': GlobalParams.PRACTICE_NAME,
+          'UserId': GlobalParams.USER_ID,
+          'OwnerType': userType,
+          'OwnerId': GlobalParams.PT_CUSTOMER_ID,
+        };
+      }
+      var queryString = Uri(queryParameters: customerData).query;
+      var url = ApiPath.baseApi + 'api/PatientPortal/ResendOTP';
+      var requestUrl = url + '?' + queryString;
+
+      var response = await BaseWebService().getWebAPI(
+        requestUrl: requestUrl,
+        token: GlobalParams.TOKEN,
+        practiceName: GlobalParams.PRACTICE_NAME,
+      );
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_26 = 205;
+      } else if (response.statusCode == 200) {
+        resendOtpResult = response.body;
+        response_Status_Code_API_26 = response.statusCode;
+      } else {
+        maximum_Calling_API_26 = maximum_Calling_API_26 + 1;
+        if (maximum_Calling_API_26 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await resendOtp(userType, authId);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await resendOtp(userType, authId);
+            });
+          }
+        } else {
+          response_Status_Code_API_26 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> verifyDOB(String dob) async {
+    try {
+      Map<String, String> customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+        'MaximeyesPatientNumber': GlobalParams.MAXIMEYES_PATIENT_NUMBER,
+        'DOB': dob,
+        'PtCustomerId': GlobalParams.PT_CUSTOMER_ID,
+      };
+
+      String queryString = Uri(queryParameters: customerData).query;
+
+      String url = ApiPath.baseApi + 'api/PatientPortal/VerifyPatientDOB';
+      var requestUrl = url + '?' + queryString;
+
+      Response response = await BaseWebService().postWebAPI(
+        requestUrl: requestUrl,
+      );
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_27 = 205;
+      } else if (response.statusCode == 200) {
+        dobAuthenticationResponse = response.body;
+        response_Status_Code_API_27 = response.statusCode;
+      } else {
+        maximum_Calling_API_27 = maximum_Calling_API_27 + 1;
+        if (maximum_Calling_API_27 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await verifyDOB(dob);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await verifyDOB(dob);
+            });
+          }
+        } else {
+          response_Status_Code_API_27 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error  :: $e');
+    }
+  }
+
+  Future<void> acceptTermsAfterLoginForPatient(
+      String base64Signature, bool optedPatient) async {
+    try {
+      Map<String, String> customerData = {
+        'SourceFrom': optedPatient ? 'OptIn' : 'NewRecord',
+        'Signature': base64Signature,
+        'PtCustomerId': GlobalParams.PT_CUSTOMER_ID,
+        'MaximeyesPatientNumber': GlobalParams.MAXIMEYES_PATIENT_NUMBER,
+      };
+
+      String url = ApiPath.baseApi +
+          'api/PatientPortal/AcceptTermsAndCondition?PracticeName=${GlobalParams.PRACTICE_NAME}';
+
+      Response response = await BaseWebService()
+          .postWebAPI(requestUrl: url, dataModel: customerData);
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_28 = 205;
+      } else if (response.statusCode == 200) {
+        termsAcceptanceResponse = response.body;
+        response_Status_Code_API_28 = response.statusCode;
+      } else {
+        maximum_Calling_API_28 = maximum_Calling_API_28 + 1;
+        if (maximum_Calling_API_28 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await acceptTermsAfterLoginForPatient(
+                base64Signature, optedPatient);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await acceptTermsAfterLoginForPatient(
+                  base64Signature, optedPatient);
+            });
+          }
+        } else {
+          response_Status_Code_API_28 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error  :: $e');
+    }
+  }
+
+  Future<void> fetchTermsAfterLogin() async {
+    try {
+      Map<String, String> customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+        'PtCustomerId': GlobalParams.PT_CUSTOMER_ID,
+      };
+      var queryString = Uri(queryParameters: customerData).query;
+      var url = ApiPath.baseApi + 'api/PatientPortal/GetTNCTextAfterLogin';
+      var requestUrl = url + '?' + queryString;
+      Response response =
+          await BaseWebService().getWebAPI(requestUrl: requestUrl);
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_29 = 205;
+      } else if (response.statusCode == 200) {
+        patientTermsResponseModel =
+            await PatientTermsResponseModel.fromJson(jsonDecode(response.body));
+        response_Status_Code_API_29 = response.statusCode;
+      } else {
+        maximum_Calling_API_29 = maximum_Calling_API_29 + 1;
+        if (maximum_Calling_API_29 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await fetchTermsAfterLogin();
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await fetchTermsAfterLogin();
+            });
+          }
+        } else {
+          response_Status_Code_API_29 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
+  }
+
+  Future<void> updatePassword(String password) async {
+    try {
+      Map<String, String> customerData = {
+        'PracticeName': GlobalParams.PRACTICE_NAME,
+        'UserId': GlobalParams.USER_ID,
+        'NewPassword': password
+      };
+      var queryString = Uri(queryParameters: customerData).query;
+      var url = ApiPath.baseApi + 'api/Users/UpdatePatientPassword';
+      var requestUrl = url + '?' + queryString;
+      Response response =
+          await BaseWebService().postWebAPI(requestUrl: requestUrl);
+
+      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
+        response_Status_Code_API_30 = 205;
+      } else if (response.statusCode == 200) {
+        updatePasswordResponseModel =
+            await UpdatePasswordResponseModel.fromJson(
+                jsonDecode(response.body));
+        response_Status_Code_API_30 = response.statusCode;
+      } else {
+        maximum_Calling_API_30 = maximum_Calling_API_30 + 1;
+        if (maximum_Calling_API_30 < ApiPath.MaxAPICalling) {
+          if (response.statusCode == 401) {
+            await AuthenticationService.generateToken();
+            await updatePassword(password);
+          } else {
+            Future.delayed(Duration(seconds: 1), () async {
+              await updatePassword(password);
+            });
+          }
+        } else {
+          response_Status_Code_API_30 = response.statusCode;
+        }
+      }
+    } catch (e) {
+      print('caught error : $e');
+    }
   }
 }
