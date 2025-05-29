@@ -2,20 +2,168 @@
 @tailwind components;
 @tailwind utilities;
 
-/* :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+:root {
+  /* Text Colors */
+  --primary-text-color: #000000;
+  --secondary-text-color: #000000;
+  --tertiary-text-color: #000000;
+  --quaternary-text-color: #000000;
+  --quinary-text-color: #000000;
+  --senary-text-color: #000000;
+  --septenary-text-color: #000000;
+  --octonary-text-color: #000000;
+  --nonary-text-color: #000000;
+  --denary-text-color: #000000;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --list-tile-hover-color: #000000;
+  --list-tile-default-color: #000000;
+  --list-tile-selected-color: #000000;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-} */
+  --error-text-widgets: #000000;
+  --grey-border-color: #000000;
+  --proceed-btn: #000000;
+  --bg-color: #ffffff;
+  --pending-alert-icon: #000000;
+  --success-screen-color: #000000;
+  --failure-screen-color: #000000;
+  --alert-icon: #000000;
+  --primary-action: #000000;
+  --value-selection1: #000000;
+  --value-selection2: #000000;
+  --button-hover: #000000;
+  --button-pressed: #000000;
+  --button-disable: #000000;
+  --white-button-pressed-hover: #000000;
+  --white-button-hover: #000000;
+  --border-color: #000000;
+  --otp-green-icon-color: #000000;
+  --otp-red-icon-color: #000000;
+  --message-sent-color: #000000;
+
+  /* Primary Button */
+  --primary-default-bg: #000000;
+  --primary-hover-bg: #000000;
+  --primary-pressed-bg: #000000;
+  --primary-disabled-bg: #000000;
+  --primary-disabled-label: #000000;
+  --primary-default-label: #000000;
+
+  /* Ghost Button 1 */
+  --ghost1-default-bg: #000000;
+  --ghost1-hover-bg: #000000;
+  --ghost1-pressed-bg: #000000;
+  --ghost1-disabled-bg: #000000;
+  --ghost1-default-border: #000000;
+  --ghost1-disabled-border: #000000;
+  --ghost1-disabled-label: #000000;
+  --ghost1-default-label: #000000;
+
+  /* Ghost Button 2 */
+  --ghost2-default-bg: #000000;
+  --ghost2-hover-bg: #000000;
+  --ghost2-pressed-bg: #000000;
+  --ghost2-border: #000000;
+  --ghost2-label: #000000;
+
+  /* Secondary Button */
+  --secondary-default-bg: #000000;
+  --secondary-hover-bg: #000000;
+  --secondary-pressed-bg: #000000;
+  --secondary-disabled-bg: #000000;
+  --secondary-default-border: #000000;
+  --secondary-pressed-border: #000000;
+  --secondary-default-label: #000000;
+  --secondary-disabled-label: #000000;
+
+  /* CTA Hyperlink Button */
+  --cta-text-default: #000000;
+  --cta-text-hover: #000000;
+  --cta-text-disabled: #000000;
+
+  --outline-tooltip-color: #000000;
+  --table-header-color: #000000;
+  --table-border-color: #000000;
+  --table-bg-color: #000000;
+
+  --mobile-appbar-color: #000000;
+  --auth-user-hover: #000000;
+  --auth-user-clicked: #000000;
+  --auth-user-divider: #000000;
+
+  /* Message Screen */
+  --message-panel-divider: #000000;
+  --message-attachment-divider: #000000;
+  --latest-message-bg: #000000;
+  --message-thread-border: #000000;
+  --message-subject-divider: #000000;
+  --attachment-border: #000000;
+  --attachment-bg: #000000;
+  --attachment-bg-hover: #000000;
+  --search-message-highlight: #000000;
+
+  /* Pagination */
+  --page-icon-default: #000000;
+  --page-icon-hover: #000000;
+  --page-number-bg: #000000;
+
+  /* Icon Button */
+  --icon-default-primary: #000000;
+  --icon-default-secondary: #000000;
+  --icon-default-tertiary: #000000;
+  --icon-default-quaternary: #000000;
+  --icon-default-quinary: #000000;
+
+  --icon-pressed-primary: #000000;
+  --icon-pressed-secondary: #000000;
+  --icon-pressed-tertiary: #000000;
+  --icon-pressed-quaternary: #000000;
+
+  --icon-hover-primary: #000000;
+  --icon-hover-secondary: #000000;
+  --icon-hover-tertiary: #000000;
+  --icon-hover-quaternary: #000000;
+
+  /* TextField */
+  --textfield-error-border: #000000;
+  --textfield-default-border: #000000;
+  --textfield-focused-border: #000000;
+  --textfield-error-text: #000000;
+  --textfield-error-filled: #000000;
+  --textfield-filled: #000000;
+  --textfield-hint-text: #000000;
+  --textfield-label: #000000;
+  --textfield-non-editing-filled: #000000;
+  --textfield-inline-color: #000000;
+
+  /* NavBar */
+  --menu-yellow-strip: #000000;
+  --menu-tab-hover: #000000;
+
+  /* Appointment */
+  --appointment-bg: #000000;
+  --appointment-cancel-bg: #000000;
+  --appointment-status-confirm: #000000;
+  --appointment-status-pending: #000000;
+  --chip-selected-bg: #000000;
+  --chip-selected-border: #000000;
+  --appointment-confirmed-bg: #000000;
+
+  /* Common */
+  --link-hover-black: #000000;
+  --link-hover-white: #000000;
+  --link-hover-blue: #000000;
+  --divider-primary: #000000;
+  --divider-secondary: #000000;
+  --divider-tertiary: #000000;
+  --text-label-secondary: #000000;
+  --popup-success: #000000;
+  --popup-info: #000000;
+  --popup-critical: #000000;
+  --popup-warning: #000000;
+
+  --menu-hover-color: #000000;
+  --password-criteria-met: #000000;
+}
 
 a {
   font-weight: 500;
