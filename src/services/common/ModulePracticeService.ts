@@ -18,12 +18,13 @@ class GetModulePermissionByPracticeServices {
             const queryString = new URLSearchParams(customerData).toString();
 
             const requestUrl = `${url}?${queryString}`;
-            const response = await new BaseWebService().postWebAPI({
+            const response = await  baseWebService.postWebAPI({
                 requestUrl: requestUrl,
+                dataModel: null,
             });
 
             if (response.status === 200) {
-                const responseData = await response.json();
+                const responseData = response.data;
                 this.modulePermissionByPracticeModel = 
                     ModulePermissionByPracticeModel.fromJson(responseData);
                 this.response_Status_Code_API = response.status;
