@@ -1,5 +1,5 @@
-import { themeService } from "../services/common/ThemeService";
- 
+// import { themeService } from "../services/common/ThemeService";
+
 export interface ThemeColors {
   // Text Color
   primaryTextColor: string;
@@ -312,179 +312,181 @@ export const defaultThemeColors: ThemeColors = {
 
   menuHoverColor: "transparent",
   passwordCriteriaMet: "transparent",
-}; 
+};
 
-export async function getTheme(){
-    const result = await themeService.getAppTheme();
-    const test = "OceanBlue";
-  
-    // if (result?.theme === "OceanBlue") {
-    if(test === "OceanBlue"){
-      return {
-        // Text Color
-        primaryTextColor: "#000000",
-        secondaryTextColor: "#FFFFFF",
-        tertiaryTextColor: "#C15151",
-        quaternaryTextColor: "#5C5C5C",
-        quinaryTextColor: "#518EC1",
-        senaryTextColor: "#437A00",
-        septenaryTextColor: "#D76910",
-        octonaryTextColor: "#1785E1",
-        nonaryTextColor: "#B0B0B0",
-        denaryTextColor: "#B7FFAF",
-  
-        // List Tile
-        listTileHoverColor: "#E8F8F8",
-        listTileDefaultColor: "#F1F1F1",
-        listTileSelectedColor: "#D5FEFF",
-  
-        // Defaults / Not Provided Yet
-        errorTextWidgets: "#D00202",
-        greyBorderColor: "#5C5C5C",
-        proceedBTN: "#1786E1",
-        BGColor: "#1785E1",
-        pendingAlertIcon: "#ff9600",
-        SuccessScreenColor: "#1DBCBC",
-        FailureScreenColor: "#FF7272",
-        AlertIcon: "#FF8A00",
-        PrimaryAction: "#FDCD29",
-        ValueSelection1: "#A5FFFF",
-        ValueSelection2: "#00D4D5",
-        ButtonHover: "#70BFFF",
-        ButtonPressed: "#005AA6",
-        ButtonDisable: "#C8C8C8",
-        whiteButtonPressedHover: "#B0B0B0",
-        whiteButtonHover: "#E2E2E2",
-        BorderColor: "#FFFFFF",
-        otpGreenIconColor: "#00B02E",
-        otpRedIconColor: "#D61818",
-        messageSentColor: "#04AFAF",
-  
-        // Primary Button
-        primaryDefaultBackgroundButtonColor: "#1785E1",
-        primaryHoverBackgroundButtonColor: "#70BEFF",
-        primaryPressedBackgroundButtonColor: "#005AA6",
-        primaryDisabledBackgroundButtonColor: "#C8C8C8",
-        primaryDisabledLabelTextColor: "#929292",
-        primaryDefaultLabelTextColor: "#FFFFFF",
-  
-        // Ghost Button1
-        ghost1DefaultBackgroundButtonColor: "#1785E1",
-        ghost1HoverBackgroundButtonColor: "#70BEFF",
-        ghost1PressedBackgroundButtonColor: "#005AA6",
-        ghost1DisabledBackgroundButtonColor: "#1785E1",
-        ghost1DefaultBorderButtonColor: "#FFFFFF",
-        ghost1DisabledBorderButtonColor: "#C2E3FF",
-        ghost1DisabledLabelTextColor: "#55B2FF",
-        ghost1DefaultLabelTextColor: "#FFFFFF",
-  
-        // Ghost Button2
-        ghost2DefaultBackgroundButtonColor: "#FFFFFF",
-        ghost2HoverBackgroundButtonColor: "#EEF6FF",
-        ghost2PressedBackgroundButtonColor: "#CAE3F8",
-        ghost2BorderButtonColor: "#1785E1",
-        ghost2LabelTextColor: "#1785E1",
-  
-        // Secondary Button
-        secondaryDefaultBackgroundButtonColor: "#FFFFFF",
-        secondaryHoverBackgroundButtonColor: "#E2E2E2",
-        secondaryPressedBackgroundButtonColor: "#B0B0B0",
-        secondaryDisabledBackgroundButtonColor: "#FFFFFF",
-        secondaryDefaultBorderButtonColor: "#5C5C5C",
-        secondaryPressedBorderButtonColor: "#8F8F8F",
-        secondaryDefaultLabelTextColor: "",
-        secondaryDisabledLabelTextColor: "",
-  
-        // CTA HyperLink Button
-        defaultCTAButtonTextColor: "#000000",
-        hoverCTAButtonTextColor: "#1785e1",
-        disabledCTAButtonTextColor: "#c8c8c8",
-  
-        outlineTooltipColor: "#CACACA",
-        tableHeaderColor: "B0B0B0",
-        tableBorderColor: "#B6B6B6",
-        tableBackgroundColor: "#F1F1F1",
-  
-        mobileAppBarColor: "#1785E1",
-        authUserButtonHover: "#EEF6FF",
-        authUserButtonClicked: "#CAE3F8",
-        authUserDividerColor: "#D2D2D2",
-  
-        // Message Screen
-        messagePanelDividerColor: "#8F8F8F",
-        messageAttachmentDividerColor: "#BABABA",
-        latestMessageBackgroundColor: "#F1F1F1",
-        messageThreadBorderColor: "#B6B6B6",
-        messageSubjectDividerBorderColor: "#8F8F8F",
-        attachmentBorderColor: "#BABABA",
-        attachmentBackgroundColor: "#FFFFFF",
-        attachmentBackgroundHoverColor: "#F0F0F0",
-        searchMessageTextHighlightColor: "#FF87F5",
-  
-        // Pagination
-        pageIconDefaultColor: "#44AAFF",
-        pageIconHoverColor: "#0B6AB8",
-        pageNumberBackgroundColor: "#C8C8C8",
-  
-        // IconButton
-        iconDefaultPrimaryColor: "#5C5C5C",
-        iconDefaultSecondaryColor: "#0B62AA",
-        iconDefaultTertiaryColor: "#FFFFFF",
-        iconDefaultQuaternaryColor: "#518EC1",
-        iconDefaultQuinaryColor: "#B0B0B0",
-  
-        iconPressedPrimaryColor: "#003764",
-        iconPressedSecondaryColor: "#CAE3F8",
-        iconPressedTertiaryColor: "#C6CBCF",
-        iconPressedQuaternaryColor: "#C6CBCF",  //Same as tertiary
-  
-        iconHoverPrimaryColor: "#32A2FF",
-        iconHoverSecondaryColor: "#EEF6FF",
-        iconHoverTertiaryColor: "#D8DFE4",
-        iconHoverQuaternaryColor: "#D8DFE4",//Same as tertiary
-  
-        // TextField
-        textfieldErrorBorderColor: "#D61818",
-        textfieldDefaultBorderColor: "#ADADAD",
-        textfieldFocusedBorderColor: "#1785E1",
-        textfieldErrorTextColor: "#D00202",
-        textfieldErrorFilledColor: "#FFEDED",
-        textfieldFilledColor: "#F1F1F1",
-        textfieldHintTextColor: "#D0D0D0",
-        textfieldLabelColor: " #5C5C5C",
-        textfieldNonEditingFilledColor: "#b7d4ec",
-        textfieldInlineColor: "#C1001F",
-  
-        // NavBar
-        menuYellowStripColor: "#FFC600",
-        menuTabHoverColor: "#0067BE",
-  
-        // Appointment
-        backgroundColor: "#F1F1F1",
-        cancelBackgroundColor: "#10B5B5",
-        appointmentConfirmStatusColor: "#4F9B3A",
-        appointmentPendingConfirmationColor: "#B74E4E",
-        selectedChoiceChipBackgroundColor: "#00D4D5",
-        selectedChoiceChipBorderColor: "#8F8F8F",
-        appointmentConfirmedBackgroundColor: "#10B5B5",
-  
-        // Common
-        blackLinkHoverColor: "#518EC1",
-        whiteLinkHoverColor: "#6CBCFF",
-        blueLinkHoverColor: "#0B62AA",
-        dividerPrimaryColor: "#5C5C5C",
-        dividerSecondaryColor: "#8F8F8F",
-        dividerTertiaryColor: "#B6B6B6",
-        textLabelSecondaryColor: "#1785E1F",
-        successPopupColor: "#33CC66",
-        infoPopupColor: "#FFFFFF",
-        crticalPopupColor: "#FB723C",
-        warningPopupColor: "#E9BF1C",
-  
-        menuHoverColor: "#0070CD",
-        passwordCriteriaMet: "#82FF75",
-      };
-    }
-  
-    return defaultThemeColors;
+export const oceanBlueThemeColors: ThemeColors = {
+  // Text Color
+  primaryTextColor: "#000000",
+  secondaryTextColor: "#FFFFFF",
+  tertiaryTextColor: "#C15151",
+  quaternaryTextColor: "#5C5C5C",
+  quinaryTextColor: "#518EC1",
+  senaryTextColor: "#437A00",
+  septenaryTextColor: "#D76910",
+  octonaryTextColor: "#1785E1",
+  nonaryTextColor: "#B0B0B0",
+  denaryTextColor: "#B7FFAF",
+
+  // List Tile
+  listTileHoverColor: "#E8F8F8",
+  listTileDefaultColor: "#F1F1F1",
+  listTileSelectedColor: "#D5FEFF",
+
+  // Defaults / Not Provided Yet
+  errorTextWidgets: "#D00202",
+  greyBorderColor: "#5C5C5C",
+  proceedBTN: "#1786E1",
+  BGColor: "#1785E1",
+  pendingAlertIcon: "#ff9600",
+  SuccessScreenColor: "#1DBCBC",
+  FailureScreenColor: "#FF7272",
+  AlertIcon: "#FF8A00",
+  PrimaryAction: "#FDCD29",
+  ValueSelection1: "#A5FFFF",
+  ValueSelection2: "#00D4D5",
+  ButtonHover: "#70BFFF",
+  ButtonPressed: "#005AA6",
+  ButtonDisable: "#C8C8C8",
+  whiteButtonPressedHover: "#B0B0B0",
+  whiteButtonHover: "#E2E2E2",
+  BorderColor: "#FFFFFF",
+  otpGreenIconColor: "#00B02E",
+  otpRedIconColor: "#D61818",
+  messageSentColor: "#04AFAF",
+
+  // Primary Button
+  primaryDefaultBackgroundButtonColor: "#1785E1",
+  primaryHoverBackgroundButtonColor: "#70BEFF",
+  primaryPressedBackgroundButtonColor: "#005AA6",
+  primaryDisabledBackgroundButtonColor: "#C8C8C8",
+  primaryDisabledLabelTextColor: "#929292",
+  primaryDefaultLabelTextColor: "#FFFFFF",
+
+  // Ghost Button1
+  ghost1DefaultBackgroundButtonColor: "#1785E1",
+  ghost1HoverBackgroundButtonColor: "#70BEFF",
+  ghost1PressedBackgroundButtonColor: "#005AA6",
+  ghost1DisabledBackgroundButtonColor: "#1785E1",
+  ghost1DefaultBorderButtonColor: "#FFFFFF",
+  ghost1DisabledBorderButtonColor: "#C2E3FF",
+  ghost1DisabledLabelTextColor: "#55B2FF",
+  ghost1DefaultLabelTextColor: "#FFFFFF",
+
+  // Ghost Button2
+  ghost2DefaultBackgroundButtonColor: "#FFFFFF",
+  ghost2HoverBackgroundButtonColor: "#EEF6FF",
+  ghost2PressedBackgroundButtonColor: "#CAE3F8",
+  ghost2BorderButtonColor: "#1785E1",
+  ghost2LabelTextColor: "#1785E1",
+
+  // Secondary Button
+  secondaryDefaultBackgroundButtonColor: "#FFFFFF",
+  secondaryHoverBackgroundButtonColor: "#E2E2E2",
+  secondaryPressedBackgroundButtonColor: "#B0B0B0",
+  secondaryDisabledBackgroundButtonColor: "#FFFFFF",
+  secondaryDefaultBorderButtonColor: "#5C5C5C",
+  secondaryPressedBorderButtonColor: "#8F8F8F",
+  secondaryDefaultLabelTextColor: "#5C5C5C",
+  secondaryDisabledLabelTextColor: "#A0A0A0",
+
+  // CTA HyperLink Button
+  defaultCTAButtonTextColor: "#000000",
+  hoverCTAButtonTextColor: "#1785e1",
+  disabledCTAButtonTextColor: "#c8c8c8",
+
+  outlineTooltipColor: "#CACACA",
+  tableHeaderColor: "#B0B0B0",
+  tableBorderColor: "#B6B6B6",
+  tableBackgroundColor: "#F1F1F1",
+
+  mobileAppBarColor: "#1785E1",
+  authUserButtonHover: "#EEF6FF",
+  authUserButtonClicked: "#CAE3F8",
+  authUserDividerColor: "#D2D2D2",
+
+  // Message Screen
+  messagePanelDividerColor: "#8F8F8F",
+  messageAttachmentDividerColor: "#BABABA",
+  latestMessageBackgroundColor: "#F1F1F1",
+  messageThreadBorderColor: "#B6B6B6",
+  messageSubjectDividerBorderColor: "#8F8F8F",
+  attachmentBorderColor: "#BABABA",
+  attachmentBackgroundColor: "#FFFFFF",
+  attachmentBackgroundHoverColor: "#F0F0F0",
+  searchMessageTextHighlightColor: "#FF87F5",
+
+  // Pagination
+  pageIconDefaultColor: "#44AAFF",
+  pageIconHoverColor: "#0B6AB8",
+  pageNumberBackgroundColor: "#C8C8C8",
+
+  // IconButton
+  iconDefaultPrimaryColor: "#5C5C5C",
+  iconDefaultSecondaryColor: "#0B62AA",
+  iconDefaultTertiaryColor: "#FFFFFF",
+  iconDefaultQuaternaryColor: "#518EC1",
+  iconDefaultQuinaryColor: "#B0B0B0",
+
+  iconPressedPrimaryColor: "#003764",
+  iconPressedSecondaryColor: "#CAE3F8",
+  iconPressedTertiaryColor: "#C6CBCF",
+  iconPressedQuaternaryColor: "#C6CBCF", //Same as tertiary
+
+  iconHoverPrimaryColor: "#32A2FF",
+  iconHoverSecondaryColor: "#EEF6FF",
+  iconHoverTertiaryColor: "#D8DFE4",
+  iconHoverQuaternaryColor: "#D8DFE4", //Same as tertiary
+
+  // TextField
+  textfieldErrorBorderColor: "#D61818",
+  textfieldDefaultBorderColor: "#ADADAD",
+  textfieldFocusedBorderColor: "#1785E1",
+  textfieldErrorTextColor: "#D00202",
+  textfieldErrorFilledColor: "#FFEDED",
+  textfieldFilledColor: "#F1F1F1",
+  textfieldHintTextColor: "#D0D0D0",
+  textfieldLabelColor: "#5C5C5C",
+  textfieldNonEditingFilledColor: "#b7d4ec",
+  textfieldInlineColor: "#C1001F",
+
+  // NavBar
+  menuYellowStripColor: "#FFC600",
+  menuTabHoverColor: "#0067BE",
+
+  // Appointment
+  backgroundColor: "#F1F1F1",
+  cancelBackgroundColor: "#10B5B5",
+  appointmentConfirmStatusColor: "#4F9B3A",
+  appointmentPendingConfirmationColor: "#B74E4E",
+  selectedChoiceChipBackgroundColor: "#00D4D5",
+  selectedChoiceChipBorderColor: "#8F8F8F",
+  appointmentConfirmedBackgroundColor: "#10B5B5",
+
+  // Common
+  blackLinkHoverColor: "#518EC1",
+  whiteLinkHoverColor: "#6CBCFF",
+  blueLinkHoverColor: "#0B62AA",
+  dividerPrimaryColor: "#5C5C5C",
+  dividerSecondaryColor: "#8F8F8F",
+  dividerTertiaryColor: "#B6B6B6",
+  textLabelSecondaryColor: "#1785E1",
+  successPopupColor: "#33CC66",
+  infoPopupColor: "#FFFFFF",
+  crticalPopupColor: "#FB723C",
+  warningPopupColor: "#E9BF1C",
+
+  menuHoverColor: "#0070CD",
+  passwordCriteriaMet: "#82FF75",
+};
+
+export async function getTheme(): Promise<ThemeColors> {
+  // const result = await themeService.getAppTheme();
+  const test = "OceanBlue";
+  switch (test) {
+    case "OceanBlue":
+      return oceanBlueThemeColors;
+
+    default:
+      return defaultThemeColors;
   }
+}
