@@ -1,12 +1,12 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../../lib/utils";
 import Calender from "/calendar-logo.png";
-import { getTheme } from '../../utils/ThemeSelection';
+import { getTheme } from "../../utils/ThemeSelection";
+import type { ThemeColors } from "../../utils/ThemeSelection";
 
 const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
-const theme = await getTheme();
 
 interface DatePickerProps {
   selected?: Date;
@@ -17,7 +17,10 @@ interface DatePickerProps {
   value?: string;
   onChangeRaw?: (value: string) => void;
   onError?: (error: string | null) => void;
-  restrictDateSelection?: "before" | "after" | "none"; // New prop
+  restrictDateSelection?: "before" | "after" | "none";
+  minYear?: number;
+  maxYear?: number;
+  enhancedInput?: boolean; // New toggle for enhancements
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
@@ -29,14 +32,23 @@ const DatePicker: React.FC<DatePickerProps> = ({
   value,
   onChangeRaw,
   onError,
-  restrictDateSelection = "none" // Default value
+  restrictDateSelection = "none",
+  minYear,
+  maxYear,
+  enhancedInput = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(selected ? dayjs(selected) : dayjs());
   const [visibleMonth, setVisibleMonth] = useState(dayjs(selected || new Date()));
   const [isYearView, setIsYearView] = useState(false);
+  const [theme, setTheme] = useState<ThemeColors | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getTheme().then(setTheme);
+  }, []);
 
   const startOfMonth = visibleMonth.startOf("month").startOf("week");
   const endOfMonth = visibleMonth.endOf("month").endOf("week");
@@ -46,19 +58,15 @@ const DatePicker: React.FC<DatePickerProps> = ({
     let date = startOfMonth.clone();
     const end = endOfMonth.clone();
 
-    while (date.isBefore(end) || date.isSame(end, 'day')) {
+    while (date.isBefore(end) || date.isSame(end, "day")) {
       days.push(date);
-      date = date.add(1, 'day').clone();
+      date = date.add(1, "day").clone();
     }
     return days;
   };
 
   const changeMonth = (direction: "prev" | "next") => {
-    setVisibleMonth(
-      direction === "prev"
-        ? visibleMonth.subtract(1, "month")
-        : visibleMonth.add(1, "month")
-    );
+    setVisibleMonth(direction === "prev" ? visibleMonth.subtract(1, "month") : visibleMonth.add(1, "month"));
   };
 
   const handleDateClick = (date: dayjs.Dayjs) => {
@@ -79,39 +87,40 @@ const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    const numbersOnly = inputValue.replace(/\D/g, '');
+    let inputValue = e.target.value;
+    if (enhancedInput) {
+      // Strip non-digits
+      const numbersOnly = inputValue.replace(/\D/g, "");
 
-    let formattedDate = '';
-    for (let i = 0; i < numbersOnly.length && i < 8; i++) {
-      if (i === 2 || i === 4) formattedDate += '/';
-      formattedDate += numbersOnly[i];
-    }
-
-    onChangeRaw?.(formattedDate);
-
-    if (numbersOnly.length === 8) {
-      const month = parseInt(numbersOnly.substring(0, 2));
-      const day = parseInt(numbersOnly.substring(2, 4));
-      const year = parseInt(numbersOnly.substring(4, 8));
-      const currentYear = new Date().getFullYear();
-      const minYear = currentYear - 150;
-
-      let errorMessage = null;
-
-      if (month > 12) {
-        errorMessage = "Invalid month. Month cannot be greater than 12";
-      } else if (day > 31) {
-        errorMessage = "Invalid day. Day cannot be greater than 31";
-      } else if (year > currentYear) {
-        errorMessage = "Invalid year. Year cannot be greater than current year";
-      } else if (year < minYear) {
-        errorMessage = `Invalid year. Year cannot be less than ${minYear}`;
+      // Format as MM/DD/YYYY
+      let formattedDate = "";
+      for (let i = 0; i < numbersOnly.length && i < 8; i++) {
+        if (i === 2 || i === 4) formattedDate += "/";
+        formattedDate += numbersOnly[i];
       }
+      inputValue = formattedDate;
+      onChangeRaw?.(formattedDate);
 
-      onError?.(errorMessage);
+      if (numbersOnly.length === 8) {
+        const mm = parseInt(numbersOnly.substring(0, 2));
+        const dd = parseInt(numbersOnly.substring(2, 4));
+        const yyyy = parseInt(numbersOnly.substring(4, 8));
+        const now = new Date().getFullYear();
+        const min = minYear ?? now - 150;
+        const max = maxYear ?? now;
+
+        let errorMessage = null;
+
+        if (mm < 1 || mm > 12) errorMessage = "Invalid month";
+        else if (dd < 1 || dd > 31) errorMessage = "Invalid day";
+        else if (yyyy < min || yyyy > max) errorMessage = `Invalid year. Allowed: ${min} - ${max}`;
+
+        onError?.(errorMessage);
+      } else {
+        onError?.(null);
+      }
     } else {
-      onError?.(null);
+      onChangeRaw?.(inputValue);
     }
   };
 
@@ -125,17 +134,20 @@ const DatePicker: React.FC<DatePickerProps> = ({
     if (isYearView) {
       const currentYear = dayjs().year();
       return (
-        <div ref={yearRef} className="grid grid-cols-4 gap-3 p-2 overflow-y-auto" style={{ maxHeight: '12rem' }}>
-          {Array.from({ length: 100 }, (_, i) => currentYear - i)
-            .map((year) => (
-              <button
-                key={year}
-                className="p-2 rounded hover:bg-white text-sm"
-                onClick={() => handleYearSelect(year)}
-              >
-                {year}
-              </button>
-            ))}
+        <div
+          ref={yearRef}
+          className="grid grid-cols-4 gap-3 p-2 overflow-y-auto"
+          style={{ maxHeight: "12rem" }}
+        >
+          {Array.from({ length: 100 }, (_, i) => currentYear - i).map((year) => (
+            <button
+              key={year}
+              className="p-2 rounded hover:bg-white text-sm"
+              onClick={() => handleYearSelect(year)}
+            >
+              {year}
+            </button>
+          ))}
         </div>
       );
     }
@@ -143,7 +155,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
     return (
       <>
         <div className="grid grid-cols-7 text-center text-xs text-black mb-2">
-          {daysOfWeek.map((day) => <div key={day}>{day}</div>)}
+          {daysOfWeek.map((day) => (
+            <div key={day}>{day}</div>
+          ))}
         </div>
         <div className="grid grid-cols-7 text-center gap-y-1">
           {generateCalendar().map((date) => {
@@ -173,17 +187,31 @@ const DatePicker: React.FC<DatePickerProps> = ({
     );
   };
 
+  if (!theme) return null;
+
   return (
     <div className="relative">
       <div className="relative flex items-center">
         <input
           ref={inputRef}
           type="text"
-          style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          onKeyDown={(e) => {
+            if (!enhancedInput) return;
+            const allowedKeys = ["Backspace", "ArrowLeft", "ArrowRight", "Delete", "Tab"];
+            if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
+              e.preventDefault();
+            }
+          }}
+          style={{
+            backgroundColor: theme.textfieldFilledColor ?? "#fff",
+            borderColor: theme.textfieldDefaultBorderColor ?? "#ccc",
+          }}
           className={cn(
-            "flex h-10 w-full rounded-md border px-3 py-2 pr-9 text-base focus-visible:ring-2", 
+            "flex h-10 w-full rounded-md border px-3 py-2 pr-9 text-base focus-visible:ring-2",
             error && "border-red-500",
-            className 
+            className
           )}
           value={value}
           onChange={handleInputChange}
@@ -200,10 +228,18 @@ const DatePicker: React.FC<DatePickerProps> = ({
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-60">
           <div className="bg-white rounded-3xl shadow-2xl">
-            <div className="flex max-w-md overflow-hidden  border-none rounded-2xl">
+            <div className="flex max-w-md overflow-hidden border-none rounded-2xl">
               <div className="bg-white text-white w-40 flex flex-col items-center pt-8 p-4 border-2 border-left-black-800">
-                <span className="text-xs uppercase tracking-widest"style={{ color: theme.primaryTextColor }}>Select Date</span>
-                <span className="mt-4 text-2xl font-semibold"style={{ color: theme.primaryTextColor }}>
+                <span
+                  className="text-xs uppercase tracking-widest"
+                  style={{ color: theme.primaryTextColor }}
+                >
+                  Select Date
+                </span>
+                <span
+                  className="mt-4 text-2xl font-semibold"
+                  style={{ color: theme.primaryTextColor }}
+                >
                   {selectedDate.format("ddd, MMM D")}
                 </span>
               </div>
@@ -214,16 +250,24 @@ const DatePicker: React.FC<DatePickerProps> = ({
                     {visibleMonth.format("MMMM YYYY")}
                   </span>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => changeMonth("prev")}><ChevronLeft size={20} /></button>
-                    <button onClick={() => changeMonth("next")}><ChevronRight size={20} /></button>
+                    <button onClick={() => changeMonth("prev")}>
+                      <ChevronLeft size={20} />
+                    </button>
+                    <button onClick={() => changeMonth("next")}>
+                      <ChevronRight size={20} />
+                    </button>
                   </div>
                 </div>
 
                 {renderCalendarBody()}
 
                 <div className="flex justify-end gap-4 mt-4 text-sm font-medium text-black">
-                  <button onClick={() => setIsOpen(false)} className="hover:underline-black">Cancel</button>
-                  <button onClick={() => setIsOpen(false)} className="hover:underline">OK</button>
+                  <button onClick={() => setIsOpen(false)} className="hover:underline-black">
+                    Cancel
+                  </button>
+                  <button onClick={() => setIsOpen(false)} className="hover:underline">
+                    OK
+                  </button>
                 </div>
               </div>
             </div>

@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react';
 import { getTheme } from '../../utils/ThemeSelection';
+import { useNavigate } from 'react-router-dom';
+
 const theme = await getTheme();
 
 const PtHomePage = ({
+  
   features = [
     'Manage Appointments',
     'Pre Checkin and Sign policy documents',
@@ -20,6 +23,7 @@ const PtHomePage = ({
   logoAlt = 'Rose City Eyecare',
   phoneNumber = '555-123-4567',
 }) => {
+  const navigate = useNavigate();
   return (
     <div className="flex h-screen w-screen">
       {/* Left section */}
@@ -50,7 +54,9 @@ const PtHomePage = ({
       {/* Right section */}
       <div className="w-2/5  flex flex-col justify-center items-center " style={{ color: theme.secondaryTextColor, backgroundColor: theme.BGColor }}>
         <div className="flex mb-1 w-4/5 max-w-xl px-8 gap-x-6" >
-          <button className=" w-2/3 px-6 py-3 border-rounded-full hover:bg-blue-200 hover:text-white focus:outline-none" style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }} onMouseEnter={(e) => {
+          <button className=" w-2/3 px-6 py-3 border-rounded-full hover:bg-blue-200 hover:text-white focus:outline-none" style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }} 
+          onClick={() => navigate('/sign-up')}
+          onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = theme.ButtonHover;
           }}
             onMouseLeave={(e) => {

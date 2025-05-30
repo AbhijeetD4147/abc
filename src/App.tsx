@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import PtHomePage from './pages/home/PtHomePage'
 import { defaultThemeColors } from './utils/ThemeSelection';
 import SignUpPage from './pages/authentication/SignUpPage';
+import LoginPage from './pages/authentication/LoginPage';
 
 function App() {
   useEffect(() => {
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<PtHomePage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/login" element={<LoginPage logoUrl={''} companyName={''} />} />
       </Routes>
     </Router>
   )
