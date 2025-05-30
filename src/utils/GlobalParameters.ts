@@ -17,7 +17,7 @@ export class GlobalParams {
   static LOGO: string = "logo";
   static SESSION_GUID: string = "";
   static LOCATION_PHONE: string = "";
-
+  static COMPANY_NAME: string = "";
   static userMaximeyesPatientNumber: string = "";
   static userDOB: string = "";
   static isSettingIconMenuItemsAccess: boolean = true;
