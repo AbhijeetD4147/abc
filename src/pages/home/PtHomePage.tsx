@@ -31,7 +31,7 @@ const PtHomePage: React.FC = () => {
   const [theme, setTheme] = useState<ThemeData | null>(null);
   const [homePageData, setHomePageData] = useState<HomePageData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   const navigate = useNavigate();
 
   // Initialize theme data
@@ -76,23 +76,23 @@ const PtHomePage: React.FC = () => {
 
     return {
       logoSrc: firstHomeData.logo
-      ? `data:image/jpeg;base64,${firstHomeData.logo}`
-      : '',
-      
-  logoAlt: 'Company Logo',
-  companyName: firstHomeData.practiceName || 'Company Name',
-  description: firstHomeData.header || 'Welcome to our patient portal',
-  features: firstHomeData.ptHomePageOptions?.map(option => option.optionName) || [
-    'View medical records',
-    'Schedule appointments',
-    'Message your doctor',
-    'View test results'
-  ],
-  tagline: firstHomeData.footer || 'Your health, our priority',
-  phoneNumber: phoneNumber || '(555) 123-4567',
-  portalTitle: '',
+        ? `data:image/jpeg;base64,${firstHomeData.logo}`
+        : '',
 
-};
+      logoAlt: 'Company Logo',
+      companyName: firstHomeData.practiceName || 'Company Name',
+      description: firstHomeData.header || 'Welcome to our patient portal',
+      features: firstHomeData.ptHomePageOptions?.map(option => option.optionName) || [
+        'View medical records',
+        'Schedule appointments',
+        'Message your doctor',
+        'View test results'
+      ],
+      tagline: firstHomeData.footer || 'Your health, our priority',
+      phoneNumber: phoneNumber || '(555) 123-4567',
+      portalTitle: '',
+
+    };
   }, []);
 
   // Fetch home data from API
@@ -100,12 +100,12 @@ const PtHomePage: React.FC = () => {
     try {
       const homeService = new HomeService();
       await homeService.getHomeData('Home');
-      
+
       if (homeService.response_Status_Code_API === 200) {
         const homeData = homeService.homeDataModel;
         if (homeData && homeData.length > 0) {
           const processedData = processHomeData(homeData);
-          GlobalParams.LOGO= homeData[0].logo;
+          GlobalParams.LOGO = homeData[0].logo;
           GlobalParams.COMPANY_NAME = homeData[0].practiceName;
           if (processedData) {
             setHomePageData(processedData);
@@ -140,7 +140,7 @@ const PtHomePage: React.FC = () => {
   // Handle button hover effects
   const handleButtonHover = useCallback((e: React.MouseEvent<HTMLButtonElement>, isHover: boolean) => {
     if (!theme) return;
-    
+
     const button = e.currentTarget;
     button.style.backgroundColor = isHover ? theme.ButtonHover : theme.BGColor;
   }, [theme]);
@@ -159,7 +159,7 @@ const PtHomePage: React.FC = () => {
         await Promise.all([
           console.log('Initializing theme...'),
           initializeTheme(),
-  
+
           fetchHomeData()
         ]);
 
@@ -237,13 +237,13 @@ const PtHomePage: React.FC = () => {
       </div>
 
       {/* Right section */}
-      <div 
-        className="w-2/5 flex flex-col justify-center items-center" 
+      <div
+        className="w-2/5 flex flex-col justify-center items-center"
         style={{ color: theme.secondaryTextColor, backgroundColor: theme.BGColor }}
       >
         <div className="flex mb-1 w-4/5 max-w-xl px-8 gap-x-6">
-          <button 
-            className="w-2/3 px-6 py-3 border-rounded-full focus:outline-none" 
+          <button
+            className="w-2/3 px-6 py-3 border-rounded-full focus:outline-none"
             style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
             onClick={() => handleNavigation('/signup')}
             onMouseEnter={(e) => handleButtonHover(e, true)}
@@ -251,8 +251,8 @@ const PtHomePage: React.FC = () => {
           >
             Create New Account
           </button>
-          <button 
-            className="flex-1 px-6 py-3 border border-rounded-full focus:outline-none" 
+          <button
+            className="flex-1 px-6 py-3 border border-rounded-full focus:outline-none"
             style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
             onMouseEnter={(e) => handleButtonHover(e, true)}
             onMouseLeave={(e) => handleButtonHover(e, false)}
