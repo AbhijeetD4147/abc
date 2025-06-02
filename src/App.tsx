@@ -12,7 +12,7 @@ import GetModulePermissionServices from "./services/common/ModuleServices";
 import PtHomePage from "./pages/home/PtHomePage";
 import LoginPage from "./pages/authentication/LoginPage";
 import SignUpPage from "./pages/authentication/SignUpPage";
-import DashboardPage from "./pages/DashboardPage";
+import  DashboardPage  from "./pages/dashboard/DashboardPage";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -114,9 +114,8 @@ function App() {
         <Route path="/home" element={<PtHomePage />} />
         <Route path ="/login" element={<LoginPage logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
         <Route path ="/signup" element={<SignUpPage />} />
-        <Route path ="/dashboard" element={<DashboardPage />} />
-        {/* <Route path="/dashboard" element={<DashboardScreen />} />
-        <Route path="/forgotPassword" element={<ForgotPasswordScreen />} />
+         <Route path="/dashboarduis" element={<DashboardPage />} />
+        {/*<Route path="/forgotPassword" element={<ForgotPasswordScreen />} />
         <Route path="/forgotUsername" element={<ForgotUsernameScreen />} />
         <Route path="/authterms" element={<AuthTermsAndConditionScreen />} />
         <Route path="/invalidLinkScreen" element={<InvalidLinkScreen />} /> */}

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { FaUser, FaLock } from "react-icons/fa";
 import { getTheme } from "../../utils/ThemeSelection";
+import { GlobalParams } from '../../utils/GlobalParameters';
+import Footer from "../../components/ui/Footer";
 
 interface SignInProps {
   logoUrl: string;
@@ -30,18 +32,23 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
       // redirect or do something
     }
   };
-
+  console.log(GlobalParams.LOGO);
   return (
+
     <div className="flex min-h-screen w-screen">
       {/* Left Panel */}
       <div className="w-1/2 flex flex-col justify-center items-center bg-white p-10 relative">
-        <img src={logoUrl} alt="Company Logo" className="w-32 h-32 mb-4" />
-        <h1 className="text-3xl font-bold text-red-600">{companyName}</h1>
-        <p className="text-gray-600 mt-2">City Eyecare</p>
+        <img
+          src={
+            GlobalParams.LOGO
+              ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
+              : ''
+          }
+          alt="Company Logo"
+          className="w-90 h-30 inline-block align-middle"
+        />
         <div className="absolute bottom-5 left-5 text-xs text-gray-400">
-          <div className="text-right mt-10 text-sm text-gray-500">
-            ©2025, First Insight Corporation. All rights reserved.
-          </div>
+         <Footer/>
         </div>
       </div>
 
@@ -62,12 +69,12 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
           {/* Username Field */}
           {loginFailed && (
-              <p className="text-md text-white font-regular mb-4">
-                The username or password entered is invalid.
-              </p>
-            )}
+            <p className="text-md text-white font-regular mb-4">
+              The username or password entered is invalid.
+            </p>
+          )}
           <div className="relative mb-2">
-            
+
             <FaUser className="absolute left-4 top-4 text-gray-500 text-lg" />
             <input
               type="text"
