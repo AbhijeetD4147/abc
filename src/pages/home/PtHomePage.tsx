@@ -5,6 +5,8 @@ import { HomeDataModel } from '../../model/home/HomeModel';
 import { getTheme } from '../../utils/ThemeSelection';
 import HomeService from '../../services/home/HomeService';
 import { GlobalParams } from '../../utils/GlobalParameters';
+import checkMark from '../../assets/check-mark.png';
+import MaximEyes from '../../assets/maximeyeslogo.png';
 
 interface ThemeData {
   primaryTextColor: string;
@@ -31,7 +33,7 @@ const PtHomePage: React.FC = () => {
   const [theme, setTheme] = useState<ThemeData | null>(null);
   const [homePageData, setHomePageData] = useState<HomePageData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   const navigate = useNavigate();
 
   // Initialize theme data
@@ -76,23 +78,23 @@ const PtHomePage: React.FC = () => {
 
     return {
       logoSrc: firstHomeData.logo
-      ? `data:image/jpeg;base64,${firstHomeData.logo}`
-      : '',
-      
-  logoAlt: 'Company Logo',
-  companyName: firstHomeData.practiceName || 'Company Name',
-  description: firstHomeData.header || 'Welcome to our patient portal',
-  features: firstHomeData.ptHomePageOptions?.map(option => option.optionName) || [
-    'View medical records',
-    'Schedule appointments',
-    'Message your doctor',
-    'View test results'
-  ],
-  tagline: firstHomeData.footer || 'Your health, our priority',
-  phoneNumber: phoneNumber || '(555) 123-4567',
-  portalTitle: '',
+        ? `data:image/jpeg;base64,${firstHomeData.logo}`
+        : '',
 
-};
+      logoAlt: 'Company Logo',
+      companyName: firstHomeData.practiceName || 'Company Name',
+      description: firstHomeData.header || 'Welcome to our patient portal',
+      features: firstHomeData.ptHomePageOptions?.map(option => option.optionName) || [
+        'View medical records',
+        'Schedule appointments',
+        'Message your doctor',
+        'View test results'
+      ],
+      tagline: firstHomeData.footer || 'Your health, our priority',
+      phoneNumber: phoneNumber || '(555) 123-4567',
+      portalTitle: '',
+
+    };
   }, []);
 
   // Fetch home data from API
@@ -100,12 +102,12 @@ const PtHomePage: React.FC = () => {
     try {
       const homeService = new HomeService();
       await homeService.getHomeData('Home');
-      
+
       if (homeService.response_Status_Code_API === 200) {
         const homeData = homeService.homeDataModel;
         if (homeData && homeData.length > 0) {
           const processedData = processHomeData(homeData);
-          GlobalParams.LOGO= homeData[0].logo;
+          GlobalParams.LOGO = homeData[0].logo;
           GlobalParams.COMPANY_NAME = homeData[0].practiceName;
           if (processedData) {
             setHomePageData(processedData);
@@ -140,7 +142,7 @@ const PtHomePage: React.FC = () => {
   // Handle button hover effects
   const handleButtonHover = useCallback((e: React.MouseEvent<HTMLButtonElement>, isHover: boolean) => {
     if (!theme) return;
-    
+
     const button = e.currentTarget;
     button.style.backgroundColor = isHover ? theme.ButtonHover : theme.BGColor;
   }, [theme]);
@@ -159,7 +161,7 @@ const PtHomePage: React.FC = () => {
         await Promise.all([
           console.log('Initializing theme...'),
           initializeTheme(),
-  
+
           fetchHomeData()
         ]);
 
@@ -204,25 +206,28 @@ const PtHomePage: React.FC = () => {
   return (
     <div className="flex h-screen w-screen">
       {/* Left section */}
-      <div className="w-3/5 p-10 flex flex-col text-[color:var(--primary-text-color)]">
-        <div className="flex justify-center items-center mb-4">
-          <img src={homePageData?.logoSrc || ''} alt={homePageData?.logoAlt || 'Logo'} className="w-40" />
+      <div className="w-3/5 p-3 ml-0  flex flex-col text-[color:var(--primary-text-color)]">
+        <div className="flex justify-center items-center mb-1">
+          <img src={homePageData?.logoSrc || ''} alt={homePageData?.logoAlt || 'Logo'} className="w-26 h-29 mt-0" />
         </div>
-        <h1 className="text-xl font-medium text-center mb-6" style={{ color: theme.primaryTextColor }}>
+        <h1 className="text-4xl font-regular text-center mb-3" style={{ color: theme.primaryTextColor }}>
           {homePageData.companyName}
         </h1>
-        <h2 className="text-xl font-medium text-center mb-6" style={{ color: theme.primaryTextColor }}>
+        <h2 className="text-xl font-medium text-center mb-3" style={{ color: theme.primaryTextColor }}>
           {homePageData.portalTitle}
         </h2>
 
-        <p className="text-start max-w-4xl mb-6 text-lg" style={{ color: theme.quaternaryTextColor }}>
+        <p className="text-start max-w-4xl mb-6 ml-10 text-md" style={{ color: theme.quaternaryTextColor }}>
           {homePageData.description}
         </p>
 
-        <ul className="text-md space-y-2 mb-10" style={{ color: theme.primaryTextColor }}>
+        <ul className="text-sm space-y-2 mb-5 ml-11" style={{ color: theme.primaryTextColor }}>
           {homePageData.features.map((item, i) => (
-            <li key={i} className="flex items-center justify-start space-x-2" style={{ color: theme.quaternaryTextColor }}>
-              <span>✔️</span>
+            <li key={i} className="flex items-center justify-start space-x-3" style={{ color: theme.quaternaryTextColor }}>
+              <span>
+                <img src={checkMark} alt="Logo" style={{ width: '20px', height: '20px' }} />
+              </span>
+
               <span>{item}</span>
             </li>
           ))}
@@ -231,19 +236,33 @@ const PtHomePage: React.FC = () => {
         <p className="text-md mt-auto text-center" style={{ color: theme.quaternaryTextColor }}>
           {homePageData.tagline}
         </p>
-        <div className="text-right mt-10 text-sm text-gray-500">
-          ©2025, First Insight Corporation. All rights reserved.
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "0px 0px",
+          fontFamily: "Arial, sans-serif",
+          color: "#333",
+        }}>
+          <div style={{
+            display: "flex"
+          }}>
+            <img src={MaximEyes} alt="Maximeyes Logo" className='m-0 h-30 w-60' />
+          </div>
+          <div className='text-xs mt-12' style={{ textAlign: 'right' }}>
+            &copy; 2025, First Insight Corporation. All rights reserved.
+          </div>
         </div>
       </div>
 
       {/* Right section */}
-      <div 
-        className="w-2/5 flex flex-col justify-center items-center" 
+      <div
+        className="w-2/5 flex flex-col justify-center items-center"
         style={{ color: theme.secondaryTextColor, backgroundColor: theme.BGColor }}
       >
         <div className="flex mb-1 w-4/5 max-w-xl px-8 gap-x-6">
-          <button 
-            className="w-2/3 px-6 py-3 border-rounded-full focus:outline-none" 
+          <button
+            className="text-lg w-4/6 px-1 py-2 border-rounded-full focus:outline-none"
             style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
             onClick={() => handleNavigation('/signup')}
             onMouseEnter={(e) => handleButtonHover(e, true)}
@@ -251,8 +270,8 @@ const PtHomePage: React.FC = () => {
           >
             Create New Account
           </button>
-          <button 
-            className="flex-1 px-6 py-3 border border-rounded-full focus:outline-none" 
+          <button
+            className="text-lg flex-1 px-1 py-2 border border-rounded-full focus:outline-none"
             style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
             onMouseEnter={(e) => handleButtonHover(e, true)}
             onMouseLeave={(e) => handleButtonHover(e, false)}
