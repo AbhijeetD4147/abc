@@ -53,8 +53,8 @@ class HomeService {
         }
     }
 
-    parse(responseBody: string): HomeDataModel[] {
-        const parsed = JSON.parse(responseBody);
+    parse(responseBody: any): HomeDataModel[] {
+        const parsed = responseBody;
         return parsed.map((json: any) => new HomeDataModel(json));
     }
 }

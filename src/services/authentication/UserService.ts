@@ -25,6 +25,7 @@ import { VerifyOtpResponseModel } from '../../model/patient_portal/VerifyOtpResp
 import { baseWebService } from '../../services/common/BaseWebService'; // Adjust path
 
 export class AuthenticationService {
+    
     loginHistory?: string;
     username?: string;
     ptCustomerId?: number;
@@ -1183,7 +1184,7 @@ export class AuthenticationService {
         }
     }
 
-    async checkPatientAccount(id: string): Promise<void> {
+    async checkPatientAccount(id: string): Promise<PatientAccountHistoryModel | null> {
         try {
             const customerData: { [key: string]: string } = {
                 'PracticeName': GlobalParams.PRACTICE_NAME,
@@ -1202,10 +1203,13 @@ export class AuthenticationService {
 
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_23 = 205;
+                return null;
             } else if (response.status === 200) {
                 this.patientAccountHistoryModel =
                     PatientAccountHistoryModel.fromJson(JSON.parse(response.data));
+                    const model = PatientAccountHistoryModel.fromJson(JSON.parse(response.data));
                 this.response_Status_Code_API_23 = response.status;
+                return model;
             } else {
                 this.maximum_Calling_API_23 = this.maximum_Calling_API_23 + 1;
                 if (this.maximum_Calling_API_23 < ApiPath.MaxAPICalling) {
@@ -1219,10 +1223,12 @@ export class AuthenticationService {
                     }
                 } else {
                     this.response_Status_Code_API_23 = response.status;
+                    return null;
                 }
             }
         } catch (e) {
             console.error('caught error on appointment count ::', e);
+            return null;
         }
     }
 
