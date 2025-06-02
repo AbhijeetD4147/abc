@@ -6,7 +6,11 @@ import Calender from "/calendar-logo.png";
 import { getTheme } from "../../utils/ThemeSelection";
 import type { ThemeColors } from "../../utils/ThemeSelection";
 
-const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
+// Change this line:
+// const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
+
+// To this:
+const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 interface DatePickerProps {
   selected?: Date;
@@ -29,7 +33,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
   maxDate,
   error,
   className,
-  value,
+  value = '', // Set default value to empty string
   onChangeRaw,
   onError,
   restrictDateSelection = "none",

@@ -2,79 +2,65 @@ import React from 'react';
 import { useForm, useController } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 import DatePicker from '../../components/ui/DatePicker';
 import { getTheme } from '../../utils/ThemeSelection';
+import { GlobalParams } from '../../utils/GlobalParameters';
+import { toast } from 'react-hot-toast';
 import dayjs from 'dayjs';
 
-const phoneRegex = /^\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/;
+interface SignUpPageProps {
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  mobileNumber?: string;
+  emailId?: string;
+  userType?: string;
+  authUserName?: string;
+  authUserId?: string;
+}
+
+// Enhanced validation patterns from sample code
+const phoneRegex = /^\(\d{3}\)[-.]?\d{3}[-.]?\d{4}$/;
 const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
-
-function formatPhoneNumber(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 10);
-  const parts = [];
-
-  if (digits.length > 0) parts.push('(' + digits.slice(0, 3));
-  if (digits.length >= 4) parts[0] += ')';
-  if (digits.length >= 4) parts.push(digits.slice(3, 6));
-  if (digits.length >= 7) parts.push(digits.slice(6, 10));
-
-  return parts.join(digits.length >= 7 ? '-' : ' ').trim();
-}
-
-function formatDateInput(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 8);
-  const parts = [];
-
-  if (digits.length >= 2) parts.push(digits.slice(0, 2));
-  if (digits.length >= 4) parts.push(digits.slice(2, 4));
-  if (digits.length >= 5) parts.push(digits.slice(4, 8));
-
-  return parts.join('/');
-}
 
 const formSchema = z.object({
   legalFirstName: z.string().min(1, 'First Name is required!'),
   lastName: z.string().min(1, 'Last Name is required!'),
-  preferredName: z.string().optional(),
-
+  countryCode: z.string().default('+1'),
   mobile: z.string()
-    .optional()
-    .refine(val => !val || phoneRegex.test(val), {
-      message: 'Mobile format is invalid!',
-    }),
-
+    .regex(phoneRegex, 'Mobile format is invalid!')
+    .min(1, 'Mobile number is required!'),
   email: z.string()
-    .optional()
-    .refine(val => !val || /^\S+@\S+\.\S+$/.test(val), {
-      message: 'Email format is invalid!',
-    }),
-
-  dob: z.string().regex(dateRegex, 'DOB is required!'),
-}).superRefine((data, ctx) => {
-  const hasValidMobile = data.mobile && phoneRegex.test(data.mobile);
-  const hasValidEmail = data.email && /^\S+@\S+\.\S+$/.test(data.email);
-
-  if (!hasValidMobile && !hasValidEmail) {
-    ctx.addIssue({
-      path: ['mobile'],
-      message: 'Either a valid email or mobile must be provided!',
-      code: z.ZodIssueCode.custom,
-    });
-    ctx.addIssue({
-      path: ['email'],
-      message: 'Either a valid email or mobile must be provided!',
-      code: z.ZodIssueCode.custom,
-    });
-  }
+    .email('Email format is invalid!')
+    .min(1, 'Email is required!'),
+  dob: z.string().regex(dateRegex, 'DOB is required!')
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-const SignUpPage: React.FC = () => {
+const SignUpPage: React.FC<SignUpPageProps> = (props) => {
+  const navigate = useNavigate();
   const [theme, setTheme] = React.useState<any>({});
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [fieldErrors, setFieldErrors] = React.useState({
+    firstName: false,
+    lastName: false,
+    mobile: false,
+    email: false,
+    dob: false
+  });
 
   React.useEffect(() => {
     getTheme().then(setTheme);
+    
+    // Pre-fill form if data is provided
+    if (props.title === "Sign Up as Patient") {
+      setValue('legalFirstName', props.firstName || '');
+      setValue('lastName', props.lastName || '');
+      setValue('mobile', props.mobileNumber || '');
+      setValue('email', props.emailId || '');
+    }
   }, []);
 
   const {
@@ -82,16 +68,91 @@ const SignUpPage: React.FC = () => {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      countryCode: '+1'
+    }
   });
 
   const mobileController = useController({ name: 'mobile', control });
   const dobController = useController({ name: 'dob', control });
 
+  // Field-level validation from sample code
+  const validateField = (name: string, value: string) => {
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: !value.trim()
+    }));
+  };
+
+  const validatePatient = async (formData: FormData) => {
+    try {
+      setIsSubmitting(true);
+      
+      const patientValidateData = {
+        PracticeName: GlobalParams.PRACTICE_NAME,
+        FirstName: formData.legalFirstName.trim(),
+        LastName: formData.lastName.trim(),
+        Mobile: formData.countryCode + formData.mobile.trim(),
+        Email: formData.email.trim(),
+        DOB: formData.dob,
+        AuthSignUpAsPatient: props.title === "Sign Up as Patient" ? "true" : "false"
+      };
+
+      const response = await fetch(`${process.env.VITE_API_BASE_URL}/api/PatientPortal/ValidatePatient`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GlobalParams.TOKEN}`,
+        },
+        body: JSON.stringify(patientValidateData)
+      });
+
+      // Handle specific response status codes
+      if (response.status === 205) {
+        return;
+      }
+
+      if (response.status !== 200) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      
+      if (data.isExist) {
+        navigate('/patient-record-match-found', {
+          state: {
+            email: formData.email,
+            patientNumber: data.patientNumber
+          }
+        });
+      } else {
+        if (data.accountType === "AuthSignUpAsPatient") {
+          navigate('/signup-completed');
+        } else {
+          navigate('/record-not-match');
+        }
+      }
+    } catch (error) {
+      toast.error('An unexpected error has occurred. Please try again later. If the problem persists, call our office.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const onSubmit = (data: FormData) => {
-    console.log('Form Data:', data);
+    // Validate all fields before submission
+    Object.keys(data).forEach(key => {
+      validateField(key, data[key as keyof FormData]);
+    });
+
+    if (!Object.values(fieldErrors).some(error => error)) {
+      validatePatient(data);
+    }
+    navigate('/dashboard');
   };
 
   return (
@@ -151,7 +212,7 @@ const SignUpPage: React.FC = () => {
               type="text"
               inputMode="numeric"
               placeholder="(000) 000-0000"
-              value={formatPhoneNumber(mobileController.field.value || '')}
+              value={mobileController.field.value ? `(${mobileController.field.value.slice(0,3)}) ${mobileController.field.value.slice(3,6)}-${mobileController.field.value.slice(6)}` : ''}
               onChange={(e) => {
                 const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
                 mobileController.field.onChange(raw);

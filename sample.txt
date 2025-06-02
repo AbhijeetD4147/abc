@@ -1,1455 +1,747 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:first_insight/main.dart';
-import 'package:first_insight/model/authentication/password_response_model.dart/update_password_response_model.dart';
-import 'package:first_insight/model/authentication/patient_account_history.dart';
-import 'package:first_insight/model/authentication/insert_auth_individual_model.dart';
-import 'package:first_insight/model/authentication/switch_user_portal_permission_model.dart';
-import 'package:first_insight/model/authentication/accept_terms_response_model.dart';
-import 'package:first_insight/model/authentication/terms_and_conditions/terms_condition_patient_response_model.dart';
-import 'package:first_insight/model/authentication/username_suggestion_model.dart';
-import 'package:first_insight/model/authentication/vendor_data_response_model.dart';
-import 'package:first_insight/model/patient_portal/AuthorizedIndividualDetailResponseModel.dart';
-import 'package:first_insight/model/patient_portal/AuthorizedPatientResponse.dart';
-import 'package:first_insight/model/patient_portal/ForgotPasswordGUIDVerificationResponseModel.dart';
-import 'package:first_insight/model/patient_portal/ForgotUpdatePasswordResponseModel.dart';
-import 'package:first_insight/model/patient_portal/ForgotUsernameGuidResponseModel.dart';
-import 'package:first_insight/model/patient_portal/LoginResponseModel.dart';
 import 'package:first_insight/model/patient_portal/PatientAvailabilityResponseModel.dart';
-import 'package:first_insight/model/patient_portal/ResetLinkSendResponse.dart';
-import 'package:first_insight/model/patient_portal/SaveUserResponse.dart';
-import 'package:first_insight/model/patient_portal/VerifyOtpResponseModel.dart';
-import 'package:first_insight/screens/authentication/authorized_individual/auth_user_login.dart';
-import 'package:first_insight/services/common/base_web_service.dart';
-import 'package:first_insight/utils/constants.dart';
+import 'package:first_insight/model/patient_portal/PatientInformation.dart';
+import 'package:first_insight/screens/authentication/patient_record_match_found_screen.dart';
+import 'package:first_insight/screens/authentication/record_not_match_found_screen.dart';
+import 'package:first_insight/screens/authentication/sign_up_completed_screen.dart';
+import 'package:first_insight/services/authentication/user_service.dart';
+import 'package:first_insight/utils/theme_selection_service.dart';
 import 'package:first_insight/utils/global_params.dart';
+import 'package:first_insight/utils/validators.dart';
+import 'package:first_insight/utils/base_textstyle.dart';
+import 'package:first_insight/utils/base_widget.dart';
+import 'package:first_insight/utils/responsive.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:sizer/sizer.dart';
+import 'package:toastification/toastification.dart';
 
-class AuthenticationService {
-  String? loginHistory;
-  String? username;
-  int? ptCustomerId;
-  String? password;
-  var isAuthDeleted;
-  String? captchaCode;
+import '../../utils/idle_wrapper.dart';
 
-  SwitchUserPortalPermissionModel? switchUsersDetailResponse;
+// ignore: must_be_immutable
+class SignupScreen extends StatefulWidget {
+  var Title,
+      FirstName,
+      LastName,
+      MobileNumber,
+      EmailId,
+      userType,
+      authUserName,
+      authUserId;
 
-  AuthUserDetail? authUserDetail;
-  NewPatientTermsResponseModel? newPatientTermsResponseModel;
-  ExistingPatientTermsResponseModel? existingPatientTermsResponseModel;
-  AuthorizedIndividualTermsResponseModel?
-      authorizedIndividualTermsResponseModel;
-  UsernameSuggestionModel? usernameSuggestionModel;
-  PatientAccountHistoryModel? patientAccountHistoryModel;
-  ForgotUpdatePasswordResponseModel? forgotUpdatePasswordResponseModel;
-  LoginResponseModel? loginResponseModel;
-  ForgotPasswordGUIDVerificationResponseModel?
-      forgotPasswordGUIDVerificationResponseModel;
-  PatientTermsResponseModel? patientTermsResponseModel;
-  AuthTermsResponseModel? authTermsResponseModel;
-  List<AuthorizedPatientResponse>? authorizedPatientList;
-  UpdatePasswordResponseModel? updatePasswordResponseModel;
+  SignupScreen(
+      {super.key,
+      this.Title,
+      this.FirstName,
+      this.LastName,
+      this.MobileNumber,
+      this.EmailId,
+      this.userType,
+      this.authUserName,
+      this.authUserId});
 
-  UsernameGuidModel? usernameGuidModel;
+  @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
 
+class _SignupScreenState extends State<SignupScreen> {
+  final form = GlobalKey<FormState>();
+  DateFormat dateFormat = DateFormat("MM/dd/yyyy");
+
+  var firstName = TextEditingController();
+  bool _validateFirstName = false;
+
+  var lastName = TextEditingController(text: "");
+  bool _validateLastName = false;
+
+  final countryCode = TextEditingController(text: '+1');
+  bool _validateCountryCode = false;
+
+  var mobileNumber = TextEditingController(text: "");
+  bool _validateMobileNumber = false;
+  String? mobileNumberErrorText;
+
+  var email = TextEditingController(text: "");
+  bool _validateEmail = false;
+  String? emailErrorText;
+
+  final dob = TextEditingController();
+  bool _validateDob = false;
+  bool _validateManualDob = false;
+  var maskFormatterDob = new MaskTextInputFormatter(mask: '##/##/####');
+
+  double height = 0.0;
+  double width = 0.0;
+
+  PatientInformation? patientInformation;
   PatientAvailabilityResponseModel? patientAvailabilityResponseModel;
-  InsertAuthorizedIndividualModel? insertAuthorizedIndividualModel;
+  bool isButtonClicked = false;
 
-  String? messageCount;
-  String? healthSummaryUnreadCount;
-  String? appointmentUnreadCount;
+  var maskFormatter = new MaskTextInputFormatter(mask: '###-###-####');
+  bool dateFieldValidate = false;
 
-  Map<String, dynamic> _map = {};
+  @override
+  void initState() {
+    if (widget.Title == "Sign Up as Patient") {
+      firstName = TextEditingController(text: widget.FirstName.toString());
+      lastName = TextEditingController(text: widget.LastName.toString());
+      mobileNumber =
+          TextEditingController(text: widget.MobileNumber.toString());
+      email = TextEditingController(text: widget.EmailId.toString());
+    }
+    super.initState();
+  }
 
-  Map<String, dynamic> get map => _map;
+  Future<void> patientValidate() async {
+    setState(() {
+      isButtonClicked = true;
+    });
 
-  ResetLinkSendResponse? resetLinkForgotPasswordSendResponse;
-  ResetLinkSendResponse? resetLinkForgotUsernameSendResponse;
+    patientInformation = new PatientInformation(
+      firstName.text.trim(),
+      lastName.text.trim(),
+      countryCode.text.trim(),
+      mobileNumber.text.trim(),
+      email.text.trim(),
+      dob.text.trim(),
+    );
 
-  // var userId = "0";
-  SaveUserResponse? saveUserResponse;
+    Map<String, String> patientValidateData = {};
 
-  var isSent = "false";
-
-  String? patientName;
-
-  var isAdded;
-
-  VerifyOtpResponseModel? verifyOtpResponseModel;
-  Map<String, String>? customerData;
-  var resendOtpResult;
-  String? dobAuthenticationResponse;
-  String? termsAcceptanceResponse;
-  String? authTermsAndConditionData;
-
-  int maximum_Calling_API_1 = 0;
-  int maximum_Calling_API_2 = 0;
-  int maximum_Calling_API_3 = 0;
-  int maximum_Calling_API_4 = 0;
-  int maximum_Calling_API_5 = 0;
-  int maximum_Calling_API_6 = 0;
-  int maximum_Calling_API_7 = 0;
-  int maximum_Calling_API_8 = 0;
-  int maximum_Calling_API_9 = 0;
-  int maximum_Calling_API_10 = 0;
-  int maximum_Calling_API_11 = 0;
-  int maximum_Calling_API_12 = 0;
-  int maximum_Calling_API_13 = 0;
-  int maximum_Calling_API_14 = 0;
-  int maximum_Calling_API_15 = 0;
-  int maximum_Calling_API_16 = 0;
-  int maximum_Calling_API_17 = 0;
-  int maximum_Calling_API_18 = 0;
-  int maximum_Calling_API_19 = 0;
-  int maximum_Calling_API_20 = 0;
-  int maximum_Calling_API_21 = 0;
-  int maximum_Calling_API_22 = 0;
-  int maximum_Calling_API_23 = 0;
-  int maximum_Calling_API_24 = 0;
-  int maximum_Calling_API_25 = 0;
-  int maximum_Calling_API_26 = 0;
-  int maximum_Calling_API_27 = 0;
-  int maximum_Calling_API_28 = 0;
-  int maximum_Calling_API_29 = 0;
-  int maximum_Calling_API_30 = 0;
-  int? response_Status_Code_API_1;
-  int? response_Status_Code_API_2;
-  int? response_Status_Code_API_3;
-  int? response_Status_Code_API_4;
-  int? response_Status_Code_API_5;
-  int? response_Status_Code_API_6;
-  int? response_Status_Code_API_7;
-  int? response_Status_Code_API_8;
-  int? response_Status_Code_API_9;
-  int? response_Status_Code_API_10;
-  int? response_Status_Code_API_11;
-  int? response_Status_Code_API_12;
-  int? response_Status_Code_API_13;
-  int? response_Status_Code_API_14;
-  int? response_Status_Code_API_15;
-  int? response_Status_Code_API_16;
-  int? response_Status_Code_API_17;
-  int? response_Status_Code_API_18;
-  int? response_Status_Code_API_19;
-  int? response_Status_Code_API_20;
-  int? response_Status_Code_API_21;
-  int? response_Status_Code_API_22;
-  int? response_Status_Code_API_23;
-  int? response_Status_Code_API_24;
-  int? response_Status_Code_API_25;
-  int? response_Status_Code_API_26;
-  int? response_Status_Code_API_27;
-  int? response_Status_Code_API_28;
-  int? response_Status_Code_API_29;
-  int? response_Status_Code_API_30;
-
-  //To Check OTP Entered By User
-  Future<void> checkOtp(
-      String userType, String authId, String otp, String callFrom) async {
-    if (userType == 'New_Patient_Account') {
-      customerData = {
+    if (widget.Title == "Sign Up as Patient") {
+      patientValidateData = {
         'PracticeName': GlobalParams.PRACTICE_NAME,
-        'OwnerId': GlobalParams.PT_CUSTOMER_ID,
-        'OwnerType': userType,
-        'OTP': otp,
-      };
-    } else if (userType == "NEW_AUTH_INDIVIDUAL") {
-      customerData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'OwnerId': authId,
-        'OwnerType': userType,
-        'OTP': otp,
+        'FirstName': patientInformation!.firstName,
+        'LastName': patientInformation!.lastName,
+        'Mobile': patientInformation!.mobileNumber,
+        'Email': patientInformation!.email,
+        'DOB': patientInformation!.dob,
+        'AuthSignUpAsPatient':
+            widget.Title == "Sign Up as Patient" ? "true" : "false"
       };
     } else {
-      if (callFrom == "SignUpAsPatient") {
-        customerData = {
-          'PracticeName': GlobalParams.PRACTICE_NAME,
-          'UserId': GlobalParams.USER_ID,
-          'OwnerType': userType,
-          'OwnerId': GlobalParams.PT_CUSTOMER_ID,
-          'OTP': otp,
-          'CallFrom': "SignUpAsPatient",
-        };
-      } else {
-        customerData = {
-          'PracticeName': GlobalParams.PRACTICE_NAME,
-          'UserId': GlobalParams.USER_ID,
-          'OwnerType': userType,
-          'OwnerId': GlobalParams.PT_CUSTOMER_ID,
-          'OTP': otp,
-        };
-      }
-    }
-    try {
-      String queryString = Uri(queryParameters: customerData).query;
-      String url = ApiPath.baseApi + 'api/PatientPortal/VerifyOTP';
-      var requestUrl = url + '?' + queryString;
-      Response response = await BaseWebService().getWebAPI(
-        requestUrl: requestUrl,
-        token: GlobalParams.TOKEN,
-        practiceName: GlobalParams.PRACTICE_NAME,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_1 = 205;
-      } else if (response.statusCode == 200) {
-        verifyOtpResponseModel =
-            await VerifyOtpResponseModel.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_1 = response.statusCode;
-      } else {
-        maximum_Calling_API_1 = maximum_Calling_API_1 + 1;
-        if (maximum_Calling_API_1 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await checkOtp(userType, authId, otp, callFrom);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await checkOtp(userType, authId, otp, callFrom);
-            });
-          }
-        } else {
-          response_Status_Code_API_1 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  //To Get Terms And Condition Text
-  Future<void> fetchTermsAndConditionData() async {
-    try {
-      Map<String, String> customerData = {
+      patientValidateData = {
         'PracticeName': GlobalParams.PRACTICE_NAME,
+        'FirstName': patientInformation!.firstName,
+        'LastName': patientInformation!.lastName,
+        'Mobile': countryCode.text + patientInformation!.mobileNumber,
+        'Email': patientInformation!.email,
+        'DOB': patientInformation!.dob,
+        'AuthSignUpAsPatient': "false"
       };
-      var queryString = Uri(queryParameters: customerData).query;
-      var url = ApiPath.baseApi + 'api/PatientPortal/GetTncText';
-      var requestUrl = url + '?' + queryString;
-      Response response =
-          await BaseWebService().getWebAPI(requestUrl: requestUrl);
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_2 = 205;
-      } else if (response.statusCode == 200) {
-        authTermsAndConditionData = response.body;
-        response_Status_Code_API_2 = response.statusCode;
-      } else {
-        maximum_Calling_API_2 = maximum_Calling_API_2 + 1;
-        if (maximum_Calling_API_2 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await fetchTermsAndConditionData();
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await fetchTermsAndConditionData();
-            });
-          }
-        } else {
-          response_Status_Code_API_2 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
     }
-  }
 
-  //To Send Credentials on Email Id
-  Future<void> sendCredentials(String emailId, int patientNumber) async {
-    Map<String, String> customerData = {
-      'PracticeName': GlobalParams.PRACTICE_NAME,
-      'EmailID': emailId,
-      'PatientNumber': patientNumber.toString(),
-    };
-    try {
-      var queryString = Uri(queryParameters: customerData).query;
-      var url = ApiPath.baseApi + 'api/PatientPortal/SendCredentialsToPatient';
-      var requestUrl = url + '?' + queryString;
-      Response response = await BaseWebService().getWebAPI(
-          requestUrl: requestUrl,
-          token: GlobalParams.TOKEN,
-          practiceName: GlobalParams.PRACTICE_NAME);
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_3 = 205;
-      } else if (response.statusCode == 200) {
-        isSent = await response.body;
-        response_Status_Code_API_3 = response.statusCode;
-      } else {
-        maximum_Calling_API_3 = maximum_Calling_API_3 + 1;
-        if (maximum_Calling_API_3 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await sendCredentials(emailId, patientNumber);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await sendCredentials(emailId, patientNumber);
-            });
-          }
-        } else {
-          response_Status_Code_API_3 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
+    AuthenticationService authenticationService = new AuthenticationService();
 
-  Future<void> createUser(saveUserRequestModel) async {
-    try {
-      var url = ApiPath.baseApi +
-          'api/Users/SaveUser?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: saveUserRequestModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_4 = 205;
-      } else if (response.statusCode == 200) {
-        saveUserResponse =
-            await SaveUserResponse.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_4 = response.statusCode;
-      } else {
-        maximum_Calling_API_4 = maximum_Calling_API_4 + 1;
-        if (maximum_Calling_API_4 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await createUser(saveUserRequestModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await createUser(saveUserRequestModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_4 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> resetLinkForForgotUserName(resetLinkSendRequestModel) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/Users/ResetLinkForForgotUserName?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: resetLinkSendRequestModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_5 = 205;
-      } else if (response.statusCode == 200) {
-        resetLinkForgotUsernameSendResponse =
-            ResetLinkSendResponse.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_5 = response.statusCode;
-      } else {
-        maximum_Calling_API_5 = maximum_Calling_API_5 + 1;
-        if (maximum_Calling_API_5 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await resetLinkForForgotUserName(resetLinkSendRequestModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await resetLinkForForgotUserName(resetLinkSendRequestModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_5 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> resetLinkForForgotPassword(resetPasswordLinkRequestModel) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/Users/ResetLinkForForgotPassword?PracticeName=${GlobalParams.PRACTICE_NAME}';
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: resetPasswordLinkRequestModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_6 = 205;
-      } else if (response.statusCode == 200) {
-        resetLinkForgotPasswordSendResponse =
-            ResetLinkSendResponse.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_6 = response.statusCode;
-      } else {
-        maximum_Calling_API_6 = maximum_Calling_API_6 + 1;
-        if (maximum_Calling_API_6 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await resetLinkForForgotPassword(resetPasswordLinkRequestModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await resetLinkForForgotPassword(resetPasswordLinkRequestModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_6 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  static Future<void> generateToken() async {
-    try {
-      Response firstResponse = await get(
-        Uri.parse(ApiPath.baseApi + 'GetWelcomeformParamForAuthenticate'),
-        headers: {
-          "AccountId": GlobalParams.PRACTICE_NAME,
-          "SessionGuid": GlobalParams.SESSION_GUID
-        },
-      );
-      if (firstResponse.statusCode == 200) {
-        var vendorInterfaceData =
-            VendorDataResponseModel.fromJson(jsonDecode(firstResponse.body));
-
-        final customerData = jsonEncode({
-          "vendorId": vendorInterfaceData.vendorId,
-          "vendorPassword": vendorInterfaceData.vendorPassword,
-          "accountId": vendorInterfaceData.accountId
-        });
-
-        Response response = await post(
-          Uri.parse(ApiPath.baseApi + 'Authenticate'),
-          body: customerData,
-          headers: {
-            "content-type": "application/json",
-            "SessionGuid": GlobalParams.SESSION_GUID
-          },
-        );
-        GlobalParams.TOKEN = response.body;
-      } else {
-        print("Request failed with status code : ${firstResponse.statusCode}");
-      }
-    } on SocketException {
-      print("No internet Connection");
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> validatePatient(Map<String, dynamic>? customerData) async {
-    try {
-      var queryString = Uri(queryParameters: customerData).query;
-      var url =
-          ApiPath.baseApi + 'api/PatientPortal/PatientPortalPatientValidate';
-      var requestUrl = url + "?" + queryString;
-      var response = await BaseWebService().postWebAPI(
-        requestUrl: requestUrl,
-      );
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_7 = 205;
-      } else if (response.statusCode == 200) {
+    await authenticationService.validatePatient(patientValidateData);
+    if (authenticationService.response_Status_Code_API_7 == 200) {
+      setState(() {
         patientAvailabilityResponseModel =
-            await PatientAvailabilityResponseModel.fromJson(
-                jsonDecode(response.body));
-        response_Status_Code_API_7 = response.statusCode;
-      } else {
-        maximum_Calling_API_7 = maximum_Calling_API_7 + 1;
-        if (maximum_Calling_API_7 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await validatePatient(customerData);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await validatePatient(customerData);
-            });
-          }
+            authenticationService.patientAvailabilityResponseModel;
+        if (patientAvailabilityResponseModel!.isExist!) {
+          isButtonClicked = false;
+          Get.off(
+            PatientRecordMatchFoundScreen(
+              email: patientInformation!.email,
+              patientNumber: patientAvailabilityResponseModel!.patientNumber!,
+            ),
+          );
         } else {
-          response_Status_Code_API_7 = response.statusCode;
+          if (patientAvailabilityResponseModel!.accountType! ==
+              "AuthSignUpAsPatient") {
+            Get.offAll(SignUpCompleted());
+          } else {
+            isButtonClicked = false;
+            Get.to(RecordNotMatchScreen());
+          }
         }
+      });
+    } else {
+      if (authenticationService.response_Status_Code_API_7 != 205) {
+        setState(() {
+          isButtonClicked = false;
+        });
+        showToast(
+          context,
+          message:
+              'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
+          type: ToastificationType.error,
+        );
       }
-    } catch (e) {
-      print('caught error : $e');
     }
   }
 
-  Future<void> verifyGuidForResetUsername(usernameModel) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/Users/ForgotUserNameGUIDVerification?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: usernameModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_8 = 205;
-      } else if (response.statusCode == 200) {
-        usernameGuidModel =
-            UsernameGuidModel.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_8 = response.statusCode;
-      } else {
-        maximum_Calling_API_8 = maximum_Calling_API_8 + 1;
-        if (maximum_Calling_API_8 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await verifyGuidForResetUsername(usernameModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await verifyGuidForResetUsername(usernameModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_8 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> getAuthPatientList() async {
-    var userId = GlobalParams.USER_ID;
-    try {
-      Map<String, String> customerData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'Userid': userId,
-      };
-      var url =
-          ApiPath.baseApi + 'api/PatientPortal/GetAuthorizedIndividualByUserId';
-
-      String queryString = Uri(queryParameters: customerData).query;
-
-      var requestUrl = url + '?' + queryString;
-
-      Response response = await BaseWebService().getWebAPI(
-          requestUrl: requestUrl,
-          token: GlobalParams.TOKEN,
-          practiceName: GlobalParams.PRACTICE_NAME);
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_9 = 205;
-      } else if (response.statusCode == 200) {
-        authorizedPatientList = parseMessage(response.body);
-        response_Status_Code_API_9 = response.statusCode;
-      } else {
-        maximum_Calling_API_9 = maximum_Calling_API_9 + 1;
-        if (maximum_Calling_API_9 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await getAuthPatientList();
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await getAuthPatientList();
-            });
-          }
-        } else {
-          response_Status_Code_API_9 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error.. : $e');
-    }
-  }
-
-  List<AuthorizedPatientResponse> parseMessage(String responseBody) {
-    final parsed = jsonDecode(responseBody);
-    return parsed
-        .map<AuthorizedPatientResponse>(
-            (json) => AuthorizedPatientResponse.fromJson(json))
-        .toList();
-  }
-
-  Future<void> verifyGuidForResetPassword(
-      forgotUsernameGuidRequestModel) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/Users/ForgotPasswordGUIDVerification?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: forgotUsernameGuidRequestModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_10 = 205;
-      } else if (response.statusCode == 200) {
-        forgotPasswordGUIDVerificationResponseModel =
-            ForgotPasswordGUIDVerificationResponseModel.fromJson(
-                jsonDecode(response.body));
-        response_Status_Code_API_10 = response.statusCode;
-      } else {
-        maximum_Calling_API_10 = maximum_Calling_API_10 + 1;
-        if (maximum_Calling_API_10 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await verifyGuidForResetPassword(forgotUsernameGuidRequestModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await verifyGuidForResetPassword(forgotUsernameGuidRequestModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_10 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> getCaptcha() async {
-    try {
-      Map<String, String> customerData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-      };
-
-      String queryString = Uri(queryParameters: customerData).query;
-      String url = ApiPath.baseApi + 'api/PatientPortal/GetCaptcha';
-      var requestUrl = url + '?' + queryString;
-      Response response = await BaseWebService().getWebAPI(
-          requestUrl: requestUrl,
-          token: GlobalParams.TOKEN,
-          practiceName: GlobalParams.PRACTICE_NAME);
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_11 = 205;
-      } else if (response.statusCode == 200) {
-        captchaCode = response.body;
-        response_Status_Code_API_11 = response.statusCode;
-      } else {
-        maximum_Calling_API_11 = maximum_Calling_API_11 + 1;
-        if (maximum_Calling_API_11 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await getCaptcha();
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await getCaptcha();
-            });
-          }
-        } else {
-          response_Status_Code_API_11 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> deleteAuthPatient(int authId) async {
-    var userId = GlobalParams.USER_ID;
-    try {
-      String url = ApiPath.baseApi +
-          'api/PatientPortal/DeleteAuthorizedIndividual?PracticeName=${GlobalParams.PRACTICE_NAME}&AuthId=$authId&UserId=$userId';
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_12 = 205;
-      } else if (response.statusCode == 200) {
-        isAuthDeleted = response.body;
-        response_Status_Code_API_12 = response.statusCode;
-      } else {
-        maximum_Calling_API_12 = maximum_Calling_API_12 + 1;
-        if (maximum_Calling_API_12 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await deleteAuthPatient(authId);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await deleteAuthPatient(authId);
-            });
-          }
-        } else {
-          response_Status_Code_API_12 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> getUsernameSuggestion(
-      String currentUsername, String userType, int authId) async {
-    try {
-      Map<String, dynamic> customerData = {};
-
-      if (userType == 'Auth') {
-        customerData = {
-          'PracticeName': GlobalParams.PRACTICE_NAME,
-          'UserName': currentUsername,
-          'UserType': userType,
-          'AuthId': authId.toString()
-        };
-      } else {
-        customerData = {
-          'PracticeName': GlobalParams.PRACTICE_NAME,
-          'PtCustomerId': GlobalParams.PT_CUSTOMER_ID,
-          'UserName': currentUsername,
-          'UserType': userType,
-          'AuthId': '0'
-        };
-      }
-
-      var queryString = Uri(queryParameters: customerData).query;
-
-      var url = ApiPath.baseApi + 'api/PatientPortal/GetSuggestedUserName';
-
-      var requestUrl = url + '?' + queryString;
-      var response = await BaseWebService().getWebAPI(
-          requestUrl: requestUrl,
-          token: GlobalParams.TOKEN,
-          practiceName: GlobalParams.PRACTICE_NAME);
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_13 = 205;
-      } else if (response.statusCode == 200) {
-        usernameSuggestionModel =
-            await UsernameSuggestionModel.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_13 = response.statusCode;
-      } else {
-        maximum_Calling_API_13 = maximum_Calling_API_13 + 1;
-        if (maximum_Calling_API_13 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await getUsernameSuggestion(currentUsername, userType, authId);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await getUsernameSuggestion(currentUsername, userType, authId);
-            });
-          }
-        } else {
-          response_Status_Code_API_13 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> addAuthPatient(Map customerData, String matchType) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/PatientPortal/InsertAuthorizedIndividual?PracticeName=${GlobalParams.PRACTICE_NAME}&MatchType=$matchType';
-
-      Response response = await BaseWebService()
-          .postWebAPI(requestUrl: url, dataModel: customerData);
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_14 = 205;
-      } else if (response.statusCode == 200) {
-        insertAuthorizedIndividualModel =
-            await InsertAuthorizedIndividualModel.fromJson(
-                jsonDecode(response.body));
-        response_Status_Code_API_14 = response.statusCode;
-      } else {
-        maximum_Calling_API_14 = maximum_Calling_API_14 + 1;
-        if (maximum_Calling_API_14 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await addAuthPatient(customerData, matchType);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await addAuthPatient(customerData, matchType);
-            });
-          }
-        } else {
-          response_Status_Code_API_14 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error :: $e');
-    }
-  }
-
-  Future<void> acceptTermForAuthPatient(
-      acceptTermsForAuthorizedIndividualRequestModel) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/PatientPortal/InsertTermsAndConditionsAuthorizedIndividual?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: acceptTermsForAuthorizedIndividualRequestModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_15 = 205;
-      } else if (response.statusCode == 200) {
-        authorizedIndividualTermsResponseModel =
-            AuthorizedIndividualTermsResponseModel.fromJson(
-                jsonDecode(response.body));
-        response_Status_Code_API_15 = response.statusCode;
-      } else {
-        maximum_Calling_API_15 = maximum_Calling_API_15 + 1;
-        if (maximum_Calling_API_15 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await acceptTermForAuthPatient(
-                acceptTermsForAuthorizedIndividualRequestModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await acceptTermForAuthPatient(
-                  acceptTermsForAuthorizedIndividualRequestModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_15 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> acceptTermsForExistingPatient(
-      existingPatientTermsRequestModel) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/PatientPortal/ExistingPatientSaveTermsAndConditions?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: existingPatientTermsRequestModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_16 = 205;
-      } else if (response.statusCode == 200) {
-        existingPatientTermsResponseModel =
-            ExistingPatientTermsResponseModel.fromJson(
-                jsonDecode(response.body));
-        response_Status_Code_API_16 = response.statusCode;
-      } else {
-        maximum_Calling_API_16 = maximum_Calling_API_16 + 1;
-        if (maximum_Calling_API_16 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await acceptTermsForExistingPatient(
-                existingPatientTermsRequestModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await acceptTermsForExistingPatient(
-                  existingPatientTermsRequestModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_16 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> getAuthUserDetail() async {
-    //Assume authId as ptCustomerId When Loggedin User Type is Auth as in future if signup as a patient we directly change usertype
-
-    var ptCustomerId = GlobalParams.PT_CUSTOMER_ID;
-    try {
-      customerData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'AuthId': ptCustomerId,
-      };
-      String queryString = Uri(queryParameters: customerData).query;
-
-      String url =
-          ApiPath.baseApi + 'api/PatientPortal/GetAuthIndividualDetailsById';
-
-      var requestUrl = url + '?' + queryString;
-      Response response = await BaseWebService().getWebAPI(
-          requestUrl: requestUrl,
-          token: GlobalParams.TOKEN,
-          practiceName: GlobalParams.PRACTICE_NAME);
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_17 = 205;
-      } else if (response.statusCode == 200) {
-        authUserDetail =
-            await AuthUserDetail.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_17 = response.statusCode;
-      } else {
-        maximum_Calling_API_17 = maximum_Calling_API_17 + 1;
-        if (maximum_Calling_API_17 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await getAuthUserDetail();
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await getAuthUserDetail();
-            });
-          }
-        } else {
-          response_Status_Code_API_17 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error ==> :: $e');
-    }
-  }
-
-  Future<void> acceptTermForNewPatient(newPatientTermsRequestModel) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/PatientPortal/CreatePatientPortalNewAccount?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: newPatientTermsRequestModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_18 = 205;
-      } else if (response.statusCode == 200) {
-        newPatientTermsResponseModel =
-            await NewPatientTermsResponseModel.fromJson(
-                jsonDecode(response.body));
-
-        if (newPatientTermsResponseModel!.status! == true) {
-          // For the Flow of Auth => Sign Up As Patient
-          if ((GlobalParams.USER_TYPE) != "Auth") {
-            GlobalParams.PT_CUSTOMER_ID =
-                newPatientTermsResponseModel!.ptCustomerid.toString();
-          }
-        }
-        response_Status_Code_API_18 = response.statusCode;
-      } else {
-        maximum_Calling_API_18 = maximum_Calling_API_18 + 1;
-        if (maximum_Calling_API_18 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await acceptTermForNewPatient(newPatientTermsRequestModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await acceptTermForNewPatient(newPatientTermsRequestModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_18 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> acceptTermForAuthSignupAsPatient(
-      newPatientTermsRequestModel) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/PatientPortal/CreatePatientPortalNewAccount?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: newPatientTermsRequestModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_19 = 205;
-      } else if (response.statusCode == 200) {
-        newPatientTermsResponseModel =
-            await NewPatientTermsResponseModel.fromJson(
-                jsonDecode(response.body));
-
-        if (newPatientTermsResponseModel!.status == true) {
-          GlobalParams.PT_CUSTOMER_ID =
-              newPatientTermsResponseModel!.ptCustomerid.toString();
-        }
-        response_Status_Code_API_19 = response.statusCode;
-      } else {
-        maximum_Calling_API_19 = maximum_Calling_API_19 + 1;
-        if (maximum_Calling_API_19 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await acceptTermForAuthSignupAsPatient(newPatientTermsRequestModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await acceptTermForAuthSignupAsPatient(
-                  newPatientTermsRequestModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_19 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> getResendSignUpEmailForAuthUser(String authId) async {
-    var userId = GlobalParams.USER_ID;
-
-    try {
-      Map<String, String> customerData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'AuthId': authId,
-        'UserId': userId,
-      };
-
-      String queryString = Uri(queryParameters: customerData).query;
-      String url = ApiPath.baseApi +
-          'api/PatientPortal/ResendSignUpEmailForAuthorizedIndividual';
-      var requestUrl = url + '?' + queryString;
-      var response = await BaseWebService().getWebAPI(
-          requestUrl: requestUrl,
-          token: GlobalParams.TOKEN,
-          practiceName: GlobalParams.PRACTICE_NAME);
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_20 = 205;
-      } else if (response.statusCode == 200) {
-        response_Status_Code_API_20 = response.statusCode;
-      } else {
-        maximum_Calling_API_20 = maximum_Calling_API_20 + 1;
-        if (maximum_Calling_API_20 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await getResendSignUpEmailForAuthUser(authId);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await getResendSignUpEmailForAuthUser(authId);
-            });
-          }
-        } else {
-          response_Status_Code_API_20 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> getSwitchUserDetail(Map<String, dynamic>? customerData) async {
-    var queryString = Uri(queryParameters: customerData).query;
-
-    var url = ApiPath.baseApi + 'api/PatientPortal/GetSwitchUsersDetails';
-
-    var requestUrl = url + '?' + queryString;
-    try {
-      var response = await BaseWebService().getWebAPI(
-          requestUrl: requestUrl,
-          token: GlobalParams.TOKEN,
-          practiceName: GlobalParams.PRACTICE_NAME);
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_21 = 205;
-      } else if (response.statusCode == 200) {
-        switchUsersDetailResponse =
-            await SwitchUserPortalPermissionModel.fromJson(
-                jsonDecode(response.body));
-        response_Status_Code_API_21 = response.statusCode;
-      } else {
-        maximum_Calling_API_21 = maximum_Calling_API_21 + 1;
-        if (maximum_Calling_API_21 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await getSwitchUserDetail(customerData);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await getSwitchUserDetail(customerData);
-            });
-          }
-        } else {
-          response_Status_Code_API_21 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error ==> :: $e');
-    }
-  }
-
-  Future<void> createAccountOld(Map loginModel) async {
-    try {
-      GlobalParams.SWITCH_USER_ID = "0";
-      String url = ApiPath.baseApi +
-          'api/Account/Login?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      var response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: loginModel,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_22 = 205;
-      } else if (response.statusCode == 200) {
-        loginResponseModel =
-            LoginResponseModel.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_22 = response.statusCode;
-        if (loginResponseModel!.userId! > 0) {
-          GlobalParams.USER_ID = loginResponseModel!.userId.toString();
-          GlobalParams.USER_TYPE = loginResponseModel!.userType!;
-          GlobalParams.PT_CUSTOMER_ID =
-              loginResponseModel!.ptCustomerID.toString();
-
-          if (loginResponseModel!.userType == "Auth") {
-            GlobalParams.PT_CUSTOMER_ID_For_Audit_Log =
-                loginResponseModel!.ptCustomerID.toString();
-            GlobalParams.isSettingIconMenuItemsAccess = false;
-            navigatorKey.currentState!.push(
-              MaterialPageRoute(
-                builder: (context) => AuthUserLogin(),
+  Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+    width = MediaQuery.of(context).size.width;
+    return IdleWrapper(
+      child: SafeArea(
+        child: Scaffold(
+          body: IgnorePointer(
+            ignoring: isButtonClicked,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    SizedBox(
+                      height: Responsive.isTablet(context) ? 8.h : 0.h,
+                    ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.Title,
+                          style: Responsive.isTablet(context)
+                              ? CommonTextStyle.of(context)
+                                  .H6_SUR(ThemeSelection.primaryTextColor)
+                              : CommonTextStyle.of(context)
+                                  .H1_SUR(ThemeSelection.primaryTextColor),
+                        ),
+                        SizedBox(
+                          height: 20.0,
+                        ),
+                        SizedBox(
+                          height: height * 0.04,
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          child: Text(
+                            "First",
+                            style: CommonTextStyle.of(context)
+                                .H20_SUR(ThemeSelection.textfieldLabelColor),
+                          ),
+                        ),
+                        Container(
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          alignment: Alignment.center,
+                          child: customTextFormField(
+                            context,
+                            key: ValueKey('First Name'),
+                            errorText: 'First Name is required',
+                            hintText: 'Legal First Name',
+                            readOnly: false,
+                            validate: _validateFirstName,
+                            textEditingController: firstName,
+                            inlineError: true,
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(255),
+                            ],
+                            onChanged: (val) {
+                              setState(() {
+                                if (firstName.text.trim().isEmpty) {
+                                  _validateFirstName = true;
+                                } else {
+                                  _validateFirstName = false;
+                                }
+                              });
+                            },
+                          ),
+                        ),
+                        SizedBox(
+                          height: height * 0.005,
+                        ),
+                        SizedBox(
+                          height: height * 0.04,
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          child: Text(
+                            "Last",
+                            style: CommonTextStyle.of(context)
+                                .H20_SUR(ThemeSelection.textfieldLabelColor),
+                          ),
+                        ),
+                        Container(
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          alignment: Alignment.center,
+                          child: customTextFormField(
+                            context,
+                            key: ValueKey('Last Name'),
+                            errorText: 'Last Name is required',
+                            hintText: 'Last Name',
+                            readOnly: false,
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(255),
+                            ],
+                            validate: _validateLastName,
+                            textEditingController: lastName,
+                            inlineError: true,
+                            onChanged: (val) {
+                              setState(() {
+                                if (lastName.text.trim().isEmpty) {
+                                  _validateLastName = true;
+                                } else {
+                                  _validateLastName = false;
+                                }
+                              });
+                            },
+                          ),
+                        ),
+                        SizedBox(
+                          height: height * 0.005,
+                        ),
+                        SizedBox(
+                          height: height * 0.04,
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          child: Text(
+                            "Mobile",
+                            style: CommonTextStyle.of(context)
+                                .H20_SUR(ThemeSelection.textfieldLabelColor),
+                          ),
+                        ),
+                        Container(
+                          alignment: Alignment.center,
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: Responsive.isMobile(context)
+                                    ? width / 6
+                                    : MediaQuery.of(context).size.width * 0.05,
+                                alignment: Alignment.center,
+                                child: customTextFormField(
+                                  key: ValueKey("Mobile Pin"),
+                                  context,
+                                  hintText: '01',
+                                  readOnly: true,
+                                  validate: _validateCountryCode,
+                                  textEditingController: countryCode,
+                                  inlineError: true,
+                                  errorText: '',
+                                ),
+                              ),
+                              SizedBox(
+                                width: 10.0,
+                              ),
+                              Flexible(
+                                child: customTextFormField(
+                                  context,
+                                  key: ValueKey('Mobile Number'),
+                                  errorText: mobileNumberErrorText,
+                                  hintText: '(000) 000-0000',
+                                  readOnly: false,
+                                  inputFormatters: [maskFormatter],
+                                  keyBoardType: TextInputType.numberWithOptions(
+                                    signed: true,
+                                  ),
+                                  validate: _validateMobileNumber,
+                                  textEditingController: mobileNumber,
+                                  inlineError: true,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      if (mobileNumber.text.trim().isNotEmpty) {
+                                        if (mobileNumber.text.mobileValidate &&
+                                            mobileNumber.text.toString() !=
+                                                '000-000-0000') {
+                                          _validateMobileNumber = false;
+                                        } else {
+                                          mobileNumberErrorText =
+                                              'Please enter valid mobile number';
+                                          _validateMobileNumber = true;
+                                        }
+                                      } else {
+                                        _validateMobileNumber = true;
+                                        mobileNumberErrorText =
+                                            "Mobile is required";
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 15.0,
+                              ),
+                              Container(
+                                key: ValueKey("HoverText"),
+                                child: customHoverTooltip(
+                                  context,
+                                  toolTipMessage:
+                                      'Enter a mobile phone number that is readily\navailable to you to receive a security code for\n2–factor verification. Important messages\nregarding your account will be sent on this\nnumber.',
+                                  hoverColor:
+                                      ThemeSelection.iconHoverSecondaryColor,
+                                  iconData: Symbols.info,
+                                  iconColor:
+                                      ThemeSelection.iconDefaultSecondaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          height: height * 0.005,
+                        ),
+                        SizedBox(
+                          height: height * 0.04,
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          child: Text(
+                            "Email",
+                            style: CommonTextStyle.of(context)
+                                .H20_SUR(ThemeSelection.textfieldLabelColor),
+                          ),
+                        ),
+                        Container(
+                          alignment: Alignment.center,
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Flexible(
+                                child: customTextFormField(
+                                  context,
+                                  key: ValueKey('Email Id'),
+                                  errorText: emailErrorText,
+                                  hintText: "Email",
+                                  textEditingController: email,
+                                  readOnly: false,
+                                  validate: _validateEmail,
+                                  inlineError: true,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      if (email.text.trim().isNotEmpty) {
+                                        if (email.text.trim().emailValidate) {
+                                          _validateEmail = false;
+                                          emailErrorText = '';
+                                        } else {
+                                          _validateEmail = true;
+                                          emailErrorText =
+                                              'Please enter valid Email';
+                                        }
+                                      } else {
+                                        _validateEmail = true;
+                                        emailErrorText = 'Email is required';
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: 15.0,
+                              ),
+                              Container(
+                                key: ValueKey("HoverText 2"),
+                                child: customHoverTooltip(
+                                  context,
+                                  toolTipMessage:
+                                      'Enter an email address that you use frequently\nfor communication and check often for\nmessages. Important communication regarding\nyour account will be sent on this email address.',
+                                  hoverColor:
+                                      ThemeSelection.iconHoverSecondaryColor,
+                                  iconData: Symbols.info,
+                                  iconColor:
+                                      ThemeSelection.iconDefaultSecondaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          height: height * 0.005,
+                        ),
+                        SizedBox(
+                          height: height * 0.04,
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          child: Text(
+                            "DOB",
+                            style: CommonTextStyle.of(context)
+                                .H20_SUR(ThemeSelection.textfieldLabelColor),
+                          ),
+                        ),
+                        Container(
+                          alignment: Alignment.center,
+                          width: Responsive.isMobile(context)
+                              ? width
+                              : width * 0.29,
+                          child: customTextFormField(
+                            context,
+                            key: ValueKey('DOB'),
+                            errorText: _validateDob
+                                ? "DOB is required"
+                                : "Invalid DOB",
+                            keyBoardType: TextInputType.phone,
+                            inputFormatters: [maskFormatterDob],
+                            validate: _validateDob || _validateManualDob,
+                            hintText: "MM/DD/YYYY",
+                            textEditingController: dob,
+                            inlineError: true,
+                            suffixIcon: GestureDetector(
+                              onTap: () => _selectDate(context),
+                              child: Padding(
+                                key: ValueKey("Calendar"),
+                                padding: Responsive.isMobile(context)
+                                    ? EdgeInsets.symmetric(
+                                            horizontal: 11, vertical: 2)
+                                        .copyWith(top: 8)
+                                    : Responsive.isTablet(context)
+                                        ? EdgeInsets.fromLTRB(9, 6, 7, 8)
+                                        : EdgeInsets.fromLTRB(10, 4, 6.65, 10),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 1,
+                                  ),
+                                  child: Icon(
+                                    Symbols.calendar_month,
+                                    size: Responsive.isMobile(context)
+                                        ? 22.0
+                                        : Responsive.isTablet(context)
+                                            ? height * 0.02
+                                            : height * 0.03,
+                                    color: ThemeSelection
+                                        .iconDefaultQuaternaryColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            onChanged: (val) {
+                              if (dob.text.trim().isNotEmpty) {
+                                setState(() {
+                                  _validateDob = false;
+                                });
+                                if (dob.text.trim().length == 10) {
+                                  validateManualDob(val);
+                                } else {
+                                  setState(() {
+                                    _validateManualDob = true;
+                                  });
+                                }
+                              } else {
+                                setState(() {
+                                  _validateDob = true;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        SizedBox(
+                          height: Responsive.isTablet(context) ? 2.h : 0.h,
+                        ),
+                        Text(
+                          "We will send you a security code via your email or text.",
+                          style: CommonTextStyle.of(context)
+                              .H22_SUR(ThemeSelection.primaryTextColor),
+                        ),
+                        SizedBox(
+                          height: Responsive.isMobile(context) ? 8.h : 20.h,
+                        ),
+                        Divider(
+                          thickness: Responsive.isk4Desktop(context) ? 5 : 1,
+                        ),
+                        SizedBox(
+                          height: 2.h, //reduce for mobile
+                        ),
+                        Center(
+                          key: ValueKey('Proceed'),
+                          child: isButtonClicked
+                              ? CircularProgressIndicator()
+                              : primaryButton(
+                                  context,
+                                  () {
+                                    fieldValidation();
+                                  },
+                                  'Proceed',
+                                  ThemeSelection.secondaryTextColor,
+                                ),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            );
-          } else {
-            GlobalParams.PT_CUSTOMER_ID_For_Audit_Log = "0";
-          }
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void fieldValidation() {
+    if (firstName.text.trim().isNotEmpty &&
+        lastName.text.trim().isNotEmpty &&
+        countryCode.text.trim().isNotEmpty &&
+        mobileNumber.text.trim().isNotEmpty &&
+        email.text.trim().isNotEmpty &&
+        dob.text.trim().isNotEmpty &&
+        mobileNumber.text.mobileValidate &&
+        mobileNumber.text != '000-000-0000' &&
+        email.text.emailValidate &&
+        dateFieldValidate) {
+      patientValidate();
+    } else {
+      setState(() {
+        if (firstName.text.trim().isNotEmpty) {
+          _validateFirstName = false;
+        } else {
+          _validateFirstName = true;
         }
-      } else {
-        maximum_Calling_API_22 = maximum_Calling_API_22 + 1;
-        if (maximum_Calling_API_22 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await createAccountOld(loginModel);
+        if (lastName.text.trim().isNotEmpty) {
+          _validateLastName = false;
+        } else {
+          _validateLastName = true;
+        }
+        if (mobileNumber.text.trim().isNotEmpty) {
+          if (mobileNumber.text.mobileValidate &&
+              mobileNumber.text.trim() != '000-000-0000') {
+            _validateMobileNumber = false;
           } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await createAccountOld(loginModel);
-            });
+            mobileNumberErrorText = 'Please enter valid mobile number';
+            _validateMobileNumber = true;
           }
         } else {
-          response_Status_Code_API_22 = response.statusCode;
+          _validateMobileNumber = true;
+          mobileNumberErrorText = "Mobile is required";
         }
-      }
-    } catch (e) {
-      print('caught error ==> :: $e');
+        if (email.text.trim().isNotEmpty) {
+          if (email.text.trim().emailValidate) {
+            _validateEmail = false;
+          } else {
+            _validateEmail = true;
+            emailErrorText = 'Please enter valid Email';
+          }
+        } else {
+          _validateEmail = true;
+          emailErrorText = 'Email is required';
+        }
+        if (dob.text.trim().isNotEmpty) {
+          _validateDob = false;
+          if (dob.text.trim().length == 10) {
+            validateManualDob(dob.text.trim());
+          } else {
+            _validateManualDob = true;
+          }
+        } else {
+          _validateDob = true;
+        }
+      });
     }
   }
 
-  Future<void> checkPatientAccount(String id) async {
-    try {
-      Map<String, String> customerData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'PatientGuid': id,
-      };
-      String queryString = Uri(queryParameters: customerData).query;
+  void validateManualDob(String dateOfBirth) {
+    // MM/DD/YYYY
+    // 02/26/2023
+    int month = int.parse(dateOfBirth.substring(0, 2));
+    int date = int.parse(dateOfBirth.substring(3, 5));
+    int year = int.parse(dateOfBirth.substring(6, 10));
 
-      String url =
-          ApiPath.baseApi + 'api/PatientPortal/CheckPatientIsUsedAccountOrNot';
+    DateTime checkDate = DateFormat("MM/dd/yyyy").parse(dateOfBirth);
+    DateTime today = DateTime.now();
 
-      var requestUrl = url + '?' + queryString;
-      Response response = await BaseWebService().getWebAPI(
-        requestUrl: requestUrl,
-        token: GlobalParams.TOKEN,
-        practiceName: GlobalParams.PRACTICE_NAME,
-      );
+    bool isNotLeapYear =
+        ((year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0));
 
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_23 = 205;
-      } else if (response.statusCode == 200) {
-        patientAccountHistoryModel =
-            PatientAccountHistoryModel.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_23 = response.statusCode;
+    setState(() {
+      if (month < 1 || month > 12) {
+        _validateManualDob = true;
+      } else if (date < 1 || date > 31) {
+        _validateManualDob = true;
+      } else if (year < 1900) {
+        _validateManualDob = true;
+      } else if (date > 29 && month == 2) {
+        _validateManualDob = true;
+      } else if (date == 31 &&
+          (month == 2 ||
+              month == 4 ||
+              month == 6 ||
+              month == 9 ||
+              month == 11)) {
+        _validateManualDob = true;
+      } else if (checkDate.compareTo(today) > 0) {
+        _validateManualDob = true;
+      } else if (!isNotLeapYear && month == 2 && date == 29) {
+        _validateManualDob = true;
       } else {
-        maximum_Calling_API_23 = maximum_Calling_API_23 + 1;
-        if (maximum_Calling_API_23 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await checkPatientAccount(id);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await checkPatientAccount(id);
-            });
-          }
-        } else {
-          response_Status_Code_API_23 = response.statusCode;
-        }
+        _validateManualDob = false;
       }
-    } catch (e) {
-      print('caught error on appointment count :: $e');
-    }
+      if (_validateManualDob) {
+        dateFieldValidate = false;
+      } else {
+        dateFieldValidate = true;
+      }
+    });
   }
 
-  Future<void> changePassword(passwordResetModel) async {
-    try {
-      String url = ApiPath.baseApi +
-          'api/Users/ForgotPasswordForChangePassword?PracticeName=${GlobalParams.PRACTICE_NAME}';
-      var response = await BaseWebService().postWebAPI(
-        dataModel: passwordResetModel,
-        requestUrl: url,
-      );
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_24 = 205;
-      } else if (response.statusCode == 200) {
-        forgotUpdatePasswordResponseModel =
-            await ForgotUpdatePasswordResponseModel.fromJson(
-                jsonDecode(response.body));
-        response_Status_Code_API_24 = response.statusCode;
-      } else {
-        maximum_Calling_API_24 = maximum_Calling_API_24 + 1;
-        if (maximum_Calling_API_24 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await updatePassword(passwordResetModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await updatePassword(passwordResetModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_24 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> login(Map loginModel) async {
-    GlobalParams.SWITCH_USER_ID = "0";
-    try {
-      String url = ApiPath.baseApi +
-          'api/Account/Login?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      var response = await BaseWebService().postWebAPI(
-        requestUrl: url,
-        dataModel: loginModel,
-      );
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_25 = 205;
-      } else if (response.statusCode == 200) {
-        loginResponseModel =
-            await LoginResponseModel.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_25 = response.statusCode;
-      } else {
-        maximum_Calling_API_25 = maximum_Calling_API_25 + 1;
-        if (maximum_Calling_API_25 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await login(loginModel);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await login(loginModel);
-            });
-          }
-        } else {
-          response_Status_Code_API_25 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> resendOtp(String userType, String authId) async {
-    try {
-      if (userType == 'New_Patient_Account') {
-        customerData = {
-          'PracticeName': GlobalParams.PRACTICE_NAME,
-          'OwnerId': GlobalParams.PT_CUSTOMER_ID,
-          'OwnerType': userType,
-        };
-      } else if (userType == "NEW_AUTH_INDIVIDUAL") {
-        customerData = {
-          'PracticeName': GlobalParams.PRACTICE_NAME,
-          'OwnerId': authId,
-          'OwnerType': userType,
-        };
-      } else {
-        customerData = {
-          'PracticeName': GlobalParams.PRACTICE_NAME,
-          'UserId': GlobalParams.USER_ID,
-          'OwnerType': userType,
-          'OwnerId': GlobalParams.PT_CUSTOMER_ID,
-        };
-      }
-      var queryString = Uri(queryParameters: customerData).query;
-      var url = ApiPath.baseApi + 'api/PatientPortal/ResendOTP';
-      var requestUrl = url + '?' + queryString;
-
-      var response = await BaseWebService().getWebAPI(
-        requestUrl: requestUrl,
-        token: GlobalParams.TOKEN,
-        practiceName: GlobalParams.PRACTICE_NAME,
-      );
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_26 = 205;
-      } else if (response.statusCode == 200) {
-        resendOtpResult = response.body;
-        response_Status_Code_API_26 = response.statusCode;
-      } else {
-        maximum_Calling_API_26 = maximum_Calling_API_26 + 1;
-        if (maximum_Calling_API_26 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await resendOtp(userType, authId);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await resendOtp(userType, authId);
-            });
-          }
-        } else {
-          response_Status_Code_API_26 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> verifyDOB(String dob) async {
-    try {
-      Map<String, String> customerData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'MaximeyesPatientNumber': GlobalParams.MAXIMEYES_PATIENT_NUMBER,
-        'DOB': dob,
-        'PtCustomerId': GlobalParams.PT_CUSTOMER_ID,
-      };
-
-      String queryString = Uri(queryParameters: customerData).query;
-
-      String url = ApiPath.baseApi + 'api/PatientPortal/VerifyPatientDOB';
-      var requestUrl = url + '?' + queryString;
-
-      Response response = await BaseWebService().postWebAPI(
-        requestUrl: requestUrl,
-      );
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_27 = 205;
-      } else if (response.statusCode == 200) {
-        dobAuthenticationResponse = response.body;
-        response_Status_Code_API_27 = response.statusCode;
-      } else {
-        maximum_Calling_API_27 = maximum_Calling_API_27 + 1;
-        if (maximum_Calling_API_27 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await verifyDOB(dob);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await verifyDOB(dob);
-            });
-          }
-        } else {
-          response_Status_Code_API_27 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error  :: $e');
-    }
-  }
-
-  Future<void> acceptTermsAfterLoginForPatient(
-      String base64Signature, bool optedPatient) async {
-    try {
-      Map<String, String> customerData = {
-        'SourceFrom': optedPatient ? 'OptIn' : 'NewRecord',
-        'Signature': base64Signature,
-        'PtCustomerId': GlobalParams.PT_CUSTOMER_ID,
-        'MaximeyesPatientNumber': GlobalParams.MAXIMEYES_PATIENT_NUMBER,
-      };
-
-      String url = ApiPath.baseApi +
-          'api/PatientPortal/AcceptTermsAndCondition?PracticeName=${GlobalParams.PRACTICE_NAME}';
-
-      Response response = await BaseWebService()
-          .postWebAPI(requestUrl: url, dataModel: customerData);
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_28 = 205;
-      } else if (response.statusCode == 200) {
-        termsAcceptanceResponse = response.body;
-        response_Status_Code_API_28 = response.statusCode;
-      } else {
-        maximum_Calling_API_28 = maximum_Calling_API_28 + 1;
-        if (maximum_Calling_API_28 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await acceptTermsAfterLoginForPatient(
-                base64Signature, optedPatient);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await acceptTermsAfterLoginForPatient(
-                  base64Signature, optedPatient);
-            });
-          }
-        } else {
-          response_Status_Code_API_28 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error  :: $e');
-    }
-  }
-
-  Future<void> fetchTermsAfterLogin() async {
-    try {
-      Map<String, String> customerData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'PtCustomerId': GlobalParams.PT_CUSTOMER_ID,
-      };
-      var queryString = Uri(queryParameters: customerData).query;
-      var url = ApiPath.baseApi + 'api/PatientPortal/GetTNCTextAfterLogin';
-      var requestUrl = url + '?' + queryString;
-      Response response =
-          await BaseWebService().getWebAPI(requestUrl: requestUrl);
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_29 = 205;
-      } else if (response.statusCode == 200) {
-        patientTermsResponseModel =
-            await PatientTermsResponseModel.fromJson(jsonDecode(response.body));
-        response_Status_Code_API_29 = response.statusCode;
-      } else {
-        maximum_Calling_API_29 = maximum_Calling_API_29 + 1;
-        if (maximum_Calling_API_29 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await fetchTermsAfterLogin();
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await fetchTermsAfterLogin();
-            });
-          }
-        } else {
-          response_Status_Code_API_29 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
-    }
-  }
-
-  Future<void> updatePassword(String password) async {
-    try {
-      Map<String, String> customerData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'UserId': GlobalParams.USER_ID,
-        'NewPassword': password
-      };
-      var queryString = Uri(queryParameters: customerData).query;
-      var url = ApiPath.baseApi + 'api/Users/UpdatePatientPassword';
-      var requestUrl = url + '?' + queryString;
-      Response response =
-          await BaseWebService().postWebAPI(requestUrl: requestUrl);
-
-      if (response.statusCode == 200 && response.body == "SESSION INVALID") {
-        response_Status_Code_API_30 = 205;
-      } else if (response.statusCode == 200) {
-        updatePasswordResponseModel =
-            await UpdatePasswordResponseModel.fromJson(
-                jsonDecode(response.body));
-        response_Status_Code_API_30 = response.statusCode;
-      } else {
-        maximum_Calling_API_30 = maximum_Calling_API_30 + 1;
-        if (maximum_Calling_API_30 < ApiPath.MaxAPICalling) {
-          if (response.statusCode == 401) {
-            await AuthenticationService.generateToken();
-            await updatePassword(password);
-          } else {
-            Future.delayed(Duration(seconds: 1), () async {
-              await updatePassword(password);
-            });
-          }
-        } else {
-          response_Status_Code_API_30 = response.statusCode;
-        }
-      }
-    } catch (e) {
-      print('caught error : $e');
+  Future _selectDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+        context: context,
+        initialDate: DateTime.now(),
+        firstDate: DateTime(1900),
+        lastDate: DateTime.now(),
+        initialEntryMode: DatePickerEntryMode.calendarOnly,
+        cancelText: "CLOSE",
+        confirmText: "SAVE",
+        builder: (context, child) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: ColorScheme.light(
+                    primary: ThemeSelection.BGColor, // header background color
+                    onPrimary: Colors.white, // header text color
+                    onSurface: Colors.black, // body text color
+                  ),
+                  textButtonTheme: TextButtonThemeData(
+                    style: ButtonStyle(
+                      foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                          (Set<WidgetState> states) {
+                        if (states.contains(WidgetState.hovered))
+                          return ThemeSelection
+                              .primaryPressedBackgroundButtonColor;
+                        if (states.contains(WidgetState.focused))
+                          return ThemeSelection.whiteButtonHover;
+                        return ThemeSelection.BGColor;
+                      }),
+                    ),
+                  ),
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: Responsive.isMobile(context)
+                        ? 100.w
+                        : Responsive.isTablet(context)
+                            ? 45.w
+                            : 23.w,
+                    minHeight: Responsive.isMobile(context)
+                        ? 70.h
+                        : Responsive.isTablet(context)
+                            ? 70.h
+                            : 60.h,
+                  ),
+                  child: child,
+                ),
+              ),
+            ],
+          );
+        });
+    if (pickedDate != null) {
+      setState(() {
+        dob.text = dateFormat.format(pickedDate);
+        _validateDob = false;
+        _validateManualDob = false;
+        dateFieldValidate = true;
+      });
     }
   }
 }
