@@ -261,8 +261,8 @@ const PtHomePage: React.FC = () => {
         style={{ color: theme.secondaryTextColor, backgroundColor: theme.BGColor }}
       >
         <div className="flex mb-1 w-4/5 max-w-xl px-8 gap-x-6">
-          <button
-            className="text-lg w-4/6 px-1 py-2 border-rounded-full focus:outline-none"
+          <button 
+            className="w-2/3 px-6 py-3 border-rounded-full focus:outline-none" 
             style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
             onClick={() => handleNavigation('/signup')}
             onMouseEnter={(e) => handleButtonHover(e, true)}
@@ -270,8 +270,8 @@ const PtHomePage: React.FC = () => {
           >
             Create New Account
           </button>
-          <button
-            className="text-lg flex-1 px-1 py-2 border border-rounded-full focus:outline-none"
+          <button 
+            className="flex-1 px-6 py-3 border border-rounded-full focus:outline-none" 
             style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
             onMouseEnter={(e) => handleButtonHover(e, true)}
             onMouseLeave={(e) => handleButtonHover(e, false)}
