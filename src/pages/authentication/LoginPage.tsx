@@ -4,8 +4,6 @@ import { FaUser, FaLock } from "react-icons/fa";
 import { getTheme } from "../../utils/ThemeSelection";
 import { GlobalParams } from '../../utils/GlobalParameters';
 import Footer from "../../components/ui/Footer";
-import { GlobalParams } from '../../utils/GlobalParameters';
-import Footer from "../../components/ui/Footer";
 
 interface SignInProps {
   logoUrl: string;
@@ -82,10 +80,6 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
           {/* Username Field */}
           {loginFailed && (
-            <p className="text-md text-white font-regular mb-4">
-              The username or password entered is invalid.
-            </p>
-          )}
             <p className="text-md text-white font-regular mb-4">
               The username or password entered is invalid.
             </p>
