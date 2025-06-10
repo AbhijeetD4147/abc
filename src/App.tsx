@@ -5,14 +5,15 @@ import axios from "axios";
 // import 'react-toastify/dist/ReactToastify.css';
 
 import { ApiPath } from "./utils/constants";
-import {AuthenticationService} from "./services/authentication/UserService";
+import { AuthenticationService } from "./services/authentication/UserService";
 import { GlobalParams } from "./utils/GlobalParameters";
 import GetUrlService from "./services/common/GetUserService";
 import GetModulePermissionServices from "./services/common/ModuleServices";
 import PtHomePage from "./pages/home/PtHomePage";
 import LoginPage from "./pages/authentication/LoginPage";
 import SignUpPage from "./pages/authentication/SignUpPage";
-import  DashboardPage  from "./pages/dashboard/DashboardPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
+import PatientProfile from "./pages/settings/profile/PatientProfile";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -57,7 +58,7 @@ function App() {
               queryType = patientAccount?.loginHistory;
               ptCustomerId = patientAccount.ptCustomerId;
               username = patientAccount.username || "";
-              
+
               // Assign the retrieved ptCustomerId to GlobalParams.PT_CUSTOMER_ID
               if (ptCustomerId !== null) {
                 GlobalParams.PT_CUSTOMER_ID = ptCustomerId.toString();
@@ -112,9 +113,10 @@ function App() {
       <Routes>
         <Route path="/" element={<PtHomePage />} />
         <Route path="/home" element={<PtHomePage />} />
-        <Route path ="/login" element={<LoginPage logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
-        <Route path ="/signup" element={<SignUpPage />} />
-         <Route path="/dashboarduis" element={<DashboardPage />} />
+        <Route path="/login" element={<LoginPage logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/dashboarduis" element={<DashboardPage />} />
+        <Route path="/profile" element={<PatientProfile />} />
         {/*<Route path="/forgotPassword" element={<ForgotPasswordScreen />} />
         <Route path="/forgotUsername" element={<ForgotUsernameScreen />} />
         <Route path="/authterms" element={<AuthTermsAndConditionScreen />} />

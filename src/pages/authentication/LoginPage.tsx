@@ -48,7 +48,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
           className="w-90 h-30 inline-block align-middle"
         />
         <div className="absolute bottom-5 left-5 text-xs text-gray-400">
-         <Footer/>
+          <Footer />
         </div>
       </div>
 
