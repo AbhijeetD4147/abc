@@ -4,6 +4,8 @@ import { FaUser, FaLock } from "react-icons/fa";
 import { getTheme } from "../../utils/ThemeSelection";
 import { GlobalParams } from '../../utils/GlobalParameters';
 import Footer from "../../components/ui/Footer";
+import { GlobalParams } from '../../utils/GlobalParameters';
+import Footer from "../../components/ui/Footer";
 
 interface SignInProps {
   logoUrl: string;
@@ -33,11 +35,22 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
     }
   };
   console.log(GlobalParams.LOGO);
+  console.log(GlobalParams.LOGO);
   return (
+
 
     <div className="flex min-h-screen w-screen">
       {/* Left Panel */}
       <div className="w-1/2 flex flex-col justify-center items-center bg-white p-10 relative">
+        <img
+          src={
+            GlobalParams.LOGO
+              ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
+              : ''
+          }
+          alt="Company Logo"
+          className="w-90 h-30 inline-block align-middle"
+        />
         <img
           src={
             GlobalParams.LOGO
@@ -73,7 +86,12 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
               The username or password entered is invalid.
             </p>
           )}
+            <p className="text-md text-white font-regular mb-4">
+              The username or password entered is invalid.
+            </p>
+          )}
           <div className="relative mb-2">
+
 
             <FaUser className="absolute left-4 top-4 text-gray-500 text-lg" />
             <input
