@@ -157,12 +157,15 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center mt-1 min-h-screen w-screen bg-white">
-      <h1 className="text-4xl font-regular mb-1" style={{ color: theme.primaryTextColor }}>
+    <div className="flex flex-col items-center justify-start md:justify-center mt-2 min-h-screen w-screen px-4 bg-white">
+      <h1 className="text-2xl md:text-4xl font-regular mb-3 text-center" style={{ color: theme.primaryTextColor }}>
         Create New Account
       </h1>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-8 w-full max-w-lg">
+  
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="bg-white w-full max-w-lg md:p-8 sm:p-6 p-4"
+      >
         {/* First Name */}
         <div className="mb-3">
           <label htmlFor="legalFirstName" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
@@ -173,12 +176,12 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             type="text"
             placeholder="Legal First Name"
             {...register('legalFirstName')}
-            className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
             style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
           />
           {errors.legalFirstName && <p className="text-red-500 text-xs mt-1">{errors.legalFirstName.message}</p>}
         </div>
-
+  
         {/* Last Name */}
         <div className="mb-3">
           <label htmlFor="lastName" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
@@ -189,82 +192,83 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             type="text"
             placeholder="Last Name"
             {...register('lastName')}
-            className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
             style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
           />
           {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
         </div>
-
+  
         {/* Mobile */}
         <div className="mb-3">
-          <label className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }} htmlFor="mobile">
+          <label htmlFor="mobile" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
             Mobile
           </label>
-          <div className="flex items-center">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <input
               type="text"
               value="+1"
               readOnly
-              className="border rounded w-1/6 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              style={{
-                backgroundColor: theme.textfieldFilledColor,
-                borderColor: theme.textfieldDefaultBorderColor,
-              }}
+              className="border rounded sm:w-1/6 w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
+              style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
             />
-
-            <input id="mobile"
+            <input
+              id="mobile"
               type="text"
               inputMode="numeric"
               placeholder="(000) 000-0000"
-              value={mobileController.field.value ? `(${mobileController.field.value.slice(0, 3)}) ${mobileController.field.value.slice(3, 6)}-${mobileController.field.value.slice(6)}` : ''}
+              value={mobileController.field.value
+                ? `(${mobileController.field.value.slice(0, 3)}) ${mobileController.field.value.slice(3, 6)}-${mobileController.field.value.slice(6)}`
+                : ''}
               onChange={(e) => {
                 const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
                 mobileController.field.onChange(raw);
               }}
-              className="border rounded w-5/6 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ml-2"
+              className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
               style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
             />
-            <div className="relative group ml-2 inline-block">
-              {/* Info Icon */}
+            {/* Tooltip */}
+            <div className="relative group inline-block">
               <div className="w-6 h-6 flex items-center justify-center border-2 border-blue-500 text-blue-500 rounded-full text-sm font-bold cursor-pointer">
                 i
               </div>
-
-              {/* Tooltip */}
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-[240px] bg-white border border-gray-300 text-gray-800 text-sm rounded px-3 py-2 
-              opacity-0 group-hover:opacity-100 transition-opacity duration-300 
-              pointer-events-none shadow-lg z-10">
-                Enter a mobile phone number that is readily available to you to receive a security code for 2-factor verification. Important messages regarding your account will be sent on this number.
+                opacity-0 group-hover:opacity-100 transition-opacity duration-300 
+                pointer-events-none shadow-lg z-10">
+                Enter a mobile phone number that is readily available to receive a security code for 2FA.
               </div>
             </div>
-
-
           </div>
         </div>
+  
+        {/* Email */}
         <div className="mb-3">
-          <label className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }} htmlFor="email">
+          <label htmlFor="email" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
             Email
           </label>
-          <div className="flex items-center">
-            <input className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <input
               id="email"
               type="email"
               placeholder="Email"
               {...register('email')}
+              className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
+              style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
             />
-            <div className="relative group ml-2">
+            {/* Tooltip */}
+            <div className="relative group inline-block">
               <div className="w-6 h-6 flex items-center justify-center border-2 border-blue-500 text-blue-500 rounded-full text-sm font-bold cursor-pointer">
                 i
               </div>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mb-2 w-max max-w-xs bg-white border border-black text-grey-800 text-sm rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                Enter an email address that you use frequently for communication and check ofthen for messages. Important communication regarding your account will be sent on this email address
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-[240px] bg-white border border-gray-300 text-gray-800 text-sm rounded px-3 py-2 
+                opacity-0 group-hover:opacity-100 transition-opacity duration-300 
+                pointer-events-none shadow-lg z-10">
+                Use an email address you check regularly to receive important account messages.
               </div>
             </div>
           </div>
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
         </div>
-
+  
         {/* DOB */}
         <div className="mb-3">
           <label htmlFor="dob" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
@@ -281,21 +285,26 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
           />
           {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob.message}</p>}
         </div>
-
-        <p className="text-xs mb-2" style={{ color: theme.textfieldLabelColor }}>
+  
+        {/* Info Text */}
+        <p className="text-xs mb-2 text-gray-600" style={{ color: theme.textfieldLabelColor }}>
           We will send you a security code via your email or text.
         </p>
-
-        <div className="mt-7 mb-7 border-t border-gray-400 pt-6 w-5/6">
+  
+        {/* Submit Button */}
+        <div className="mt-7 mb-7 border-t border-gray-400 pt-6 w-full">
           <div className="flex justify-center">
-            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-xl text-white font-regular py-2 px-14 rounded focus:outline-none focus:shadow-outline">
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-700 text-white text-base md:text-xl font-medium py-2 px-10 md:px-14 rounded focus:outline-none focus:shadow-outline"
+            >
               Proceed
             </button>
           </div>
         </div>
       </form>
     </div>
-  );
+  );  
 };
 
 export default SignUpPage;

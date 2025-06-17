@@ -189,9 +189,9 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
     };
 
     return (
-        <div className="flex min-h-screen w-screen">
+        <div className="flex flex-col md:flex-row min-h-screen w-screen">
             {/* Left Panel */}
-            <div className="w-1/2 flex flex-col justify-center items-center bg-white p-10 relative">
+            <div className="w-full md:w-1/2 flex flex-col justify-center items-center bg-white p-6 md:p-10 relative">
                 <img
                     src={
                         logoUrl || GlobalParams.LOGO
@@ -199,21 +199,24 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
                             : ''
                     }
                     alt="Company Logo"
-                    className="w-90 h-30 inline-block align-middle"
+                    className="w-40 h-auto mb-4"
                 />
-                <div className="absolute bottom-5 left-5 text-xs text-gray-400">
+                <div className="absolute bottom-3 left-3 text-xs text-gray-400">
                     <Footer />
                 </div>
             </div>
 
             {/* Right Panel */}
             <div
-                className="w-1/2 flex flex-col justify-center items-center p-10"
-                style={{ backgroundColor: theme.BGColor, color: theme.secondaryTextColor }}
+                className="w-full md:w-1/2 flex flex-col justify-center items-center p-6 md:p-10"
+                style={{
+                    backgroundColor: theme.BGColor,
+                    color: theme.secondaryTextColor,
+                }}
             >
                 <div className="w-full max-w-md">
                     {/* Header Icon */}
-                    <div className="flex justify-center mb-8">
+                    <div className="flex justify-center mb-8 relative">
                         <div className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center">
                             <Icon
                                 name="user"
@@ -222,28 +225,27 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
                                 colorVariant="light"
                                 stroke
                             />
-                            <div className="absolute ml-8 mt-8">
-                                <Icon
-                                    name="lock"
-                                    height="20px"
-                                    width="20px"
-                                    colorVariant="light"
-                                    stroke
-                                />
-                            </div>
+                        </div>
+                        <div className="absolute top-14 left-1/2 transform -translate-x-1/2">
+                            <Icon
+                                name="lock"
+                                height="20px"
+                                width="20px"
+                                colorVariant="light"
+                                stroke
+                            />
                         </div>
                     </div>
 
-                    {/* Title */}
+                    {/* Title & Subtitle */}
                     <h1 className="text-3xl font-light text-center mb-2 text-white">
                         Recover your Username
                     </h1>
-
-                    {/* Subtitle */}
-                    <div className=" justify-start text-center mb-5 text-white">
+                    <div className="text-center mb-5 text-white text-sm">
                         <p>We can help you reset your Username.</p>
                         <p>Follow the instruction below.</p>
                     </div>
+
                     {/* Email Input */}
                     <div className="mb-3">
                         <div className="relative">
@@ -262,7 +264,9 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
                                 onChange={handleEmailChange}
                                 onBlur={handleEmailBlur}
                                 placeholder="Your Email Address"
-                                className={`w-full pl-10 pr-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${emailError ? 'border-red-600 bg-red-100' : 'border-gray-300 bg-white'
+                                className={`w-full pl-10 pr-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${emailError
+                                    ? 'border-red-600 bg-red-100'
+                                    : 'border-gray-300 bg-white'
                                     } focus:outline-none focus:border-blue-500`}
                             />
                         </div>
@@ -275,9 +279,8 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
 
                     {/* Captcha Section */}
                     <div className="mb-6">
-                        {/* Captcha Display */}
-                        <div className="flex items-center mb-4">
-                            <div className="bg-white px-4 py-2 rounded border-2 border-gray-300 mr-4 font-mono text-lg font-bold text-gray-800 tracking-wider">
+                        <div className="flex items-center mb-4 flex-wrap gap-2">
+                            <div className="bg-white px-4 py-2 rounded border-2 border-gray-300 font-mono text-lg font-bold text-gray-800 tracking-wider">
                                 {captchaCode}
                             </div>
                             <button
@@ -290,31 +293,30 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
                             </button>
                         </div>
 
-                        {/* Captcha Input */}
-                        <div>
-                            <p className="text-white mb-2">Input symbols</p>
-                            <input
-                                type="text"
-                                value={captchaInput}
-                                onChange={handleCaptchaChange}
-                                placeholder="Enter the symbols shown above"
-                                className={`w-full px-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${captchaError ? 'border-red-600 bg-red-100' : 'border-gray-300 bg-white'
-                                    } focus:outline-none focus:border-blue-500`}
-                            />
-                            {captchaError && (
-                                <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
-                                    {captchaError}
-                                </div>
-                            )}
-                        </div>
+                        <p className="text-white mb-2">Input symbols</p>
+                        <input
+                            type="text"
+                            value={captchaInput}
+                            onChange={handleCaptchaChange}
+                            placeholder="Enter the symbols shown above"
+                            className={`w-full px-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${captchaError
+                                ? 'border-red-600 bg-red-100'
+                                : 'border-gray-300 bg-white'
+                                } focus:outline-none focus:border-blue-500`}
+                        />
+                        {captchaError && (
+                            <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
+                                {captchaError}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex space-x-4">
+                    {/* Buttons */}
+                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
                         <Button
                             colorVariant="default"
                             onClick={handleCancel}
-                            className="flex-1 py-1 rounded-lg border-2 border-white text-xl text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
+                            className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
                             isDisabled={isLoading}
                         >
                             Cancel
@@ -322,8 +324,10 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
                         <Button
                             colorVariant="default"
                             onClick={handleSubmit}
-                            className="flex-1 py-1 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
-                            isDisabled={isLoading || !!emailError || !!captchaError || !email || !captchaInput}
+                            className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
+                            isDisabled={
+                                isLoading || !!emailError || !!captchaError || !email || !captchaInput
+                            }
                         >
                             {isLoading ? 'Processing...' : 'Next'}
                         </Button>

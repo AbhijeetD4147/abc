@@ -25,6 +25,9 @@ import ForgotUsername from "./pages/authentication/ForgotUsername"
 import ForgotPassword from "./pages/authentication/ForgotPassword";
 import CredentialsSendForExistingUser from "./pages/authentication/CredentialsSendForExistingUser";
 import VerificationOtp from "./pages/authentication/VerificationOtp";
+import PatientTermsAndConditions from "./pages/authentication/PatientTermsAndConditions";
+import RecordMatchFound from "./pages/authentication/RecordMatchFound";
+import RecordMatchNotFound from "./pages/authentication/RecordMatchNotFound";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -140,6 +143,9 @@ function App() {
         <Route path="/credentials-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="username" />} />
         <Route path="/password-reset-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="password" />} />
         <Route path="/otp-verification" element={<VerificationOtp />} />
+        <Route path="/patient-terms-conditions" element={<PatientTermsAndConditions optedPatient={true} />} />
+        <Route path="/record-match-found" element={<RecordMatchFound email={""} patientNumber={0} />} />
+        <Route path="/record-match-not-found" element={<RecordMatchNotFound />} />
         {/*<Route path="/authterms" element={<AuthTermsAndConditionScreen />} />
         <Route path="/invalidLinkScreen" element={<InvalidLinkScreen />} /> */}
         <Route path="*" element={<Navigate to={initialRoute} />} />

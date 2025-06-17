@@ -207,7 +207,7 @@ const OTPVerification: React.FC = () => {
     return (
         <div className="min-h-screen flex flex-col md:flex-row">
             {/* Left Panel - Teal Background */}
-            <div className="flex-1 md:flex-none md:w-3/5 h-1/4 md:h-auto bg-teal-500 p-6 md:p-12 flex flex-col items-center justify-center text-white" style={{ backgroundColor: '#05afaf' }}>
+            <div className="flex-1 md:flex-none md:w-2/5 h-1/4 md:h-auto bg-teal-500 p-6 md:p-12 flex flex-col items-center justify-center text-white" style={{ backgroundColor: '#05afaf' }}>
                 <div className="text-center">
                     <div className="mb-6">
                         <Icon
@@ -223,7 +223,7 @@ const OTPVerification: React.FC = () => {
             </div>
 
             {/* Right Panel - White Background */}
-            <div className="flex-3 md:flex-none md:w-2/3 h-3/4 md:h-auto bg-white p-6 md:p-12 flex flex-col items-center justify-center">
+            <div className="flex-3 md:flex-none md:w-3/5 h-3/4 md:h-auto bg-white p-6 md:p-12 flex flex-col items-center justify-center">
                 <div className="max-w-xl w-full">
                     <h2 className="text-2xl md:text-2xl font-semibold mb-6">
                         Enter security code received on your Phone/Email

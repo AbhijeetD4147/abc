@@ -10,7 +10,7 @@ import { ResetLinkSendRequestModel } from '../../model/patient_portal/ResetLinkS
 interface PageProps {
     logoUrl: string;
     companyName: string;
-    recoveryType?: 'username' | 'password'; 
+    recoveryType?: 'username' | 'password';
 }
 
 const theme = await getTheme();
@@ -53,7 +53,7 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
     // Handle resend email
     const handleResendEmail = async () => {
         setIsResending(true);
-        
+
         try {
             // Create request model
             const resetLinkSendRequestModel = new ResetLinkSendRequestModel({
@@ -102,7 +102,7 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
     };
 
     const getSuccessMessage = () => {
-        return recoveryType === 'username' 
+        return recoveryType === 'username'
             ? 'We have sent a verification email with your username.'
             : 'We have sent a verification email with password reset instructions.';
     };
