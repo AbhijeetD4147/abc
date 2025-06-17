@@ -5,6 +5,10 @@ import { getTheme } from "../../utils/ThemeSelection";
 import { GlobalParams } from '../../utils/GlobalParameters';
 import Footer from "../../components/ui/Footer";
 import { Icon } from "@ketan_nimase/ui";
+import { LoginModel } from "../../model/authentication/LoginModel";
+import { AuthenticationService } from "../../services/authentication/UserService";
+import { useNavigate } from "react-router-dom";
+import { ApiPath } from "../../utils/constants";
 
 interface SignInProps {
   logoUrl: string;
@@ -15,6 +19,9 @@ const theme = await getTheme();
 
 const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
   const [loginFailed, setLoginFailed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   const {
     register,
@@ -22,17 +29,80 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
     formState: { errors },
   } = useForm();
 
-  const onSubmit = (data: any) => {
-    // Simulate sign-in logic
-    const isAuthenticated = data.username === "admin" && data.password === "1234";
-
-    if (!isAuthenticated) {
-      setLoginFailed(true);
-    } else {
+  const onSubmit = async (data: any) => {
+    try {
+      setIsLoading(true);
       setLoginFailed(false);
-      // redirect or do something
+      setErrorMessage("");
+
+      // Create login model
+      const loginModel = new LoginModel({
+        userName: data.username,
+        password: data.password,
+        geoLocation: "",
+        callFrom: "PORTAL"
+      });
+
+      // Call login API
+      const authService = new AuthenticationService();
+      await authService.login(loginModel.toJson());
+
+      // Check response status
+      if (authService.response_Status_Code_API_25 === 200) {
+        const loginResponse = authService.loginResponseModel;
+        
+        // Handle different login scenarios
+        if (loginResponse?.isAccountLocked) {
+          setLoginFailed(true);
+          setErrorMessage(`Your account has been locked. Please try again after ${loginResponse.timeRemaining} minutes.`);
+        } else if (loginResponse?.loginStatus === 0) {
+          setLoginFailed(true);
+          setErrorMessage(`Invalid username or password. ${loginResponse.loginAttemptsleft} attempts remaining.`);
+        } else if (loginResponse?.loginStatus === 1) {
+          // Successful login
+          // Set global parameters
+          GlobalParams.USER_ID = loginResponse.userId?.toString() || "";
+          GlobalParams.PT_CUSTOMER_ID = loginResponse.ptCustomerID?.toString() || "";
+          GlobalParams.MAXIMEYES_PATIENT_NUMBER = loginResponse.maximeyesPatientNumber || "";
+          GlobalParams.USER_TYPE = loginResponse.userType || "";
+          GlobalParams.PATIENT_DOB = loginResponse.ptDOB || "";
+          GlobalParams.SESSION_GUID = loginResponse.sessionGuid || "";
+          GlobalParams.LOCATION_PHONE = loginResponse.locationPhone || "";
+          ApiPath.isLogin = true;
+          
+          // Handle different login scenarios
+          if (loginResponse.isOtpRequired) {
+            // Navigate to OTP verification page
+            navigate("/otp-verification");
+          } else if (!loginResponse.iS_DOB_VERIFIED) {
+            // Navigate to DOB verification page
+            navigate("/dob-verification");
+          } else if (loginResponse.isOptedOut) {
+            // Navigate to opted-out page
+            navigate("/opted-out");
+          } else {
+            // Navigate to dashboard
+            navigate("/dashboard");
+          }
+        }
+      } else if (authService.response_Status_Code_API_25 === 205) {
+        // Session invalid
+        setLoginFailed(true);
+        setErrorMessage("Your session has expired. Please try again.");
+      } else {
+        // Other errors
+        setLoginFailed(true);
+        setErrorMessage("An error occurred. Please try again later.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setLoginFailed(true);
+      setErrorMessage("An error occurred. Please try again later.");
+    } finally {
+      setIsLoading(false);
     }
   };
+  
   console.log(GlobalParams.LOGO);
   console.log(GlobalParams.LOGO);
   return (

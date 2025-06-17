@@ -1,168 +1,211 @@
-import 'package:first_insight/model/patient_portal/PatientAvailabilityResponseModel.dart';
-import 'package:first_insight/model/patient_portal/PatientInformation.dart';
-import 'package:first_insight/screens/authentication/patient_record_match_found_screen.dart';
-import 'package:first_insight/screens/authentication/record_not_match_found_screen.dart';
-import 'package:first_insight/screens/authentication/sign_up_completed_screen.dart';
+// ignore_for_file: must_be_immutable
+
+import 'dart:async';
+import 'dart:convert';
+import 'package:first_insight/model/authentication/accept_terms_response_model.dart';
+import 'package:first_insight/model/authentication/login_model.dart';
+import 'package:first_insight/screens/authentication/dob_confirmation_screen.dart';
+import 'package:first_insight/screens/authentication/forgot_password_screen.dart';
+import 'package:first_insight/screens/authentication/forgot_username_screen.dart';
+import 'package:first_insight/screens/authentication/verification_otp_screen.dart';
+import 'package:first_insight/screens/settings/optOut/opt_in_screen.dart';
 import 'package:first_insight/services/authentication/user_service.dart';
 import 'package:first_insight/utils/theme_selection_service.dart';
-import 'package:first_insight/utils/global_params.dart';
-import 'package:first_insight/utils/validators.dart';
 import 'package:first_insight/utils/base_textstyle.dart';
 import 'package:first_insight/utils/base_widget.dart';
+import 'package:first_insight/utils/constants.dart';
+import 'package:first_insight/utils/global_params.dart';
 import 'package:first_insight/utils/responsive.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:sizer/sizer.dart';
 import 'package:toastification/toastification.dart';
 
-import '../../utils/idle_wrapper.dart';
+class LoginScreen extends StatefulWidget {
+  String callFrom;
+  String accountLockedDateTime;
 
-// ignore: must_be_immutable
-class SignupScreen extends StatefulWidget {
-  var Title,
-      FirstName,
-      LastName,
-      MobileNumber,
-      EmailId,
-      userType,
-      authUserName,
-      authUserId;
-
-  SignupScreen(
-      {super.key,
-      this.Title,
-      this.FirstName,
-      this.LastName,
-      this.MobileNumber,
-      this.EmailId,
-      this.userType,
-      this.authUserName,
-      this.authUserId});
+  LoginScreen({this.callFrom = "", this.accountLockedDateTime = ""});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  State<LoginScreen> createState() => LoginScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
-  final form = GlobalKey<FormState>();
-  DateFormat dateFormat = DateFormat("MM/dd/yyyy");
-
-  var firstName = TextEditingController();
-  bool _validateFirstName = false;
-
-  var lastName = TextEditingController(text: "");
-  bool _validateLastName = false;
-
-  final countryCode = TextEditingController(text: '+1');
-  bool _validateCountryCode = false;
-
-  var mobileNumber = TextEditingController(text: "");
-  bool _validateMobileNumber = false;
-  String? mobileNumberErrorText;
-
-  var email = TextEditingController(text: "");
-  bool _validateEmail = false;
-  String? emailErrorText;
-
-  final dob = TextEditingController();
-  bool _validateDob = false;
-  bool _validateManualDob = false;
-  var maskFormatterDob = new MaskTextInputFormatter(mask: '##/##/####');
-
-  double height = 0.0;
-  double width = 0.0;
-
-  PatientInformation? patientInformation;
-  PatientAvailabilityResponseModel? patientAvailabilityResponseModel;
-  bool isButtonClicked = false;
-
-  var maskFormatter = new MaskTextInputFormatter(mask: '###-###-####');
-  bool dateFieldValidate = false;
+class LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  TextEditingController usernameTextEditingController =
+      new TextEditingController();
+  TextEditingController passwordTextEditingController =
+      new TextEditingController();
+  bool _validateUsername = false;
+  bool _validatePassword = false;
+  bool loading = true, showAlertForAccountLocked = false;
+  String? logo;
+  bool isValidUser = true;
+  DateTime? accountUnlockedDateTime = DateTime.now();
+  String accountLockedDateTime = "";
+  AuthenticationService authenticationService = new AuthenticationService();
+  FocusNode usernameFocusnode = FocusNode();
+  FocusNode passwordFocusnode = FocusNode();
+  String? locationPhone = "";
 
   @override
   void initState() {
-    if (widget.Title == "Sign Up as Patient") {
-      firstName = TextEditingController(text: widget.FirstName.toString());
-      lastName = TextEditingController(text: widget.LastName.toString());
-      mobileNumber =
-          TextEditingController(text: widget.MobileNumber.toString());
-      email = TextEditingController(text: widget.EmailId.toString());
+    if (widget.callFrom == "Account Locked") {
+      accountLockedDateTime = widget.accountLockedDateTime;
     }
     super.initState();
+    getLogo();
   }
 
-  Future<void> patientValidate() async {
+  Future<void> getLogo() async {
     setState(() {
-      isButtonClicked = true;
+      loading = true;
+      ApiPath.isLogin = false;
     });
 
-    patientInformation = new PatientInformation(
-      firstName.text.trim(),
-      lastName.text.trim(),
-      countryCode.text.trim(),
-      mobileNumber.text.trim(),
-      email.text.trim(),
-      dob.text.trim(),
+    setState(() {
+      logo = GlobalParams.LOGO;
+      // dev
+      // usernameTextEditingController.text = "IanSmi0120";
+      // passwordTextEditingController.text = "Test@1234";
+      // usernameTextEditingController.text = "TesTes0919";
+      // passwordTextEditingController.text = "Test@1234";
+
+      usernameTextEditingController.text = "AK0401";
+      passwordTextEditingController.text = "Test@1234";
+
+      // usernameTextEditingController.text = "0101Aryan57";
+      // passwordTextEditingController.text = "Test@1234";
+
+      //Auth of Aryank1234
+      // usernameTextEditingController.text = "AnjKumB07";
+      // passwordTextEditingController.text = "Test@1234";
+
+      // usernameTextEditingController.text = "Aryank1234";
+      // passwordTextEditingController.text = "Test@12345";
+      // usernameTextEditingController.text = "DanielFitness";
+      // passwordTextEditingController.text = "Test@1234";
+
+      //qa1
+      // usernameTextEditingController.text = "matt.rife@mailinator.com";
+      // passwordTextEditingController.text = "Slossness@1234";
+      // usernameTextEditingController.text = "dustinmosh";
+      // passwordTextEditingController.text = "Slossness@12346";
+      // usernameTextEditingController.text = "YashDayal";
+      // passwordTextEditingController.text = "Test@12345";
+      // usernameTextEditingController.text = "ArpBal1212";
+      // passwordTextEditingController.text = "2x#2JI5L";
+      //Auth
+      // usernameTextEditingController.text = "rohan.joshi@mailinator.com";
+      // passwordTextEditingController.text = "Slossness@1234";
+      // usernameTextEditingController.text = "samay.raina@mailinator.com";
+      // passwordTextEditingController.text = "Slossness@12345";
+
+      //qa2
+      // usernameTextEditingController.text = "SunilNarine";
+      // passwordTextEditingController.text = "Test@1234";
+      // usernameTextEditingController.text = "thomassowell";
+      // passwordTextEditingController.text = "Slossness@12346";
+      loading = false;
+    });
+  }
+
+  Future<void> signIn() async {
+    setState(() {
+      loading = true;
+    });
+
+    LoginModel loginModel = new LoginModel(
+      userName: usernameTextEditingController.text,
+      password: passwordTextEditingController.text,
+      geoLocation: "",
+      callFrom: "",
     );
 
-    Map<String, String> patientValidateData = {};
-
-    if (widget.Title == "Sign Up as Patient") {
-      patientValidateData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'FirstName': patientInformation!.firstName,
-        'LastName': patientInformation!.lastName,
-        'Mobile': patientInformation!.mobileNumber,
-        'Email': patientInformation!.email,
-        'DOB': patientInformation!.dob,
-        'AuthSignUpAsPatient':
-            widget.Title == "Sign Up as Patient" ? "true" : "false"
-      };
-    } else {
-      patientValidateData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'FirstName': patientInformation!.firstName,
-        'LastName': patientInformation!.lastName,
-        'Mobile': countryCode.text + patientInformation!.mobileNumber,
-        'Email': patientInformation!.email,
-        'DOB': patientInformation!.dob,
-        'AuthSignUpAsPatient': "false"
-      };
-    }
-
-    AuthenticationService authenticationService = new AuthenticationService();
-
-    await authenticationService.validatePatient(patientValidateData);
-    if (authenticationService.response_Status_Code_API_7 == 200) {
+    await authenticationService.login(loginModel.toMap());
+    if (authenticationService.response_Status_Code_API_25 == 200) {
       setState(() {
-        patientAvailabilityResponseModel =
-            authenticationService.patientAvailabilityResponseModel;
-        if (patientAvailabilityResponseModel!.isExist!) {
-          isButtonClicked = false;
-          Get.off(
-            PatientRecordMatchFoundScreen(
-              email: patientInformation!.email,
-              patientNumber: patientAvailabilityResponseModel!.patientNumber!,
-            ),
-          );
-        } else {
-          if (patientAvailabilityResponseModel!.accountType! ==
-              "AuthSignUpAsPatient") {
-            Get.offAll(SignUpCompleted());
+        if (authenticationService.loginResponseModel!.userType!.isNotEmpty) {
+          if (authenticationService.loginResponseModel!.isAccountLocked!) {
+            loading = false;
+            accountLockedDateTime = authenticationService
+                .loginResponseModel!.accountLockedDateTime!;
+            ApiPath.loginAttempt =
+                authenticationService.loginResponseModel!.loginAttemptsleft!;
           } else {
-            isButtonClicked = false;
-            Get.to(RecordNotMatchScreen());
+            if (authenticationService.loginResponseModel!.loginStatus == 0) {
+              loading = false;
+              widget.callFrom = "";
+              ApiPath.loginAttempt =
+                  authenticationService.loginResponseModel!.loginAttemptsleft!;
+            } else {
+              var response = authenticationService.loginResponseModel;
+              GlobalParams.USER_ID = response!.userId.toString();
+
+              GlobalParams.USER_TYPE = response.userType!;
+              GlobalParams.PT_CUSTOMER_ID = response.ptCustomerID.toString();
+
+              if (response.sessionGuid!.isNotEmpty)
+                GlobalParams.SESSION_GUID = response.sessionGuid!;
+
+              if (response.userType == "Auth") {
+                GlobalParams.PT_CUSTOMER_ID_For_Audit_Log =
+                    response.ptCustomerID.toString();
+                GlobalParams.isSettingIconMenuItemsAccess = false;
+              } else {
+                GlobalParams.PT_CUSTOMER_ID_For_Audit_Log = "0";
+                GlobalParams.MAXIMEYES_PATIENT_NUMBER =
+                    response.maximeyesPatientNumber!;
+                GlobalParams.PATIENT_DOB = response.ptDOB!;
+                GlobalParams.userMaximeyesPatientNumber =
+                    response.maximeyesPatientNumber!;
+                GlobalParams.userDOB = response.ptDOB!;
+                if (response.userProfilePhotoBase64!.isNotEmpty)
+                  GlobalParams.USER_PROFILE_PHOTO_BASE64 =
+                      Base64Decoder().convert(response.userProfilePhotoBase64!);
+              }
+
+              ApiPath.isLogin = true;
+              ApiPath.isGlobalStartTimer = true;
+              GlobalParams.isSettingIconMenuItemsAccess = false;
+              usernameTextEditingController.clear();
+              passwordTextEditingController.clear();
+              loading = false;
+
+              if (response.isOptedOut!) {
+                Get.off(OptInScreen(
+                    optedBy: response.optedOutBy!,
+                    optedOutDate: response.optedOutDate!));
+              } else if (!response.iS_DOB_VERIFIED!) {
+                Get.off(DobConfirmationScreen(optedPatient: false));
+              } else {
+                Get.off(
+                  VerificationOtpScreen(
+                      userType: response.userType,
+                      locationPhone: response.locationPhone),
+                  arguments: AuthorizedIndividualTermsResponseModel(
+                      authId: response.ptCustomerID, authName: ""),
+                );
+              }
+            }
           }
+        } else {
+          usernameTextEditingController.clear();
+          passwordTextEditingController.clear();
+          loading = false;
+          isValidUser = false;
+          widget.callFrom = "";
+          ApiPath.loginAttempt = 3;
         }
+        locationPhone =
+            authenticationService.loginResponseModel!.locationPhone ?? '';
       });
     } else {
-      if (authenticationService.response_Status_Code_API_7 != 205) {
+      if (authenticationService.response_Status_Code_API_25 != 205) {
         setState(() {
-          isButtonClicked = false;
+          loading = false;
         });
         showToast(
           context,
@@ -174,574 +217,1635 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  void fieldValidation() {
+    if (usernameTextEditingController.text.isEmpty ||
+        passwordTextEditingController.text.isEmpty) {
+      if (usernameTextEditingController.text.isEmpty) {
+        setState(() {
+          _validateUsername = true;
+        });
+      }
+      if (passwordTextEditingController.text.isEmpty) {
+        setState(() {
+          _validatePassword = true;
+        });
+      }
+    } else if (_formKey.currentState!.validate()) {
+      signIn();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    height = MediaQuery.of(context).size.height;
-    width = MediaQuery.of(context).size.width;
-    return IdleWrapper(
-      child: SafeArea(
-        child: Scaffold(
-          body: IgnorePointer(
-            ignoring: isButtonClicked,
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    SizedBox(
-                      height: Responsive.isTablet(context) ? 8.h : 0.h,
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.Title,
-                          style: Responsive.isTablet(context)
-                              ? CommonTextStyle.of(context)
-                                  .H6_SUR(ThemeSelection.primaryTextColor)
-                              : CommonTextStyle.of(context)
-                                  .H1_SUR(ThemeSelection.primaryTextColor),
-                        ),
-                        SizedBox(
-                          height: 20.0,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "First",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          alignment: Alignment.center,
-                          child: customTextFormField(
-                            context,
-                            key: ValueKey('First Name'),
-                            errorText: 'First Name is required',
-                            hintText: 'Legal First Name',
-                            readOnly: false,
-                            validate: _validateFirstName,
-                            textEditingController: firstName,
-                            inlineError: true,
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(255),
-                            ],
-                            onChanged: (val) {
-                              setState(() {
-                                if (firstName.text.trim().isEmpty) {
-                                  _validateFirstName = true;
-                                } else {
-                                  _validateFirstName = false;
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(
-                          height: height * 0.005,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "Last",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          alignment: Alignment.center,
-                          child: customTextFormField(
-                            context,
-                            key: ValueKey('Last Name'),
-                            errorText: 'Last Name is required',
-                            hintText: 'Last Name',
-                            readOnly: false,
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(255),
-                            ],
-                            validate: _validateLastName,
-                            textEditingController: lastName,
-                            inlineError: true,
-                            onChanged: (val) {
-                              setState(() {
-                                if (lastName.text.trim().isEmpty) {
-                                  _validateLastName = true;
-                                } else {
-                                  _validateLastName = false;
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(
-                          height: height * 0.005,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "Mobile",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          alignment: Alignment.center,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: Responsive.isMobile(context)
-                                    ? width / 6
-                                    : MediaQuery.of(context).size.width * 0.05,
-                                alignment: Alignment.center,
-                                child: customTextFormField(
-                                  key: ValueKey("Mobile Pin"),
-                                  context,
-                                  hintText: '01',
-                                  readOnly: true,
-                                  validate: _validateCountryCode,
-                                  textEditingController: countryCode,
-                                  inlineError: true,
-                                  errorText: '',
-                                ),
-                              ),
-                              SizedBox(
-                                width: 10.0,
-                              ),
-                              Flexible(
-                                child: customTextFormField(
-                                  context,
-                                  key: ValueKey('Mobile Number'),
-                                  errorText: mobileNumberErrorText,
-                                  hintText: '(000) 000-0000',
-                                  readOnly: false,
-                                  inputFormatters: [maskFormatter],
-                                  keyBoardType: TextInputType.numberWithOptions(
-                                    signed: true,
-                                  ),
-                                  validate: _validateMobileNumber,
-                                  textEditingController: mobileNumber,
-                                  inlineError: true,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      if (mobileNumber.text.trim().isNotEmpty) {
-                                        if (mobileNumber.text.mobileValidate &&
-                                            mobileNumber.text.toString() !=
-                                                '000-000-0000') {
-                                          _validateMobileNumber = false;
-                                        } else {
-                                          mobileNumberErrorText =
-                                              'Please enter valid mobile number';
-                                          _validateMobileNumber = true;
-                                        }
-                                      } else {
-                                        _validateMobileNumber = true;
-                                        mobileNumberErrorText =
-                                            "Mobile is required";
-                                      }
-                                    });
-                                  },
-                                ),
-                              ),
-                              SizedBox(
-                                width: 15.0,
-                              ),
-                              Container(
-                                key: ValueKey("HoverText"),
-                                child: customHoverTooltip(
-                                  context,
-                                  toolTipMessage:
-                                      'Enter a mobile phone number that is readily\navailable to you to receive a security code for\n2–factor verification. Important messages\nregarding your account will be sent on this\nnumber.',
-                                  hoverColor:
-                                      ThemeSelection.iconHoverSecondaryColor,
-                                  iconData: Symbols.info,
-                                  iconColor:
-                                      ThemeSelection.iconDefaultSecondaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: height * 0.005,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "Email",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          alignment: Alignment.center,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Flexible(
-                                child: customTextFormField(
-                                  context,
-                                  key: ValueKey('Email Id'),
-                                  errorText: emailErrorText,
-                                  hintText: "Email",
-                                  textEditingController: email,
-                                  readOnly: false,
-                                  validate: _validateEmail,
-                                  inlineError: true,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      if (email.text.trim().isNotEmpty) {
-                                        if (email.text.trim().emailValidate) {
-                                          _validateEmail = false;
-                                          emailErrorText = '';
-                                        } else {
-                                          _validateEmail = true;
-                                          emailErrorText =
-                                              'Please enter valid Email';
-                                        }
-                                      } else {
-                                        _validateEmail = true;
-                                        emailErrorText = 'Email is required';
-                                      }
-                                    });
-                                  },
-                                ),
-                              ),
-                              SizedBox(
-                                width: 15.0,
-                              ),
-                              Container(
-                                key: ValueKey("HoverText 2"),
-                                child: customHoverTooltip(
-                                  context,
-                                  toolTipMessage:
-                                      'Enter an email address that you use frequently\nfor communication and check often for\nmessages. Important communication regarding\nyour account will be sent on this email address.',
-                                  hoverColor:
-                                      ThemeSelection.iconHoverSecondaryColor,
-                                  iconData: Symbols.info,
-                                  iconColor:
-                                      ThemeSelection.iconDefaultSecondaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: height * 0.005,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "DOB",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          alignment: Alignment.center,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: customTextFormField(
-                            context,
-                            key: ValueKey('DOB'),
-                            errorText: _validateDob
-                                ? "DOB is required"
-                                : "Invalid DOB",
-                            keyBoardType: TextInputType.phone,
-                            inputFormatters: [maskFormatterDob],
-                            validate: _validateDob || _validateManualDob,
-                            hintText: "MM/DD/YYYY",
-                            textEditingController: dob,
-                            inlineError: true,
-                            suffixIcon: GestureDetector(
-                              onTap: () => _selectDate(context),
-                              child: Padding(
-                                key: ValueKey("Calendar"),
-                                padding: Responsive.isMobile(context)
-                                    ? EdgeInsets.symmetric(
-                                            horizontal: 11, vertical: 2)
-                                        .copyWith(top: 8)
-                                    : Responsive.isTablet(context)
-                                        ? EdgeInsets.fromLTRB(9, 6, 7, 8)
-                                        : EdgeInsets.fromLTRB(10, 4, 6.65, 10),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: 1,
-                                  ),
-                                  child: Icon(
-                                    Symbols.calendar_month,
-                                    size: Responsive.isMobile(context)
-                                        ? 22.0
-                                        : Responsive.isTablet(context)
-                                            ? height * 0.02
-                                            : height * 0.03,
-                                    color: ThemeSelection
-                                        .iconDefaultQuaternaryColor,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            onChanged: (val) {
-                              if (dob.text.trim().isNotEmpty) {
-                                setState(() {
-                                  _validateDob = false;
-                                });
-                                if (dob.text.trim().length == 10) {
-                                  validateManualDob(val);
-                                } else {
-                                  setState(() {
-                                    _validateManualDob = true;
-                                  });
-                                }
-                              } else {
-                                setState(() {
-                                  _validateDob = true;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        SizedBox(
-                          height: Responsive.isTablet(context) ? 2.h : 0.h,
-                        ),
-                        Text(
-                          "We will send you a security code via your email or text.",
-                          style: CommonTextStyle.of(context)
-                              .H22_SUR(ThemeSelection.primaryTextColor),
-                        ),
-                        SizedBox(
-                          height: Responsive.isMobile(context) ? 8.h : 20.h,
-                        ),
-                        Divider(
-                          thickness: Responsive.isk4Desktop(context) ? 5 : 1,
-                        ),
-                        SizedBox(
-                          height: 2.h, //reduce for mobile
-                        ),
-                        Center(
-                          key: ValueKey('Proceed'),
-                          child: isButtonClicked
-                              ? CircularProgressIndicator()
-                              : primaryButton(
-                                  context,
-                                  () {
-                                    fieldValidation();
-                                  },
-                                  'Proceed',
-                                  ThemeSelection.secondaryTextColor,
-                                ),
-                        )
-                      ],
-                    ),
-                  ],
-                ),
+    return Scaffold(
+      body: loading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : Form(
+              key: _formKey,
+              child: Responsive(
+                mobile: mobileView(),
+                tablet: tabletView(),
+                desktop: webView(),
+                k4Desktop: webView(),
               ),
+            ),
+    );
+  }
+
+  Widget mobileView() {
+    return Column(
+      children: [
+        Expanded(
+          flex: 1,
+          child: logoSection(),
+        ),
+        Expanded(
+          flex: 2,
+          child: Container(
+            color: ThemeSelection.BGColor,
+            child: SingleChildScrollView(
+              child: loginSection(),
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget tabletView() {
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 1,
+            child: logoSection(),
+          ),
+          Container(
+            color: ThemeSelection.greyBorderColor,
+            width: 1.0,
+          ),
+          Expanded(
+            flex: 1,
+            child: Container(
+              color: ThemeSelection.BGColor,
+              child: SingleChildScrollView(
+                child: loginSection(),
+              ),
+            ),
+          )
+        ],
       ),
     );
   }
 
-  void fieldValidation() {
-    if (firstName.text.trim().isNotEmpty &&
-        lastName.text.trim().isNotEmpty &&
-        countryCode.text.trim().isNotEmpty &&
-        mobileNumber.text.trim().isNotEmpty &&
-        email.text.trim().isNotEmpty &&
-        dob.text.trim().isNotEmpty &&
-        mobileNumber.text.mobileValidate &&
-        mobileNumber.text != '000-000-0000' &&
-        email.text.emailValidate &&
-        dateFieldValidate) {
-      patientValidate();
-    } else {
-      setState(() {
-        if (firstName.text.trim().isNotEmpty) {
-          _validateFirstName = false;
-        } else {
-          _validateFirstName = true;
-        }
-        if (lastName.text.trim().isNotEmpty) {
-          _validateLastName = false;
-        } else {
-          _validateLastName = true;
-        }
-        if (mobileNumber.text.trim().isNotEmpty) {
-          if (mobileNumber.text.mobileValidate &&
-              mobileNumber.text.trim() != '000-000-0000') {
-            _validateMobileNumber = false;
-          } else {
-            mobileNumberErrorText = 'Please enter valid mobile number';
-            _validateMobileNumber = true;
-          }
-        } else {
-          _validateMobileNumber = true;
-          mobileNumberErrorText = "Mobile is required";
-        }
-        if (email.text.trim().isNotEmpty) {
-          if (email.text.trim().emailValidate) {
-            _validateEmail = false;
-          } else {
-            _validateEmail = true;
-            emailErrorText = 'Please enter valid Email';
-          }
-        } else {
-          _validateEmail = true;
-          emailErrorText = 'Email is required';
-        }
-        if (dob.text.trim().isNotEmpty) {
-          _validateDob = false;
-          if (dob.text.trim().length == 10) {
-            validateManualDob(dob.text.trim());
-          } else {
-            _validateManualDob = true;
-          }
-        } else {
-          _validateDob = true;
-        }
-      });
-    }
+  Widget webView() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 1,
+          child: logoSection(),
+        ),
+        Container(
+          color: ThemeSelection.greyBorderColor,
+          width: 1.0,
+        ),
+        Expanded(
+          flex: 1,
+          child: Container(
+            color: ThemeSelection.BGColor,
+            child: loginSection(),
+          ),
+        )
+      ],
+    );
   }
 
-  void validateManualDob(String dateOfBirth) {
-    // MM/DD/YYYY
-    // 02/26/2023
-    int month = int.parse(dateOfBirth.substring(0, 2));
-    int date = int.parse(dateOfBirth.substring(3, 5));
-    int year = int.parse(dateOfBirth.substring(6, 10));
-
-    DateTime checkDate = DateFormat("MM/dd/yyyy").parse(dateOfBirth);
-    DateTime today = DateTime.now();
-
-    bool isNotLeapYear =
-        ((year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0));
-
-    setState(() {
-      if (month < 1 || month > 12) {
-        _validateManualDob = true;
-      } else if (date < 1 || date > 31) {
-        _validateManualDob = true;
-      } else if (year < 1900) {
-        _validateManualDob = true;
-      } else if (date > 29 && month == 2) {
-        _validateManualDob = true;
-      } else if (date == 31 &&
-          (month == 2 ||
-              month == 4 ||
-              month == 6 ||
-              month == 9 ||
-              month == 11)) {
-        _validateManualDob = true;
-      } else if (checkDate.compareTo(today) > 0) {
-        _validateManualDob = true;
-      } else if (!isNotLeapYear && month == 2 && date == 29) {
-        _validateManualDob = true;
-      } else {
-        _validateManualDob = false;
-      }
-      if (_validateManualDob) {
-        dateFieldValidate = false;
-      } else {
-        dateFieldValidate = true;
-      }
-    });
-  }
-
-  Future _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-        context: context,
-        initialDate: DateTime.now(),
-        firstDate: DateTime(1900),
-        lastDate: DateTime.now(),
-        initialEntryMode: DatePickerEntryMode.calendarOnly,
-        cancelText: "CLOSE",
-        confirmText: "SAVE",
-        builder: (context, child) {
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: ColorScheme.light(
-                    primary: ThemeSelection.BGColor, // header background color
-                    onPrimary: Colors.white, // header text color
-                    onSurface: Colors.black, // body text color
+  Widget accountLoggedOut() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 1.h),
+              child: Icon(
+                const IconData(
+                  0xE116,
+                  fontFamily: 'metro',
+                ),
+                size: Responsive.isMobile(context) ? 65.sp : 20.sp,
+                color: ThemeSelection.iconDefaultTertiaryColor,
+              ),
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 1.h),
+              child: Text(
+                'Logged Out',
+                softWrap: true,
+                style: TextStyle(
+                  color: ThemeSelection.secondaryTextColor,
+                  fontFamily: 'SegoeUi',
+                  letterSpacing: 0.5,
+                  fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 1.5.h),
+            child: Text(
+              'For your safety, you have been logged out due to ${ApiPath.idleTime} minutes of inactivity. Sign In again.',
+              softWrap: true,
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'SegoeUi',
+                letterSpacing: 0.5,
+                fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
+              ),
+            ),
+          ),
+          customTextFormField(
+            context,
+            hintText: "Username",
+            readOnly: false,
+            textEditingController: usernameTextEditingController,
+            focusNode: usernameFocusnode,
+            onChanged: (val) {
+              setState(() {
+                if (usernameTextEditingController.text.trim().isNotEmpty) {
+                  _validateUsername = false;
+                } else {
+                  _validateUsername = true;
+                }
+              });
+            },
+            prefixIcon: Container(
+              margin: EdgeInsets.only(right: 0.5.w),
+              child: Icon(
+                const IconData(0xE179, fontFamily: 'metro'),
+                size: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                color: ThemeSelection.greyBorderColor,
+              ),
+            ),
+            validate: _validateUsername,
+            inlineError: false,
+            key: ValueKey("Username"),
+          ),
+          _validateUsername
+              ? Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    color: ThemeSelection.textfieldInlineColor,
                   ),
-                  textButtonTheme: TextButtonThemeData(
-                    style: ButtonStyle(
-                      foregroundColor: WidgetStateProperty.resolveWith<Color>(
-                          (Set<WidgetState> states) {
-                        if (states.contains(WidgetState.hovered))
-                          return ThemeSelection
-                              .primaryPressedBackgroundButtonColor;
-                        if (states.contains(WidgetState.focused))
-                          return ThemeSelection.whiteButtonHover;
-                        return ThemeSelection.BGColor;
-                      }),
+                  alignment: Alignment.topLeft,
+                  padding:
+                      EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 0.5.w),
+                  child: Text(
+                    'Username is required',
+                    style: TextStyle(
+                      color: ThemeSelection.secondaryTextColor,
+                    ),
+                  ),
+                )
+              : SizedBox(),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 1.h),
+            child: InkWell(
+              onTap: () {
+                Get.to(
+                  ForgotUsernameScreen(
+                    Guid: "",
+                    locationPhone: locationPhone,
+                  ),
+                );
+              },
+              child: Text(
+                "Forgot Username?",
+                style: TextStyle(
+                  fontFamily: 'SegoeUi',
+                  letterSpacing: 0.5,
+                  decoration: TextDecoration.underline,
+                  decorationColor: ThemeSelection.secondaryTextColor,
+                  fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                  color: ThemeSelection.secondaryTextColor,
+                ),
+                key: ValueKey("Forgot Username"),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 2.h,
+          ),
+          customTextFormField(
+            context,
+            hintText: "Password",
+            readOnly: false,
+            textEditingController: passwordTextEditingController,
+            obscureText: true,
+            focusNode: passwordFocusnode,
+            onChanged: (val) {
+              setState(() {
+                if (passwordTextEditingController.text.trim().isNotEmpty) {
+                  _validatePassword = false;
+                } else {
+                  _validatePassword = true;
+                }
+              });
+            },
+            prefixIcon: Container(
+              margin: EdgeInsets.only(right: 0.5.w),
+              child: Icon(
+                const IconData(0xE168, fontFamily: 'metro'),
+                size: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                color: ThemeSelection.greyBorderColor,
+              ),
+            ),
+            validate: _validatePassword,
+            inlineError: false,
+            key: ValueKey("Password"),
+          ),
+          _validatePassword
+              ? Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    color: ThemeSelection.textfieldInlineColor,
+                  ),
+                  alignment: Alignment.topLeft,
+                  padding:
+                      EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 0.5.w),
+                  child: Text(
+                    'Password is required',
+                    style: TextStyle(
+                      color: ThemeSelection.secondaryTextColor,
+                    ),
+                  ),
+                )
+              : SizedBox(),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 1.h),
+            child: InkWell(
+              onTap: () {
+                Get.to(
+                  ForgotPasswordScreen(
+                    Guid: "",
+                    locationPhone: locationPhone,
+                  ),
+                );
+              },
+              child: Text(
+                "Forgot Password?",
+                style: TextStyle(
+                  fontFamily: 'SegoeUi',
+                  letterSpacing: 0.5,
+                  decoration: TextDecoration.underline,
+                  decorationColor: ThemeSelection.secondaryTextColor,
+                  fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                  color: ThemeSelection.secondaryTextColor,
+                ),
+                key: ValueKey("Forgot Password"),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 2.h,
+          ),
+          SizedBox(
+            key: ValueKey("Sign In"),
+            child: ghostButton(
+              context,
+              "Sign In",
+              () {
+                fieldValidation();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget accountLocked() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 1.h),
+              child: Icon(
+                const IconData(
+                  0xE116,
+                  fontFamily: 'metro',
+                ),
+                size: Responsive.isMobile(context) ? 65.sp : 20.sp,
+                color: ThemeSelection.iconDefaultTertiaryColor,
+              ),
+            ),
+          ),
+          Container(
+            alignment: Alignment.center,
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 1.h),
+              child: Text(
+                'Account Locked',
+                softWrap: true,
+                style: TextStyle(
+                  color: ThemeSelection.secondaryTextColor,
+                  fontFamily: 'SegoeUi',
+                  letterSpacing: 0.5,
+                  fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 1.h),
+            child: Text(
+              'Your account has been temporarily locked due to multiple failed sign in attempts. \n\nYou can unlock your account after 15 minutes from the time locked, by clicking forgot password link.',
+              softWrap: true,
+              style: TextStyle(
+                color: ThemeSelection.secondaryTextColor,
+                fontFamily: 'SegoeUi',
+                letterSpacing: 0.5,
+                fontSize: Responsive.isMobile(context)
+                    ? 12.sp
+                    : Responsive.isTablet(context)
+                        ? 4.sp
+                        : 3.sp,
+              ),
+            ),
+          ),
+          Container(
+            key: ValueKey("Back to Sign In"),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 1.h),
+              child: ghostButton(
+                context,
+                "Back to Sign In",
+                () {
+                  //Here add 5hrs and 30Mins to convert time into Indian Time
+                  Duration difference = DateTime.now().difference(
+                      DateTime.parse(accountLockedDateTime)
+                          .add(Duration(hours: 5, minutes: 30)));
+                  setState(() {
+                    accountUnlockedDateTime =
+                        DateTime.parse(accountLockedDateTime)
+                            .add(Duration(hours: 5, minutes: 30))
+                            .add(Duration(minutes: 15));
+                  });
+
+                  if (difference.inMinutes > 15) {
+                    setState(() {
+                      widget.callFrom = "";
+                      ApiPath.loginAttempt = 3;
+                      isValidUser = true;
+                    });
+                  } else {
+                    showToast(
+                      context,
+                      message:
+                          'Please retry after 15 mins from ${DateFormat.jm().format(DateTime.parse(accountLockedDateTime).toLocal().add(Duration(hours: 5, minutes: 30)))}.',
+                      type: ToastificationType.warning,
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget loginSection() {
+    return widget.callFrom == "Update Password"
+        ? Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 1.h),
+                    child: Icon(
+                      const IconData(
+                        0xE166,
+                        fontFamily: 'metro',
+                      ),
+                      size: Responsive.isMobile(context) ? 65.sp : 20.sp,
+                      color: ThemeSelection.iconDefaultTertiaryColor,
                     ),
                   ),
                 ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: Responsive.isMobile(context)
-                        ? 100.w
-                        : Responsive.isTablet(context)
-                            ? 45.w
-                            : 23.w,
-                    minHeight: Responsive.isMobile(context)
-                        ? 70.h
-                        : Responsive.isTablet(context)
-                            ? 70.h
-                            : 60.h,
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 1.h),
+                    child: Text(
+                      "Password Updated",
+                      softWrap: true,
+                      style: TextStyle(
+                        color: ThemeSelection.secondaryTextColor,
+                        fontFamily: 'SegoeUi',
+                        letterSpacing: 0.5,
+                        fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
+                      ),
+                    ),
                   ),
-                  child: child,
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 1.h),
+                  child: Text(
+                    "Sign in to your account using your username and updated password.",
+                    style: TextStyle(
+                      color: ThemeSelection.secondaryTextColor,
+                      fontFamily: 'SegoeUi',
+                      fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 2.h,
+                ),
+                customTextFormField(
+                  context,
+                  hintText: "Username",
+                  readOnly: false,
+                  textEditingController: usernameTextEditingController,
+                  maxLines: 1,
+                  focusNode: usernameFocusnode,
+                  onChanged: (val) {
+                    setState(() {
+                      if (usernameTextEditingController.text
+                          .trim()
+                          .isNotEmpty) {
+                        _validateUsername = false;
+                      } else {
+                        _validateUsername = true;
+                      }
+                    });
+                  },
+                  prefixIcon: Container(
+                    margin: EdgeInsets.only(right: 0.5.w),
+                    child: Icon(
+                      const IconData(0xE179, fontFamily: 'metro'),
+                      size: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                      color: ThemeSelection.greyBorderColor,
+                    ),
+                  ),
+                  validate: _validateUsername,
+                  inlineError: false,
+                  key: ValueKey("Username"),
+                ),
+                _validateUsername
+                    ? Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          color: ThemeSelection.textfieldInlineColor,
+                        ),
+                        alignment: Alignment.topLeft,
+                        padding: EdgeInsets.symmetric(
+                            vertical: 0.5.h, horizontal: 0.5.w),
+                        child: Text(
+                          'Username is required',
+                          style: TextStyle(
+                            color: ThemeSelection.secondaryTextColor,
+                          ),
+                        ),
+                      )
+                    : SizedBox(),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 1.h),
+                  child: InkWell(
+                    onTap: () {
+                      Get.to(
+                        ForgotUsernameScreen(
+                          Guid: "",
+                          locationPhone: locationPhone,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      "Forgot Username?",
+                      style: TextStyle(
+                        fontFamily: 'SegoeUi',
+                        letterSpacing: 0.5,
+                        decoration: TextDecoration.underline,
+                        decorationColor: ThemeSelection.secondaryTextColor,
+                        fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                        color: ThemeSelection.secondaryTextColor,
+                      ),
+                      key: ValueKey("Forgot Username"),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 2.h,
+                ),
+                customTextFormField(
+                  context,
+                  hintText: "Password",
+                  readOnly: false,
+                  maxLines: 1,
+                  textEditingController: passwordTextEditingController,
+                  obscureText: true,
+                  focusNode: passwordFocusnode,
+                  onChanged: (val) {
+                    setState(() {
+                      if (passwordTextEditingController.text
+                          .trim()
+                          .isNotEmpty) {
+                        _validatePassword = false;
+                      } else {
+                        _validatePassword = true;
+                      }
+                    });
+                  },
+                  prefixIcon: Container(
+                    margin: EdgeInsets.only(right: 0.5.w),
+                    child: Icon(
+                      const IconData(0xE168, fontFamily: 'metro'),
+                      size: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                      color: ThemeSelection.greyBorderColor,
+                    ),
+                  ),
+                  validate: _validatePassword,
+                  inlineError: false,
+                  key: ValueKey("Password"),
+                ),
+                _validatePassword
+                    ? Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          color: ThemeSelection.textfieldInlineColor,
+                        ),
+                        alignment: Alignment.topLeft,
+                        padding: EdgeInsets.symmetric(
+                            vertical: 0.5.h, horizontal: 0.5.w),
+                        child: Text(
+                          'Password is required',
+                          style: TextStyle(
+                            color: ThemeSelection.secondaryTextColor,
+                          ),
+                        ),
+                      )
+                    : SizedBox(),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 1.h),
+                  child: InkWell(
+                    onTap: () {
+                      Get.to(
+                        ForgotPasswordScreen(
+                          Guid: "",
+                          locationPhone: locationPhone,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      "Forgot Password?",
+                      style: TextStyle(
+                        fontFamily: 'SegoeUi',
+                        letterSpacing: 0.5,
+                        decoration: TextDecoration.underline,
+                        decorationColor: ThemeSelection.secondaryTextColor,
+                        fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                        color: ThemeSelection.secondaryTextColor,
+                      ),
+                      key: ValueKey("Forgot Password"),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 1.h),
+                  child: Text(
+                    "We will send you a security code on your phone/email for additional verification.",
+                    style: TextStyle(
+                      color: ThemeSelection.secondaryTextColor,
+                      fontFamily: 'SegoeUi',
+                      fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 2.h,
+                ),
+                SizedBox(
+                  key: ValueKey("Sign In"),
+                  child: ghostButton(
+                    context,
+                    "Sign In",
+                    () {
+                      fieldValidation();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          )
+        : widget.callFrom == "Update Username"
+            ? Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 1.h),
+                        child: Icon(
+                          const IconData(
+                            0xE166,
+                            fontFamily: 'metro',
+                          ),
+                          size: Responsive.isMobile(context) ? 65.sp : 20.sp,
+                          color: ThemeSelection.iconDefaultTertiaryColor,
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 1.h),
+                        child: Text(
+                          "Username Updated",
+                          softWrap: true,
+                          style: TextStyle(
+                            color: ThemeSelection.secondaryTextColor,
+                            fontFamily: 'SegoeUi',
+                            letterSpacing: 0.5,
+                            fontSize:
+                                Responsive.isMobile(context) ? 15.sp : 4.sp,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 1.h),
+                      child: Text(
+                        "Sign in to your account using your updated username and password.",
+                        style: TextStyle(
+                          color: ThemeSelection.secondaryTextColor,
+                          fontFamily: 'SegoeUi',
+                          fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 2.h,
+                    ),
+                    customTextFormField(
+                      context,
+                      hintText: "Username",
+                      readOnly: false,
+                      textEditingController: usernameTextEditingController,
+                      maxLines: 1,
+                      onChanged: (val) {
+                        setState(() {
+                          if (usernameTextEditingController.text
+                              .trim()
+                              .isNotEmpty) {
+                            _validateUsername = false;
+                          } else {
+                            _validateUsername = true;
+                          }
+                        });
+                      },
+                      prefixIcon: Container(
+                        margin: EdgeInsets.only(right: 0.5.w),
+                        child: Icon(
+                          const IconData(0xE179, fontFamily: 'metro'),
+                          size: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                          color: ThemeSelection.greyBorderColor,
+                        ),
+                      ),
+                      validate: _validateUsername,
+                      inlineError: false,
+                      key: ValueKey("Username"),
+                    ),
+                    _validateUsername
+                        ? Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(5),
+                              color: ThemeSelection.textfieldInlineColor,
+                            ),
+                            alignment: Alignment.topLeft,
+                            padding: EdgeInsets.symmetric(
+                                vertical: 0.5.h, horizontal: 0.5.w),
+                            child: Text(
+                              'Username is required',
+                              style: TextStyle(
+                                color: ThemeSelection.secondaryTextColor,
+                              ),
+                            ),
+                          )
+                        : SizedBox(),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 1.h),
+                      child: InkWell(
+                        onTap: () {
+                          Get.to(
+                            ForgotUsernameScreen(
+                              Guid: "",
+                              locationPhone: locationPhone,
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "Forgot Username?",
+                          style: TextStyle(
+                            fontFamily: 'SegoeUi',
+                            letterSpacing: 0.5,
+                            decoration: TextDecoration.underline,
+                            decorationColor: ThemeSelection.secondaryTextColor,
+                            fontSize:
+                                Responsive.isMobile(context) ? 12.sp : 3.sp,
+                            color: ThemeSelection.secondaryTextColor,
+                          ),
+                          key: ValueKey("Forgot Username"),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 2.h,
+                    ),
+                    customTextFormField(
+                      context,
+                      hintText: "Password",
+                      readOnly: false,
+                      maxLines: 1,
+                      textEditingController: passwordTextEditingController,
+                      obscureText: true,
+                      onChanged: (val) {
+                        setState(() {
+                          if (passwordTextEditingController.text
+                              .trim()
+                              .isNotEmpty) {
+                            _validatePassword = false;
+                          } else {
+                            _validatePassword = true;
+                          }
+                        });
+                      },
+                      prefixIcon: Container(
+                        margin: EdgeInsets.only(right: 0.5.w),
+                        child: Icon(
+                          const IconData(0xE168, fontFamily: 'metro'),
+                          size: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                          color: ThemeSelection.greyBorderColor,
+                        ),
+                      ),
+                      validate: _validatePassword,
+                      inlineError: false,
+                      key: ValueKey("Password"),
+                    ),
+                    _validatePassword
+                        ? Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(5),
+                              color: ThemeSelection.textfieldInlineColor,
+                            ),
+                            alignment: Alignment.topLeft,
+                            padding: EdgeInsets.symmetric(
+                                vertical: 0.5.h, horizontal: 0.5.w),
+                            child: Text(
+                              'Password is required',
+                              style: TextStyle(
+                                color: ThemeSelection.secondaryTextColor,
+                              ),
+                            ),
+                          )
+                        : SizedBox(),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 1.h),
+                      child: InkWell(
+                        onTap: () {
+                          Get.to(
+                            ForgotPasswordScreen(
+                              Guid: "",
+                              locationPhone: locationPhone,
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "Forgot Password?",
+                          style: TextStyle(
+                            fontFamily: 'SegoeUi',
+                            letterSpacing: 0.5,
+                            decoration: TextDecoration.underline,
+                            decorationColor: ThemeSelection.secondaryTextColor,
+                            fontSize:
+                                Responsive.isMobile(context) ? 12.sp : 3.sp,
+                            color: ThemeSelection.secondaryTextColor,
+                          ),
+                          key: ValueKey("Forgot Password"),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 1.h),
+                      child: Text(
+                        "We will send you a security code on your phone for additional verification.",
+                        style: TextStyle(
+                          color: ThemeSelection.secondaryTextColor,
+                          fontFamily: 'SegoeUi',
+                          fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 2.h,
+                    ),
+                    Container(
+                      key: ValueKey("Sign In"),
+                      child: ghostButton(
+                        context,
+                        "Sign In",
+                        () {
+                          fieldValidation();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : widget.callFrom == "Automatically Logout"
+                ? accountLoggedOut()
+                : ApiPath.loginAttempt == 0 ||
+                        widget.callFrom == "Account Locked"
+                    ? accountLocked()
+                    : ApiPath.loginAttempt == 3
+                        ? isValidUser
+                            ? Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w, vertical: 5.h),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(bottom: 1.h),
+                                        child: Icon(
+                                          const IconData(
+                                            0xE161,
+                                            fontFamily: 'metro',
+                                          ),
+                                          size: Responsive.isMobile(context)
+                                              ? 65.sp
+                                              : 20.sp,
+                                          color: ThemeSelection
+                                              .iconDefaultTertiaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 10.h,
+                                    ),
+                                    customTextFormField(
+                                      context,
+                                      hintText: "Username",
+                                      readOnly: false,
+                                      textEditingController:
+                                          usernameTextEditingController,
+                                      maxLines: 1,
+                                      key: ValueKey("Username"),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          if (usernameTextEditingController.text
+                                              .trim()
+                                              .isNotEmpty) {
+                                            _validateUsername = false;
+                                          } else {
+                                            _validateUsername = true;
+                                          }
+                                        });
+                                      },
+                                      prefixIcon: Container(
+                                        margin: EdgeInsets.only(right: 0.5.w),
+                                        child: Icon(
+                                          const IconData(0xE179,
+                                              fontFamily: 'metro'),
+                                          size: Responsive.isMobile(context)
+                                              ? 12.sp
+                                              : 3.sp,
+                                          color: ThemeSelection.greyBorderColor,
+                                        ),
+                                      ),
+                                      validate: _validateUsername,
+                                      inlineError: false,
+                                    ),
+                                    _validateUsername
+                                        ? Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                              color: ThemeSelection
+                                                  .textfieldInlineColor,
+                                            ),
+                                            alignment: Alignment.topLeft,
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 0.5.h,
+                                                horizontal: 0.5.w),
+                                            child: Text(
+                                              'Username is required',
+                                              style: TextStyle(
+                                                color: ThemeSelection
+                                                    .secondaryTextColor,
+                                              ),
+                                            ),
+                                          )
+                                        : SizedBox(),
+                                    Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 1.h),
+                                      child: InkWell(
+                                        onTap: () {
+                                          Get.to(
+                                            ForgotUsernameScreen(
+                                              Guid: "",
+                                              locationPhone: locationPhone,
+                                            ),
+                                          );
+                                        },
+                                        child: Text(
+                                          "Forgot Username?",
+                                          style: TextStyle(
+                                            fontFamily: 'SegoeUi',
+                                            letterSpacing: 0.5,
+                                            decoration:
+                                                TextDecoration.underline,
+                                            decorationColor: ThemeSelection
+                                                .secondaryTextColor,
+                                            fontSize:
+                                                Responsive.isMobile(context)
+                                                    ? 12.sp
+                                                    : 3.sp,
+                                            color: ThemeSelection
+                                                .secondaryTextColor,
+                                          ),
+                                          key: ValueKey("Forgot Username"),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 2.h,
+                                    ),
+                                    customTextFormField(
+                                      context,
+                                      hintText: "Password",
+                                      readOnly: false,
+                                      maxLines: 1,
+                                      key: ValueKey("Password"),
+                                      textEditingController:
+                                          passwordTextEditingController,
+                                      obscureText: true,
+                                      onChanged: (val) {
+                                        setState(() {
+                                          if (passwordTextEditingController.text
+                                              .trim()
+                                              .isNotEmpty) {
+                                            _validatePassword = false;
+                                          } else {
+                                            _validatePassword = true;
+                                          }
+                                        });
+                                      },
+                                      prefixIcon: Container(
+                                        margin: EdgeInsets.only(right: 0.5.w),
+                                        child: Icon(
+                                          const IconData(0xE168,
+                                              fontFamily: 'metro'),
+                                          size: Responsive.isMobile(context)
+                                              ? 12.sp
+                                              : 3.sp,
+                                          color: ThemeSelection.greyBorderColor,
+                                        ),
+                                      ),
+                                      validate: _validatePassword,
+                                      inlineError: false,
+                                    ),
+                                    _validatePassword
+                                        ? Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                              color: ThemeSelection
+                                                  .textfieldInlineColor,
+                                            ),
+                                            alignment: Alignment.topLeft,
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 0.5.h,
+                                                horizontal: 0.5.w),
+                                            child: Text(
+                                              'Password is required',
+                                              style: TextStyle(
+                                                color: ThemeSelection
+                                                    .secondaryTextColor,
+                                              ),
+                                            ),
+                                          )
+                                        : SizedBox(),
+                                    Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 1.h),
+                                      child: InkWell(
+                                        onTap: () {
+                                          Get.to(
+                                            ForgotPasswordScreen(
+                                              Guid: "",
+                                              locationPhone: locationPhone,
+                                            ),
+                                          );
+                                        },
+                                        child: Text(
+                                          "Forgot Password?",
+                                          style: TextStyle(
+                                            fontFamily: 'SegoeUi',
+                                            letterSpacing: 0.5,
+                                            decoration:
+                                                TextDecoration.underline,
+                                            decorationColor: ThemeSelection
+                                                .secondaryTextColor,
+                                            fontSize:
+                                                Responsive.isMobile(context)
+                                                    ? 12.sp
+                                                    : 3.sp,
+                                            color: ThemeSelection
+                                                .secondaryTextColor,
+                                          ),
+                                          key: ValueKey("Forgot Password"),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 2.h,
+                                    ),
+                                    SizedBox(
+                                      key: ValueKey('Sign In'),
+                                      child: ghostButton(
+                                        context,
+                                        "Sign In",
+                                        () {
+                                          fieldValidation();
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12.w, vertical: 5.h),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(bottom: 1.h),
+                                        child: Icon(
+                                          const IconData(
+                                            0xE119,
+                                            fontFamily: 'metro',
+                                          ),
+                                          size: Responsive.isMobile(context)
+                                              ? 65.sp
+                                              : 20.sp,
+                                          color: ThemeSelection
+                                              .iconDefaultTertiaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                    Center(
+                                      child: Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 1.h),
+                                        child: Text(
+                                          "Sign in attempt failed",
+                                          softWrap: true,
+                                          style: TextStyle(
+                                            color: ThemeSelection
+                                                .secondaryTextColor,
+                                            fontFamily: 'SegoeUi',
+                                            letterSpacing: 0.5,
+                                            fontSize: Responsive.isMobile(
+                                                    context)
+                                                ? 15.sp
+                                                : Responsive.isTablet(context)
+                                                    ? 6.sp
+                                                    : 4.sp,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 1.5.h),
+                                      child: Text(
+                                        "The Username or password entered is invalid.",
+                                        softWrap: true,
+                                        style: TextStyle(
+                                          color:
+                                              ThemeSelection.secondaryTextColor,
+                                          fontFamily: 'SegoeUi',
+                                          letterSpacing: 0.5,
+                                          fontSize: Responsive.isMobile(context)
+                                              ? 12.sp
+                                              : 3.sp,
+                                        ),
+                                      ),
+                                    ),
+                                    customTextFormField(
+                                      context,
+                                      hintText: "Username",
+                                      readOnly: false,
+                                      textEditingController:
+                                          usernameTextEditingController,
+                                      maxLines: 1,
+                                      onChanged: (val) {
+                                        setState(() {
+                                          if (usernameTextEditingController.text
+                                              .trim()
+                                              .isNotEmpty) {
+                                            _validateUsername = false;
+                                          } else {
+                                            _validateUsername = true;
+                                          }
+                                        });
+                                      },
+                                      prefixIcon: Container(
+                                        margin: EdgeInsets.only(right: 0.5.w),
+                                        child: Icon(
+                                          const IconData(0xE179,
+                                              fontFamily: 'metro'),
+                                          size: Responsive.isMobile(context)
+                                              ? 12.sp
+                                              : 3.sp,
+                                          color: ThemeSelection.greyBorderColor,
+                                        ),
+                                      ),
+                                      validate: _validateUsername,
+                                      inlineError: false,
+                                      key: ValueKey("Username"),
+                                    ),
+                                    _validateUsername
+                                        ? Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                              color: ThemeSelection
+                                                  .textfieldInlineColor,
+                                            ),
+                                            alignment: Alignment.topLeft,
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 0.5.h,
+                                                horizontal: 0.5.w),
+                                            child: Text(
+                                              'Username is required',
+                                              style: TextStyle(
+                                                color: ThemeSelection
+                                                    .secondaryTextColor,
+                                              ),
+                                            ),
+                                          )
+                                        : SizedBox(),
+                                    Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 1.h),
+                                      child: InkWell(
+                                        onTap: () {
+                                          Get.to(
+                                            ForgotUsernameScreen(
+                                              Guid: "",
+                                              locationPhone: locationPhone,
+                                            ),
+                                          );
+                                        },
+                                        child: Text(
+                                          "Forgot Username?",
+                                          style: TextStyle(
+                                            fontFamily: 'SegoeUi',
+                                            letterSpacing: 0.5,
+                                            decoration:
+                                                TextDecoration.underline,
+                                            decorationColor: ThemeSelection
+                                                .secondaryTextColor,
+                                            fontSize:
+                                                Responsive.isMobile(context)
+                                                    ? 12.sp
+                                                    : 3.sp,
+                                            color: ThemeSelection
+                                                .secondaryTextColor,
+                                          ),
+                                          key: ValueKey("Forgot Username"),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 2.h,
+                                    ),
+                                    customTextFormField(
+                                      context,
+                                      hintText: "Password",
+                                      readOnly: false,
+                                      maxLines: 1,
+                                      textEditingController:
+                                          passwordTextEditingController,
+                                      obscureText: true,
+                                      onChanged: (val) {
+                                        setState(() {
+                                          if (passwordTextEditingController.text
+                                              .trim()
+                                              .isNotEmpty) {
+                                            _validatePassword = false;
+                                          } else {
+                                            _validatePassword = true;
+                                          }
+                                        });
+                                      },
+                                      prefixIcon: Container(
+                                        margin: EdgeInsets.only(right: 0.5.w),
+                                        child: Icon(
+                                          const IconData(0xE168,
+                                              fontFamily: 'metro'),
+                                          size: Responsive.isMobile(context)
+                                              ? 12.sp
+                                              : 3.sp,
+                                          color: ThemeSelection.greyBorderColor,
+                                        ),
+                                      ),
+                                      validate: _validatePassword,
+                                      inlineError: false,
+                                      key: ValueKey("Password"),
+                                    ),
+                                    _validatePassword
+                                        ? Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                              color: ThemeSelection
+                                                  .textfieldInlineColor,
+                                            ),
+                                            alignment: Alignment.topLeft,
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 0.5.h,
+                                                horizontal: 0.5.w),
+                                            child: Text(
+                                              'Password is required',
+                                              style: TextStyle(
+                                                color: ThemeSelection
+                                                    .secondaryTextColor,
+                                              ),
+                                            ),
+                                          )
+                                        : SizedBox(),
+                                    Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 1.h),
+                                      child: InkWell(
+                                        onTap: () {
+                                          Get.to(
+                                            ForgotPasswordScreen(
+                                              Guid: "",
+                                              locationPhone: locationPhone,
+                                            ),
+                                          );
+                                        },
+                                        child: Text(
+                                          "Forgot Password?",
+                                          style: TextStyle(
+                                            fontFamily: 'SegoeUi',
+                                            letterSpacing: 0.5,
+                                            decoration:
+                                                TextDecoration.underline,
+                                            decorationColor: ThemeSelection
+                                                .secondaryTextColor,
+                                            fontSize:
+                                                Responsive.isMobile(context)
+                                                    ? 12.sp
+                                                    : 3.sp,
+                                            color: ThemeSelection
+                                                .secondaryTextColor,
+                                          ),
+                                          key: ValueKey("Forgot Password"),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 2.h,
+                                    ),
+                                    SizedBox(
+                                      key: ValueKey("Sign In"),
+                                      child: ghostButton(
+                                        context,
+                                        "Sign In",
+                                        () {
+                                          fieldValidation();
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                        : Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 12.w, vertical: 5.h),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(bottom: 1.h),
+                                    child: Icon(
+                                      const IconData(
+                                        0xE119,
+                                        fontFamily: 'metro',
+                                      ),
+                                      size: Responsive.isMobile(context)
+                                          ? 65.sp
+                                          : 20.sp,
+                                      color: ThemeSelection
+                                          .iconDefaultTertiaryColor,
+                                    ),
+                                  ),
+                                ),
+                                Center(
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 1.h),
+                                    child: Text(
+                                      'Sign In attempt failed',
+                                      softWrap: true,
+                                      style: TextStyle(
+                                        color:
+                                            ThemeSelection.secondaryTextColor,
+                                        fontFamily: 'SegoeUi',
+                                        letterSpacing: 0.5,
+                                        fontSize: Responsive.isMobile(context)
+                                            ? 15.sp
+                                            : Responsive.isTablet(context)
+                                                ? 6.sp
+                                                : 4.sp,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding:
+                                      EdgeInsets.symmetric(vertical: 1.5.h),
+                                  child: Text(
+                                    'For your safety, your account will be locked after ${ApiPath.loginAttempt} more failed sign in attempts.',
+                                    softWrap: true,
+                                    style: TextStyle(
+                                      color: ThemeSelection.secondaryTextColor,
+                                      fontFamily: 'SegoeUi',
+                                      letterSpacing: 0.5,
+                                      fontSize: Responsive.isMobile(context)
+                                          ? 12.sp
+                                          : Responsive.isTablet(context)
+                                              ? 4.sp
+                                              : 3.sp,
+                                    ),
+                                    key: ValueKey("Remaining attempts"),
+                                  ),
+                                ),
+                                customTextFormField(
+                                  context,
+                                  hintText: "Username",
+                                  readOnly: false,
+                                  textEditingController:
+                                      usernameTextEditingController,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      if (usernameTextEditingController.text
+                                          .trim()
+                                          .isNotEmpty) {
+                                        _validateUsername = false;
+                                      } else {
+                                        _validateUsername = true;
+                                      }
+                                    });
+                                  },
+                                  prefixIcon: Container(
+                                    margin: EdgeInsets.only(right: 0.5.w),
+                                    child: Icon(
+                                      const IconData(0xE179,
+                                          fontFamily: 'metro'),
+                                      size: Responsive.isMobile(context)
+                                          ? 12.sp
+                                          : 3.sp,
+                                      color: ThemeSelection.greyBorderColor,
+                                    ),
+                                  ),
+                                  validate: _validateUsername,
+                                  inlineError: false,
+                                  maxLines: 1,
+                                  key: ValueKey("Username"),
+                                ),
+                                _validateUsername
+                                    ? Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          color: ThemeSelection
+                                              .textfieldInlineColor,
+                                        ),
+                                        alignment: Alignment.topLeft,
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h, horizontal: 0.5.w),
+                                        child: Text(
+                                          'Username is required',
+                                          style: TextStyle(
+                                            color: ThemeSelection
+                                                .secondaryTextColor,
+                                          ),
+                                        ),
+                                      )
+                                    : SizedBox(),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 1.h),
+                                  child: InkWell(
+                                    onTap: () {
+                                      Get.to(
+                                        ForgotUsernameScreen(
+                                          Guid: "",
+                                          locationPhone: locationPhone,
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      "Forgot Username?",
+                                      style: TextStyle(
+                                        fontFamily: 'SegoeUi',
+                                        letterSpacing: 0.5,
+                                        decoration: TextDecoration.underline,
+                                        decorationColor:
+                                            ThemeSelection.secondaryTextColor,
+                                        fontSize: Responsive.isMobile(context)
+                                            ? 12.sp
+                                            : 3.sp,
+                                        color:
+                                            ThemeSelection.secondaryTextColor,
+                                      ),
+                                      key: ValueKey("Forgot Username"),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 2.h,
+                                ),
+                                customTextFormField(
+                                  context,
+                                  maxLines: 1,
+                                  hintText: "Password",
+                                  readOnly: false,
+                                  textEditingController:
+                                      passwordTextEditingController,
+                                  obscureText: true,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      if (passwordTextEditingController.text
+                                          .trim()
+                                          .isNotEmpty) {
+                                        _validatePassword = false;
+                                      } else {
+                                        _validatePassword = true;
+                                      }
+                                    });
+                                  },
+                                  prefixIcon: Container(
+                                    margin: EdgeInsets.only(right: 0.5.w),
+                                    child: Icon(
+                                      const IconData(0xE168,
+                                          fontFamily: 'metro'),
+                                      size: Responsive.isMobile(context)
+                                          ? 12.sp
+                                          : 3.sp,
+                                      color: ThemeSelection.greyBorderColor,
+                                    ),
+                                  ),
+                                  validate: _validatePassword,
+                                  inlineError: false,
+                                  key: ValueKey("Password"),
+                                ),
+                                _validatePassword
+                                    ? Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          color: ThemeSelection
+                                              .textfieldInlineColor,
+                                        ),
+                                        alignment: Alignment.topLeft,
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h, horizontal: 0.5.w),
+                                        child: Text(
+                                          'Password is required',
+                                          style: TextStyle(
+                                            color: ThemeSelection
+                                                .secondaryTextColor,
+                                          ),
+                                        ),
+                                      )
+                                    : SizedBox(),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 1.h),
+                                  child: InkWell(
+                                    onTap: () {
+                                      Get.to(
+                                        ForgotPasswordScreen(
+                                          Guid: "",
+                                          locationPhone: locationPhone,
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      "Forgot Password?",
+                                      style: TextStyle(
+                                        fontFamily: 'SegoeUi',
+                                        letterSpacing: 0.5,
+                                        decoration: TextDecoration.underline,
+                                        decorationColor:
+                                            ThemeSelection.secondaryTextColor,
+                                        fontSize: Responsive.isMobile(context)
+                                            ? 12.sp
+                                            : 3.sp,
+                                        color:
+                                            ThemeSelection.secondaryTextColor,
+                                      ),
+                                      key: ValueKey("Forgot Password"),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 2.h,
+                                ),
+                                Container(
+                                  key: ValueKey("Sign In"),
+                                  child: ghostButton(
+                                    context,
+                                    "Sign In",
+                                    () {
+                                      fieldValidation();
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+  }
+
+  Widget logoSection() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        if (logo != null)
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 5.h),
+              child: Center(
+                child: Image.memory(
+                  Base64Decoder().convert(logo!),
+                  gaplessPlayback: true,
+                  scale: Responsive.isMobile(context)
+                      ? 2
+                      : Responsive.isTablet(context)
+                          ? 2
+                          : 1,
                 ),
               ),
+            ),
+          ),
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 1.w),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Image.asset(
+                'assets/images/maximeyeslogo.png',
+                width: Responsive.isMobile(context) ? 80 : 30.sp,
+              ),
+              Text(
+                '@${DateTime.now().year}' +
+                    ', First Insight Corporation. All rights reserved.',
+                style: CommonTextStyle.of(context)
+                    .H26_SUR(ThemeSelection.greyBorderColor),
+              ),
             ],
-          );
-        });
-    if (pickedDate != null) {
-      setState(() {
-        dob.text = dateFormat.format(pickedDate);
-        _validateDob = false;
-        _validateManualDob = false;
-        dateFieldValidate = true;
-      });
-    }
+          ),
+        ),
+      ],
+    );
   }
 }
