@@ -5,6 +5,8 @@ import Footer from "../../components/ui/Footer";
 import { Button, Icon } from "@ketan_nimase/ui";
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { AuthenticationService } from '../../services/authentication/UserService';
+import { ResetLinkSendRequestModel } from '../../model/patient_portal/ResetLinkSendRequestModel';
 
 interface PageProps {
     logoUrl: string;
@@ -14,7 +16,8 @@ interface PageProps {
 const theme = await getTheme();
 
 
-const ForgotUsername: React.FC<PageProps> = () => {
+// Update your component to use the logoUrl prop
+const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
     const [email, setEmail] = useState('');
     const [captchaInput, setCaptchaInput] = useState('');
     const [captchaCode, setCaptchaCode] = useState('');
@@ -35,9 +38,34 @@ const ForgotUsername: React.FC<PageProps> = () => {
         setCaptchaError('');
     };
 
+    // Get captcha from API
+    const getCaptchaFromAPI = async () => {
+        try {
+            // Initialize AuthenticationService
+            const authService = new AuthenticationService();
+
+            // Call API to get captcha
+            await authService.getCaptcha();
+
+            if (authService.response_Status_Code_API_11 === 200) {
+                setCaptchaCode(authService.captchaCode || '');
+                setCaptchaInput('');
+                setCaptchaError('');
+            } else if (authService.response_Status_Code_API_11 !== 205) {
+                toast.error('An unexpected error has occurred. Please try again later.');
+                // Fallback to client-side captcha generation
+                generateCaptcha();
+            }
+        } catch (error) {
+            console.error('Error getting captcha:', error);
+            // Fallback to client-side captcha generation
+            generateCaptcha();
+        }
+    };
+
     // Initialize captcha on component mount
     useEffect(() => {
-        generateCaptcha();
+        getCaptchaFromAPI();
     }, []);
 
     // Email validation
@@ -98,17 +126,42 @@ const ForgotUsername: React.FC<PageProps> = () => {
         setIsLoading(true);
 
         try {
-            // TODO: Replace with actual API call
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+            // Create request model
+            const resetLinkSendRequestModel = new ResetLinkSendRequestModel({
+                userEmail: email.trim(),
+                urlName: GlobalParams.PRACTICE_NAME
+            });
 
-            toast.success('Username recovery instructions have been sent to your email');
+            // Initialize AuthenticationService
+            const authService = new AuthenticationService();
 
-            // Reset form
-            setEmail('');
-            setCaptchaInput('');
-            generateCaptcha();
-            navigate('/credentials-sent');
+            // Call API
+            await authService.resetLinkForForgotUserName(resetLinkSendRequestModel);
 
+            // Check response status
+            if (authService.response_Status_Code_API_5 === 200) {
+                const response = authService.resetLinkForgotUsernameSendResponse;
+
+                if (response && response.userId && response.userId > 0) {
+                    toast.success('Username recovery instructions have been sent to your email');
+
+                    // Reset form
+                    setEmail('');
+                    setCaptchaInput('');
+                    generateCaptcha();
+                    navigate('/credentials-sent');
+                } else {
+                    toast.error('Failed to send recovery instructions. Please try again.');
+                    generateCaptcha(); // Refresh captcha on error
+                }
+            } else if (authService.response_Status_Code_API_5 === 205) {
+                // Session invalid
+                toast.error('Your session has expired. Please try again.');
+                generateCaptcha();
+            } else {
+                toast.error('An unexpected error has occurred. Please try again later. If the problem persists, call our office.');
+                generateCaptcha();
+            }
         } catch (error) {
             toast.error('Failed to send recovery instructions. Please try again.');
             generateCaptcha(); // Refresh captcha on error
@@ -141,8 +194,8 @@ const ForgotUsername: React.FC<PageProps> = () => {
             <div className="w-1/2 flex flex-col justify-center items-center bg-white p-10 relative">
                 <img
                     src={
-                        GlobalParams.LOGO
-                            ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
+                        logoUrl || GlobalParams.LOGO
+                            ? `data:image/jpeg;base64,${logoUrl || GlobalParams.LOGO}`
                             : ''
                     }
                     alt="Company Logo"
@@ -229,7 +282,7 @@ const ForgotUsername: React.FC<PageProps> = () => {
                             </div>
                             <button
                                 type="button"
-                                onClick={generateCaptcha}
+                                onClick={getCaptchaFromAPI}
                                 className="text-white text-xl underline hover:no-underline"
                                 style={{ backgroundColor: theme.BGColor }}
                             >

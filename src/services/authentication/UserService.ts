@@ -1284,7 +1284,7 @@ export class AuthenticationService {
                 this.response_Status_Code_API_25 = 205;
             } else if (response.status === 200) {
                 this.loginResponseModel =
-                    LoginResponseModel.fromJson(JSON.parse(response.data));
+                    LoginResponseModel.fromJson(typeof response.data === 'string' ? JSON.parse(response.data) : response.data);
                 this.response_Status_Code_API_25 = response.status;
             } else {
                 this.maximum_Calling_API_25 = this.maximum_Calling_API_25 + 1;

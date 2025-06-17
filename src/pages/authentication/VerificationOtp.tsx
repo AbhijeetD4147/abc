@@ -2,6 +2,8 @@ import { Icon } from '@ketan_nimase/ui';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { AuthenticationService } from "../../services/authentication/UserService";
+import { GlobalParams } from '../../utils/GlobalParameters';
 
 interface LocationState {
     locationId?: string;
@@ -32,14 +34,67 @@ const OTPVerification: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const userData = location.state as LocationState;
-
+    const authService = new AuthenticationService();
 
     const handleProceed = async () => {
-        // console.log("Proceed button clicked", otp);
         const otpValue = otp.join('');
         if (otpValue.length !== 4) {
-            toast("Please enter a valid 4-digit code");
+            toast.error("Please enter a valid 4-digit code");
             return;
+        }
+
+        try {
+            setLoading(true);
+            
+            // Determine the user type based on available data
+            let userType = "Patient";
+            let authId = "";
+            let callFrom = "";
+            
+            // If this is coming from a specific flow, adjust the userType
+            if (userData?.source === "new_auth") {
+                userType = "NEW_AUTH_INDIVIDUAL";
+                authId = userData.authId || "";
+            } else if (userData?.source === "auth") {
+                userType = "Auth";
+            }
+            
+            // Call the checkOtp API
+            await authService.checkOtp(userType, authId, otpValue, callFrom);
+            
+            if (authService.response_Status_Code_API_1 === 200) {
+                const verifyOtpResponseModel = authService.verifyOtpResponseModel;
+                
+                if (verifyOtpResponseModel?.status) {
+                    // OTP verification successful
+                    toast.success("OTP verified successfully");
+                    
+                    // Navigate based on the user type
+                    if (userType === "NEW_AUTH_INDIVIDUAL") {
+                        navigate("/create-credentials", { state: userData });
+                    } else if (userType === "Auth") {
+                        navigate("/auth-user-login", { state: userData });
+                    } else {
+                        // Default navigation for Patient
+                        navigate("/dashboard");
+                    }
+                } else {
+                    // OTP verification failed
+                    toast.error(verifyOtpResponseModel?.otpMessage || "Invalid OTP. Please try again.");
+                }
+            } else if (authService.response_Status_Code_API_1 === 205) {
+                // Session invalid
+                toast.error("Your session has expired. Please login again.");
+                navigate("/");
+            } else {
+                // Other error
+                toast.error("Failed to verify OTP. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error verifying OTP:", error);
+            toast.error("An error occurred while verifying OTP. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -47,15 +102,41 @@ const OTPVerification: React.FC = () => {
         try {
             setIsResendDisabled(true);
             setResendTimer(300);
-
-            // Add your resend OTP logic here
-            // For example:
-            // await resendOtpService.resend();
-
-            toast("A new security code has been sent to your phone/email");
+            
+            // Determine the user type based on available data
+            let userType = "Patient";
+            let authId = "";
+            
+            // If this is coming from a specific flow, adjust the userType
+            if (userData?.source === "new_auth") {
+                userType = "NEW_AUTH_INDIVIDUAL";
+                authId = userData.authId || "";
+            } else if (userData?.source === "auth") {
+                userType = "Auth";
+            }
+            
+            // Call the resendOtp API
+            await authService.resendOtp(userType, authId);
+            
+            if (authService.response_Status_Code_API_26 === 200) {
+                const result = authService.resendOtpResult;
+                if (result === "true" || result === true) {
+                    toast.success("A new security code has been sent to your phone/email");
+                } else {
+                    toast.error("Failed to resend security code");
+                }
+            } else if (authService.response_Status_Code_API_26 === 205) {
+                // Session invalid
+                toast.error("Your session has expired. Please login again.");
+                navigate("/");
+            } else {
+                // Other error
+                toast.error("Failed to resend security code. Please try again.");
+            }
         } catch (error) {
             console.error("Error resending code:", error);
-            toast("Failed to resend security code");
+            toast.error("Failed to resend security code");
+            setIsResendDisabled(false);
         }
     };
 

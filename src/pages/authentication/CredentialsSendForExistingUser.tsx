@@ -4,6 +4,8 @@ import { GlobalParams } from '../../utils/GlobalParameters';
 import Footer from "../../components/ui/Footer";
 import { Button, Icon } from "@ketan_nimase/ui";
 import { toast } from 'react-toastify';
+import { AuthenticationService } from '../../services/authentication/UserService';
+import { ResetLinkSendRequestModel } from '../../model/patient_portal/ResetLinkSendRequestModel';
 
 interface PageProps {
     logoUrl: string;
@@ -48,19 +50,45 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
     };
 
     // Handle resend email
+    // Handle resend email
     const handleResendEmail = async () => {
         setIsResending(true);
         
         try {
-            // TODO: Replace with actual API call
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+            // Create request model
+            const resetLinkSendRequestModel = new ResetLinkSendRequestModel({
+                userEmail: localStorage.getItem('recovery_email') || '',
+                urlName: GlobalParams.PRACTICE_NAME
+            });
+    
+            // Initialize AuthenticationService
+            const authService = new AuthenticationService();
             
-            toast.success(`${recoveryType === 'username' ? 'Username' : 'Password'} recovery email has been resent successfully`);
-            
-            // Reset timer
-            setTimeLeft(300);
-            setIsTimerActive(true);
-            
+            // Call appropriate API based on recovery type
+            if (recoveryType === 'username') {
+                await authService.resetLinkForForgotUserName(resetLinkSendRequestModel);
+                
+                if (authService.response_Status_Code_API_5 === 200) {
+                    toast.success('Username recovery email has been resent successfully');
+                    // Reset timer
+                    setTimeLeft(300);
+                    setIsTimerActive(true);
+                } else {
+                    toast.error('Failed to resend email. Please try again.');
+                }
+            } else {
+                // For password recovery
+                await authService.resetLinkForForgotPassword(resetLinkSendRequestModel);
+                
+                if (authService.response_Status_Code_API_6 === 200) {
+                    toast.success('Password recovery email has been resent successfully');
+                    // Reset timer
+                    setTimeLeft(300);
+                    setIsTimerActive(true);
+                } else {
+                    toast.error('Failed to resend email. Please try again.');
+                }
+            }
         } catch (error) {
             toast.error('Failed to resend email. Please try again.');
         } finally {

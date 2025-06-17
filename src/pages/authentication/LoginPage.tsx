@@ -102,8 +102,6 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
     }
   };
   
-  console.log(GlobalParams.LOGO);
-  console.log(GlobalParams.LOGO);
   return (
 
 
@@ -113,7 +111,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
         <img
           src={
             GlobalParams.LOGO
-              ? `data:image/jpeg;base64,${logoUrl}`
+              ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
               : ''
           }
           alt="Company Logo"
@@ -216,7 +214,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
             )}
           </div>
 
-          <a href="/forgot-username" className="text-base underline mb-6" style={{ color: theme.secondaryTextColor }}>
+          <a href="/forgot-password" className="text-base underline mb-6" style={{ color: theme.secondaryTextColor }}>
             Forgot Password?
           </a>
 
