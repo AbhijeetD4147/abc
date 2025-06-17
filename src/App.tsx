@@ -23,6 +23,8 @@ import Messages from "./pages/message/Message";
 import ActivityLogs from "./pages/settings/ActivityLogs";
 import ForgotUsername from "./pages/authentication/ForgotUsername"
 import ForgotPassword from "./pages/authentication/ForgotPassword";
+import CredentialsSendForExistingUser from "./pages/authentication/CredentialsSendForExistingUser";
+import VerificationOtp from "./pages/authentication/VerificationOtp";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -135,6 +137,9 @@ function App() {
         <Route path="/activity-logs" element={<ActivityLogs />} />
         <Route path="/forgot-username" element={<ForgotUsername logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
         <Route path="/forgot-password" element={<ForgotPassword logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
+        <Route path="/credentials-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="username" />} />
+        <Route path="/password-reset-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="password" />} />
+        <Route path="/otp-verification" element={<VerificationOtp />} />
         {/*<Route path="/authterms" element={<AuthTermsAndConditionScreen />} />
         <Route path="/invalidLinkScreen" element={<InvalidLinkScreen />} /> */}
         <Route path="*" element={<Navigate to={initialRoute} />} />

@@ -4,6 +4,7 @@ import { GlobalParams } from '../../utils/GlobalParameters';
 import Footer from "../../components/ui/Footer";
 import { Button, Icon } from "@ketan_nimase/ui";
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 interface PageProps {
     logoUrl: string;
@@ -19,6 +20,7 @@ const ForgotPassword: React.FC<PageProps> = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [usernameError, setUsernameError] = useState('');
     const [captchaError, setCaptchaError] = useState('');
+    const navigate = useNavigate();
 
     // Generate random captcha
     const generateCaptcha = () => {
@@ -103,6 +105,7 @@ const ForgotPassword: React.FC<PageProps> = () => {
             setUsername('');
             setCaptchaInput('');
             generateCaptcha();
+            navigate('/credentials-sent');
 
         } catch (error) {
             toast.error('Failed to send recovery instructions. Please try again.');

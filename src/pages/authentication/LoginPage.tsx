@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { FaUser, FaLock } from "react-icons/fa";
 import { getTheme } from "../../utils/ThemeSelection";
 import { GlobalParams } from '../../utils/GlobalParameters';
 import Footer from "../../components/ui/Footer";
@@ -114,7 +113,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
         <img
           src={
             GlobalParams.LOGO
-              ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
+              ? `data:image/jpeg;base64,${logoUrl}`
               : ''
           }
           alt="Company Logo"
@@ -135,7 +134,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
             <img
               src={loginFailed ? "/signin-failed-logo.png" : "/profile-logo-white.png"}
               alt="Profile"
-              className="w-28 h-28 mx-auto mb-6"
+              className="w-24 h-24 mx-auto mb-6"
             />
 
           </div>
@@ -161,7 +160,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
                 type="text"
                 placeholder="Username"
                 {...register("username", { required: "Username is required" })}
-                className={`w-full pl-10 pr-4 py-3 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${
+                className={`w-full pl-10 pr-4 py-2 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${
                   errors.username ? "bg-red-100 border-red-500" : ""
                 }`}
                 style={{
@@ -199,7 +198,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
                 type="password"
                 placeholder="Password"
                 {...register("password", { required: "Password is required" })}
-                className={`w-full pl-10 pr-4 py-3 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${
+                className={`w-full pl-10 pr-4 py-2 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${
                   errors.password ? "bg-red-100 border-red-500" : ""
                 }`}
                 style={{
@@ -223,7 +222,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
           <button
             type="submit"
-            className="w-full px-6 py-3 text-lg font-medium border rounded-full hover:bg-blue-200 hover:text-white transition duration-200"
+            className="w-full px-6 py-2 text-lg font-medium border rounded-full hover:bg-blue-200 hover:text-white transition duration-200"
             style={{
               backgroundColor: theme.BGColor,
               borderColor: theme.secondaryTextColor,
