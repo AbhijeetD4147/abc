@@ -21,8 +21,12 @@ const WarningPopup: React.FC<WarningPopupProps> = ({
     cancelColor = 'bg-gray-500 text-white',
 }) => {
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-            <div className="bg-white p-6 py-8 rounded-lg shadow-lg flex">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Dimmed background */}
+            <div className="absolute inset-0 bg-black opacity-70"></div>
+
+            {/* Popup content */}
+            <div className="relative bg-white p-6 py-8 rounded-lg shadow-lg flex z-10">
                 <div className="flex items-center justify-center pr-6">
                     <img src={WarningLogo} alt="Warning" className="w-24 h-24" />
                 </div>
@@ -45,6 +49,7 @@ const WarningPopup: React.FC<WarningPopupProps> = ({
                 </div>
             </div>
         </div>
+
     );
 };
 

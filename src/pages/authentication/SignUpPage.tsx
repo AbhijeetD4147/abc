@@ -173,7 +173,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             type="text"
             placeholder="Legal First Name"
             {...register('legalFirstName')}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
           />
           {errors.legalFirstName && <p className="text-red-500 text-xs mt-1">{errors.legalFirstName.message}</p>}
@@ -189,7 +189,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             type="text"
             placeholder="Last Name"
             {...register('lastName')}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
           />
           {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
@@ -205,7 +205,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
               type="text"
               value="+1"
               readOnly
-              className="shadow appearance-none border rounded w-1/6 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="border rounded w-1/6 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               style={{
                 backgroundColor: theme.textfieldFilledColor,
                 borderColor: theme.textfieldDefaultBorderColor,
@@ -221,17 +221,24 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
                 const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
                 mobileController.field.onChange(raw);
               }}
-              className="shadow appearance-none border rounded w-5/6 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ml-2"
+              className="border rounded w-5/6 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ml-2"
               style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
             />
-            <div className="relative group ml-2">
+            <div className="relative group ml-2 inline-block">
+              {/* Info Icon */}
               <div className="w-6 h-6 flex items-center justify-center border-2 border-blue-500 text-blue-500 rounded-full text-sm font-bold cursor-pointer">
                 i
               </div>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mb-2 w-max max-w-xs bg-white border border-black text-grey-800 text-sm rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                Enter a mobile phone number that is readily available to you to receive a security code for 2-factor verification. Important messages regarding your account will be sent on this number
+
+              {/* Tooltip */}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-[240px] bg-white border border-gray-300 text-gray-800 text-sm rounded px-3 py-2 
+              opacity-0 group-hover:opacity-100 transition-opacity duration-300 
+              pointer-events-none shadow-lg z-10">
+                Enter a mobile phone number that is readily available to you to receive a security code for 2-factor verification. Important messages regarding your account will be sent on this number.
               </div>
             </div>
+
+
           </div>
         </div>
         <div className="mb-3">
@@ -239,7 +246,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             Email
           </label>
           <div className="flex items-center">
-            <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            <input className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
               id="email"
               type="email"

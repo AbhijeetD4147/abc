@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../lib/utils";
 import Calender from "/calendar-logo.png";
 import { getTheme } from "../../utils/ThemeSelection";
 import type { ThemeColors } from "../../utils/ThemeSelection";
 
-// Change this line:
-// const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
-
-// To this:
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 interface DatePickerProps {
@@ -24,7 +21,7 @@ interface DatePickerProps {
   restrictDateSelection?: "before" | "after" | "none";
   minYear?: number;
   maxYear?: number;
-  enhancedInput?: boolean; // New toggle for enhancements
+  enhancedInput?: boolean;
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
@@ -33,7 +30,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
   maxDate,
   error,
   className,
-  value = '', // Set default value to empty string
+  value = "",
   onChangeRaw,
   onError,
   restrictDateSelection = "none",
@@ -93,10 +90,8 @@ const DatePicker: React.FC<DatePickerProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputValue = e.target.value;
     if (enhancedInput) {
-      // Strip non-digits
       const numbersOnly = inputValue.replace(/\D/g, "");
 
-      // Format as MM/DD/YYYY
       let formattedDate = "";
       for (let i = 0; i < numbersOnly.length && i < 8; i++) {
         if (i === 2 || i === 4) formattedDate += "/";
@@ -114,7 +109,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
         const max = maxYear ?? now;
 
         let errorMessage = null;
-
         if (mm < 1 || mm > 12) errorMessage = "Invalid month";
         else if (dd < 1 || dd > 31) errorMessage = "Invalid day";
         else if (yyyy < min || yyyy > max) errorMessage = `Invalid year. Allowed: ${min} - ${max}`;
@@ -138,17 +132,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
     if (isYearView) {
       const currentYear = dayjs().year();
       return (
-        <div
-          ref={yearRef}
-          className="grid grid-cols-4 gap-3 p-2 overflow-y-auto"
-          style={{ maxHeight: "12rem" }}
-        >
+        <div ref={yearRef} className="grid grid-cols-4 gap-3 p-2 overflow-y-auto" style={{ maxHeight: "12rem" }}>
           {Array.from({ length: 100 }, (_, i) => currentYear - i).map((year) => (
-            <button
-              key={year}
-              className="p-2 rounded hover:bg-white text-sm"
-              onClick={() => handleYearSelect(year)}
-            >
+            <button key={year} className="p-2 rounded hover:bg-white text-sm" onClick={() => handleYearSelect(year)}>
               {year}
             </button>
           ))}
@@ -225,59 +211,73 @@ const DatePicker: React.FC<DatePickerProps> = ({
           src={Calender}
           alt="calendar"
           className="absolute right-2 w-7 h-7 cursor-pointer hover:opacity-80 transition-opacity opacity-30"
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => setIsOpen(true)}
         />
       </div>
 
-      {isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-60">
-          <div className="bg-white rounded-3xl shadow-2xl">
-            <div className="flex max-w-md overflow-hidden border-none rounded-2xl">
-              <div className="bg-white text-white w-40 flex flex-col items-center pt-8 p-4 border-2 border-left-black-800">
-                <span
-                  className="text-xs uppercase tracking-widest"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  Select Date
-                </span>
-                <span
-                  className="mt-4 text-2xl font-semibold"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  {selectedDate.format("ddd, MMM D")}
-                </span>
-              </div>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              className="fixed inset-0 bg-black z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.6 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+            />
 
-              <div className="bg-white w-full p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium cursor-pointer" onClick={() => setIsYearView(!isYearView)}>
-                    {visibleMonth.format("MMMM YYYY")}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => changeMonth("prev")}>
-                      <ChevronLeft size={20} />
-                    </button>
-                    <button onClick={() => changeMonth("next")}>
-                      <ChevronRight size={20} />
-                    </button>
+            {/* Popup */}
+            <motion.div
+              className="fixed inset-0 flex items-center justify-center z-50"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="bg-white rounded-3xl shadow-2xl">
+                <div className="flex max-w-md overflow-hidden border-none rounded-2xl">
+                  <div className="bg-white text-white w-40 flex flex-col items-center pt-8 p-4 border-2 border-left-black-800">
+                    <span className="text-xs uppercase tracking-widest" style={{ color: theme.primaryTextColor }}>
+                      Select Date
+                    </span>
+                    <span className="mt-4 text-2xl font-semibold" style={{ color: theme.primaryTextColor }}>
+                      {selectedDate.format("ddd, MMM D")}
+                    </span>
+                  </div>
+
+                  <div className="bg-white w-full p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium cursor-pointer" onClick={() => setIsYearView(!isYearView)}>
+                        {visibleMonth.format("MMMM YYYY")}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => changeMonth("prev")}>
+                          <ChevronLeft size={20} />
+                        </button>
+                        <button onClick={() => changeMonth("next")}>
+                          <ChevronRight size={20} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {renderCalendarBody()}
+
+                    <div className="flex justify-end gap-4 mt-4 text-sm font-medium text-black">
+                      <button onClick={() => setIsOpen(false)} className="hover:underline-black">
+                        Cancel
+                      </button>
+                      <button onClick={() => setIsOpen(false)} className="hover:underline">
+                        OK
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                {renderCalendarBody()}
-
-                <div className="flex justify-end gap-4 mt-4 text-sm font-medium text-black">
-                  <button onClick={() => setIsOpen(false)} className="hover:underline-black">
-                    Cancel
-                  </button>
-                  <button onClick={() => setIsOpen(false)} className="hover:underline">
-                    OK
-                  </button>
-                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

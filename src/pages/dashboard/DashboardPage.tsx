@@ -2,13 +2,11 @@ import { FC, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import WarningPopup from '../../components/ui/WarningPopup';
 import {
-  MapPinIcon,
   CalendarX2Icon,
-  RefreshCcwIcon,
   Settings,
   X,
 } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
 import { Icon } from "@ketan_nimase/ui"
 
 const menuItems = [
@@ -131,6 +129,9 @@ const DashboardPage: FC = () => {
   const appointmentTime = "2025-06-10T06:05:00Z";
   const [disabled, setDisabled] = useState(true);
 
+  //temp for the creation of logo
+  const initials = `DN`.toUpperCase();
+
   useEffect(() => {
     const checkTime = () => {
       const now = dayjs();
@@ -151,6 +152,7 @@ const DashboardPage: FC = () => {
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
   const [hasArrived, setHasArrived] = useState(false);
   const hasUpcomingAppointment = true;
+  const navigate = useNavigate();
 
   const handleArrivalConfirm = () => {
     setHasArrived(true);
@@ -186,9 +188,13 @@ const DashboardPage: FC = () => {
 
           {/* User Info + Menu */}
           <div className="flex items-center gap-4 relative">
-            <div className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center rounded-full text-[18px] font-bold">
-              DN
+            <div
+              className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center rounded-full text-[18px] font-bold cursor-pointer hover:bg-blue-600 transition"
+              onClick={() => navigate("/profile")}
+            >
+              {initials}
             </div>
+
             <span className="text-[22px] font-normal">Dynamic Patient Name</span>
 
             {/* FAB Menu */}
@@ -204,31 +210,26 @@ const DashboardPage: FC = () => {
                 )}
               </div>
 
-              {/* Dropdown */}
               {isOpen && (
-                <ul className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded shadow-md z-50">
+                <ul className="absolute right-0 mt-2 min-w-max max-w-xs bg-white border border-gray-200 rounded shadow-md z-50">
                   {fabItems.map(({ label, href }) => (
-                    <li
-                      key={label}
-                      className="px-4 py-2 border border-gray-200 cursor-pointer whitespace-nowrap"
-                    >
+                    <li key={label} className="border-b last:border-b-0 border-gray-200 cursor-pointer ">
                       <a
                         href={href}
-                        className="block w-full text-black hover:text-blue-600 hover:bg-gray-100"
+                        className="block px-4 py-2 font-normal no-underline hover:text-blue-500 hover:bg-gray-100 text-black transition-all duration-200"
                       >
                         {label}
                       </a>
+
                     </li>
                   ))}
                 </ul>
               )}
             </div>
+
           </div>
         </div>
       </div>
-
-
-
       {/* Main Content */}
       <div className="flex flex-1">
         {/* Sidebar */}
@@ -271,7 +272,17 @@ const DashboardPage: FC = () => {
                     <div className="flex gap-12 mt-10">
                       <div className="flex flex-col items-center cursor-pointer group">
                         <div className="w-18 h-18 flex items-center justify-center rounded-full p-3 group-hover:bg-blue-200 transition-colors">
-                          <CalendarX2Icon className="w-16 h-16 text-blue-500 stroke-1" />
+                          <Icon
+                            backgroundShape="circle"
+                            backgroundShapeColor="#f5f5f5"
+                            badgeColor="success"
+                            colorVariant="dark"
+                            height="50px"
+                            isCursorPointer
+                            name="calendar"
+                            stroke
+                            width="50px"
+                          />
                         </div>
                         <span className="text-[25px] mt-2 text-blue-400">Cancel</span>
                       </div>
@@ -318,17 +329,17 @@ const DashboardPage: FC = () => {
                   <div className="flex items-start justify-center pt-20 gap-6 mt-10">
                     {/* Icon + Label */}
                     <div className="flex flex-col items-center text-center min-w-[100px] mr-6">
-                    <Icon
-                            backgroundShape="circle"
-                            backgroundShapeColor="#f5f5f5"
-                            badgeColor="success"
-                            colorVariant="success"
-                            height="70px"
-                            isCursorPointer
-                            name="location"
-                            stroke
-                            width="70px"
-                          />
+                      <Icon
+                        backgroundShape="circle"
+                        backgroundShapeColor="#f5f5f5"
+                        badgeColor="success"
+                        colorVariant="success"
+                        height="70px"
+                        isCursorPointer
+                        name="location"
+                        stroke
+                        width="70px"
+                      />
                       <span className="text-[25px] text-green-500 mt-4">Arrived</span>
                     </div>
 

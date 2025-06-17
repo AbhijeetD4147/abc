@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Navbar } from "../../../components/ui/Navbar";
 import { FaCamera, FaFolderOpen, FaTrash, FaUserPlus } from "react-icons/fa";
 import WarningPopup from "../../../components/ui/WarningPopup";
+import { Icon } from "@ketan_nimase/ui"
 
 const PatientProfile: React.FC = () => {
     const [editing, setEditing] = useState(false);
@@ -58,34 +59,47 @@ const PatientProfile: React.FC = () => {
             {/* Navbar */}
             <Navbar
                 patientName={{ firstName: "Jeffery", lastName: "Stevenson" }}
-                onNavigate={(route) => console.log("Navigate to:", route)}
             />
 
             {/* Header */}
-            <div className="text-center py-3 border border-bottom m-0">
-                <h2 className="m-0 text-xl">Profile</h2>
+            <div className=" flex justify-content-center text-center py-2 border border-bottom m-0">
+                <h2 className="mb-0 text-2xl">Profile</h2>
+                {/* Info Icon */}
+                <div className="relative group ml-2 inline-block">
+                    {/* Info Icon */}
+                    <div className="m-0 w-6 h-6 flex items-center justify-center border-2 border-blue-500 text-blue-500 rounded-full text-sm font-bold cursor-pointer">
+                        i
+                    </div>
+
+                    {/* Tooltip */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-[240px] bg-white border border-gray-300 text-gray-800 text-sm rounded px-3 py-2 
+              opacity-0 group-hover:opacity-100 transition-opacity duration-300 
+              pointer-events-none shadow-lg z-10">
+                        Enter a mobile phone number that is readily available to you to receive a security code for 2-factor verification. Important messages regarding your account will be sent on this number.
+                    </div>
+                </div>
             </div>
 
             {/* Main Content */}
             <div className="flex min-h-screen w-screen">
                 <div className="flex flex-1 w-screen">
                     {/* Left Section */}
-                    <div className="w-1/2 flex flex-col justify-center items-center bg-blue-500 p-10 relative">
+                    <div className="w-1/2 flex flex-col justify-center items-center bg-blue-500 p-5 relative">
                         {/* Tab Headers */}
-                        <div className="flex mb-0 ">
+                        <div className="flex mb-0">
                             <div
-                                className={`px-3 py-1 rounded-top fw-bold cursor-pointer ${activeTab === "photo"
-                                    ? "bg-blue-500 text-white border border-white border-bottom-0 ms-2"
-                                    : "text-white bg-blue-500"
+                                className={`px-3 py-1 fw-bold cursor-pointer border-2 border-white  rounded-top-2 ${activeTab === "photo"
+                                    ? "bg-blue-500 text-white"
+                                    : "bg-blue-500 text-white opacity-75"
                                     }`}
                                 onClick={() => setActiveTab("photo")}
                             >
                                 Photo
                             </div>
                             <div
-                                className={`px-3 py-1 rounded-top cursor-pointer ${activeTab === "id"
-                                    ? "bg-blue-500 text-white border border-white border-bottom-0 ms-2"
-                                    : "text-white bg-blue-500"
+                                className={`px-3 py-1 fw-bold cursor-pointer border-2 border-white rounded-top-2 ${activeTab === "id"
+                                    ? "bg-blue-500 text-white"
+                                    : "bg-blue-500 text-white opacity-75"
                                     }`}
                                 onClick={() => setActiveTab("id")}
                             >
@@ -95,37 +109,49 @@ const PatientProfile: React.FC = () => {
 
                         {/* Profile Image Box */}
                         <div
-                            className="d-flex justify-content-center align-items-center mb-3 bg-blue-500 mt-0 p-2"
+                            className="d-flex justify-content-center align-items-center bg-blue-500 p-2 border-2 border-white border-top-0"
                             style={{
-                                width: "223px",
-                                height: "223px",
-                                border: "2px solid white",
+                                width: "256px",
+                                height: "230px",
                                 position: "relative",
-                                borderRadius: "2%"
+                                borderRadius: "0 0 4px 4px", // Only bottom corners rounded
                             }}
                         >
                             {currentImage ? (
-                                <>
-                                    <img
-                                        src={currentImage}
-                                        alt="Profile"
-                                        className="rounded"
-                                        style={{ width: "100%", height: "100%", objectFit: "cover"}}
-                                    />
-                                </>
+                                <img
+                                    src={currentImage}
+                                    alt="Profile"
+                                    className="rounded"
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
                             ) : (
-                                <FaUserPlus size={48} color="ffffff" />
+                                <Icon
+                                    colorVariant="light"
+                                    height="60px"
+                                    isCursorPointer
+                                    name="user"
+                                    stroke
+                                    width="60px"
+                                />
                             )}
                         </div>
 
+
                         {/* Icons */}
-                        <div className="flex gap-4 mb-4">
+                        <div className="flex gap-4 mb-1">
                             {/* Upload from Files */}
                             <label
                                 className="flex justify-center items-center "
                                 style={{ width: "56px", height: "56px", cursor: "pointer" }}
                             >
-                                <FaFolderOpen size={28} color="#ffffff" />
+                                <Icon
+                                    colorVariant="light"
+                                    height="25px"
+                                    isCursorPointer
+                                    name="file"
+                                    stroke
+                                    width="25px"
+                                />
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -139,7 +165,14 @@ const PatientProfile: React.FC = () => {
                                 className="flex justify-center items-center "
                                 style={{ width: "56px", height: "56px", cursor: "pointer" }}
                             >
-                                <FaCamera size={28} color="#ffffff" />
+                                <Icon
+                                    colorVariant="light"
+                                    height="25px"
+                                    isCursorPointer
+                                    name="camera"
+                                    stroke
+                                    width="25px"
+                                />
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -161,13 +194,21 @@ const PatientProfile: React.FC = () => {
                                 onClick={() => currentImage && setShowConfirmPopup(true)}
                                 disabled={!currentImage}
                             >
-                                <FaTrash size={28} color={currentImage ? "#ffffff" : "#999999"} />
+                                <Icon
+                                    colorVariant={currentImage ? "light" : "dark"}
+                                    height="25px"
+                                    isCursorPointer
+                                    name="delete"
+                                    stroke
+                                    width="25px"
+                                // disabled={!currentImage}
+                                />
                             </button>
                         </div>
 
                         {/* Name Section */}
                         <div
-                            className="bg-blue-500 text-white p-3 rounded position-relative"
+                            className="bg-blue-500 text-white p-1 rounded position-relative"
                             style={{ width: "70%" }}
                         >
                             {/* Header Row */}
@@ -210,8 +251,8 @@ const PatientProfile: React.FC = () => {
                                 </div>
                             ) : (
                                 <div className="mb-3">
-                                    <p className="bg-blue-200 text-dark py-2 px-3 fs-5 mb-2">{firstName}</p>
-                                    <p className="bg-blue-200 text-dark py-2 px-3 fs-5">{lastName}</p>
+                                    <p className="bg-blue-200 text-dark py-2 px-3 fs-5 mb-2 rounded">{firstName}</p>
+                                    <p className="bg-blue-200 text-dark py-2 px-3 fs-5 rounded">{lastName}</p>
                                 </div>
                             )}
                         </div>
@@ -220,30 +261,30 @@ const PatientProfile: React.FC = () => {
                     </div>
 
                     {/* Right Section */}
-                    <div className="w-50 bg-white p-5">
+                    <div className="flex flex-col w-50 bg-white  pl-16 pt-10 align-item-center mt-20 ml-10">
                         {/* Change Username */}
-                        <div className="mb-4">
-                            <a href="#" className="h5 d-block text-primary">
+                        <div className="hover:bg-gray-100 p-2 mr-40">
+                            <a href="/update-username" className="text-3xl d-block text-black no-underline mb-2">
                                 Change Username
                             </a>
-                            <small className="text-muted">
+                            <small className="text-lg text-muted">
                                 Change your email address for login
                             </small>
                         </div>
-                        <hr />
+                        <hr className="mt-0 mr-40 mb-0"/>
 
                         {/* Change Password */}
-                        <div className="mb-4">
-                            <a href="#" className="h5 d-block text-primary">
+                        <div className="hover:bg-gray-100 p-2 mr-40">
+                            <a href="/update-password" className="text-3xl d-block text-black no-underline mb-2">
                                 Change Password
                             </a>
-                            <small className="text-muted">Last changed on: 07/21/2021</small>
+                            <small className="text-lg text-muted">Last changed on: 07/21/2021</small>
                         </div>
-                        <hr />
+                        <hr className="mt-0 mr-40 mb-0"/>
 
                         {/* Make Account Inactive */}
-                        <div>
-                            <a href="#" className="h5 text-danger">
+                        <div className="hover:bg-gray-100 pt-3 pl-2 mr-40 pb-3">
+                            <a href="/opt-out" className="text-3xl d-block text-black no-underline mb-2 text-danger">
                                 Make My Account Inactive
                             </a>
                         </div>

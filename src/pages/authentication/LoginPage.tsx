@@ -4,6 +4,7 @@ import { FaUser, FaLock } from "react-icons/fa";
 import { getTheme } from "../../utils/ThemeSelection";
 import { GlobalParams } from '../../utils/GlobalParameters';
 import Footer from "../../components/ui/Footer";
+import { Icon } from "@ketan_nimase/ui";
 
 interface SignInProps {
   logoUrl: string;
@@ -49,15 +50,6 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
           alt="Company Logo"
           className="w-90 h-30 inline-block align-middle"
         />
-        <img
-          src={
-            GlobalParams.LOGO
-              ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
-              : ''
-          }
-          alt="Company Logo"
-          className="w-90 h-30 inline-block align-middle"
-        />
         <div className="absolute bottom-5 left-5 text-xs text-gray-400">
           <Footer />
         </div>
@@ -84,58 +76,78 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
               The username or password entered is invalid.
             </p>
           )}
-          <div className="relative mb-2">
-
-
-            <FaUser className="absolute left-4 top-4 text-gray-500 text-lg" />
-            <input
-              type="text"
-              placeholder="Username"
-              {...register("username", { required: "Username is required" })}
-              className={`pl-12 pr-4 py-3 shadow appearance-none border rounded w-full text-lg w-full border text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.username ? "bg-red-100 border-red-500" : ""
+          <div className="mb-2">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                <Icon
+                  name="user"
+                  height="20px"
+                  width="20px"
+                  colorVariant="dark"
+                  stroke
+                />
+              </div>
+              <input
+                type="text"
+                placeholder="Username"
+                {...register("username", { required: "Username is required" })}
+                className={`w-full pl-10 pr-4 py-3 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${
+                  errors.username ? "bg-red-100 border-red-500" : ""
                 }`}
-              style={{
-                backgroundColor: theme.textfieldFilledColor,
-                borderColor: errors.username
-                  ? "crimson"
-                  : theme.textfieldDefaultBorderColor,
-              }}
-            />
+                style={{
+                  backgroundColor: theme.textfieldFilledColor,
+                  borderColor: errors.username
+                    ? "crimson"
+                    : theme.textfieldDefaultBorderColor,
+                }}
+              />
+            </div>
             {errors.username && (
-              <p className="text-sm text-white bg-red-700 px-3 py-1 rounded mt-1">
+              <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
                 {errors.username.message as string}
-              </p>
+              </div>
             )}
           </div>
 
-          <a href="#" className="text-base underline mb-4" style={{ color: theme.secondaryTextColor }}>
+          <a href="/forgot-username" className="text-base underline mb-4" style={{ color: theme.secondaryTextColor }}>
             Forgot Username?
           </a>
 
           {/* Password Field */}
-          <div className="relative mb-2">
-            <FaLock className="absolute left-4 top-4 text-gray-500 text-lg" />
-            <input
-              type="password"
-              placeholder="Password"
-              {...register("password", { required: "Password is required" })}
-              className={`pl-12 pr-4 py-3 shadow appearance-none border rounded w-full text-lg w-full border text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.password ? "bg-red-100 border-red-500" : ""
+          <div className="mb-2">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                <Icon
+                  name="lock"
+                  height="20px"
+                  width="20px"
+                  colorVariant="dark"
+                  stroke
+                />
+              </div>
+              <input
+                type="password"
+                placeholder="Password"
+                {...register("password", { required: "Password is required" })}
+                className={`w-full pl-10 pr-4 py-3 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${
+                  errors.password ? "bg-red-100 border-red-500" : ""
                 }`}
-              style={{
-                backgroundColor: theme.textfieldFilledColor,
-                borderColor: errors.password
-                  ? "crimson"
-                  : theme.textfieldDefaultBorderColor,
-              }}
-            />
+                style={{
+                  backgroundColor: theme.textfieldFilledColor,
+                  borderColor: errors.password
+                    ? "crimson"
+                    : theme.textfieldDefaultBorderColor,
+                }}
+              />
+            </div>
             {errors.password && (
-              <p className="text-sm text-white bg-red-700 px-3 py-1 rounded mt-1">
+              <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
                 {errors.password.message as string}
-              </p>
+              </div>
             )}
           </div>
 
-          <a href="#" className="text-base underline mb-6" style={{ color: theme.secondaryTextColor }}>
+          <a href="/forgot-username" className="text-base underline mb-6" style={{ color: theme.secondaryTextColor }}>
             Forgot Password?
           </a>
 

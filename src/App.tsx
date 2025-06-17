@@ -14,6 +14,15 @@ import LoginPage from "./pages/authentication/LoginPage";
 import SignUpPage from "./pages/authentication/SignUpPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import PatientProfile from "./pages/settings/profile/PatientProfile";
+import SamplePage from "./pages/sample_page";
+import SamplePage2 from "./pages/sample_page2";
+import UpdateUsername from "./pages/settings/profile/UpdateUsername";
+import UpdatePassword from "./pages/settings/profile/UpdatePassword";
+import OptOut from "./pages/settings/optOut/OptOut";
+import Messages from "./pages/message/Message";
+import ActivityLogs from "./pages/settings/ActivityLogs";
+import ForgotUsername from "./pages/authentication/ForgotUsername"
+import ForgotPassword from "./pages/authentication/ForgotPassword";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -115,11 +124,18 @@ function App() {
         <Route path="/home" element={<PtHomePage />} />
         <Route path="/login" element={<LoginPage logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
         <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/dashboarduis" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<PatientProfile />} />
-        {/*<Route path="/forgotPassword" element={<ForgotPasswordScreen />} />
-        <Route path="/forgotUsername" element={<ForgotUsernameScreen />} />
-        <Route path="/authterms" element={<AuthTermsAndConditionScreen />} />
+        <Route path="/sample" element={<SamplePage />} />
+        <Route path="/sample2" element={<SamplePage2 />} />
+        <Route path="/update-username" element={<UpdateUsername />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="/opt-out" element={<OptOut />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/activity-logs" element={<ActivityLogs />} />
+        <Route path="/forgot-username" element={<ForgotUsername logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
+        <Route path="/forgot-password" element={<ForgotPassword logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
+        {/*<Route path="/authterms" element={<AuthTermsAndConditionScreen />} />
         <Route path="/invalidLinkScreen" element={<InvalidLinkScreen />} /> */}
         <Route path="*" element={<Navigate to={initialRoute} />} />
       </Routes>

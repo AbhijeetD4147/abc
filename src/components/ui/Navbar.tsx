@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { Home, Settings, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Icon } from "@ketan_nimase/ui"
 
 interface NavbarProps {
     patientName: {
         firstName: string;
         lastName: string;
     };
-    onNavigate: (route: string) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ patientName, onNavigate }) => {
+export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const navigate = useNavigate();
 
     const initials = `${patientName.firstName[0] ?? ""}${patientName.lastName[0] ?? ""}`.toUpperCase();
 
@@ -35,20 +36,27 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName, onNavigate }) => {
     ];
 
     return (
-        <div className="w-full bg-blue-500  px-6 py-1 flex justify-between items-center">
+        <div className="w-full bg-blue-500 pl-4 pr-4 flex justify-between items-center">
             {/* Left: Home + Nav Buttons */}
             <div className="flex items-center space-x-1">
                 <div
-                    className="cursor-pointer hover:text-blue-600 transition"
-                    onClick={() => onNavigate("dashboard")}
+                    className="cursor-pointer hover:text-blue-300 transition text-white mr-16"
+                    onClick={() => navigate("/dashboard")}
                 >
-                    <Home size={28} stroke="#ffffff" />
+                    <Icon
+                        colorVariant="light"
+                        height="27px"
+                        isCursorPointer
+                        name="new_home"
+                        stroke
+                        width="27px"
+                    />
                 </div>
                 {menuItems.map((label) => (
                     <button
                         key={label}
-                        onClick={() => onNavigate(label.toLowerCase().replace(/\s+/g, "-"))}
-                        className="text-xs text-white bg-blue-500 hover:bg-blue-600 transition"
+                        onClick={() => navigate(label.toLowerCase().replace(/\s+/g, "-"))}
+                        className="text-md text-white bg-blue-500 transition m-0 py-3 px-4 hover:bg-blue-600"
                     >
                         {label}
                     </button>
@@ -61,26 +69,39 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName, onNavigate }) => {
                 <div className="relative">
                     <div
                         onClick={() => setIsOpen(!isOpen)}
-                        className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500  cursor-pointer transition-colors duration-200"
+                        className="w-10 h-10 flex items-center justify-center rounded-full bg-transparent hover:bg-blue-100 cursor-pointer duration-200"
                     >
                         {isOpen ? (
-                            <X size={24} stroke="#ffffff" strokeWidth={1.5} />
+                             <Icon
+                             colorVariant="light"
+                             height="22px"
+                             isCursorPointer
+                             name="cancel"
+                             stroke
+                             width="22px"
+                         />
                         ) : (
-                            <Settings size={24} stroke="#ffffff" strokeWidth={1.5} />
+                            <Icon
+                                colorVariant="light"
+                                height="30px"
+                                isCursorPointer
+                                name="settings"
+                                stroke
+                                width="30px"
+                            />
                         )}
                     </div>
 
-                    {/* Dropdown */}
                     {isOpen && (
-                        <ul className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded shadow-md z-50">
+                        <ul className="absolute right-0 mt-2 min-w-max max-w-xs bg-white border border-gray-200 rounded shadow-md z-50">
                             {fabItems.map(({ label, href }) => (
                                 <li
                                     key={label}
-                                    className="px-4 py-2 border border-gray-200 cursor-pointer whitespace-nowrap"
+                                    className="border-b last:border-b-0 border-gray-200 cursor-pointer"
                                 >
                                     <a
                                         href={href}
-                                        className="block w-full text-black hover:text-blue-600 hover:bg-gray-100"
+                                        className="block px-4 py-2 font-normal no-underline text-black hover:text-blue-500 hover:bg-gray-100 transition-all duration-200"
                                     >
                                         {label}
                                     </a>
@@ -91,7 +112,8 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName, onNavigate }) => {
                 </div>
 
                 {/* Patient Initials Avatar */}
-                <div className="w-8 h-8 rounded-full bg-blue-500 border border-white text-white flex items-center justify-center font-semibold text-lg">
+                <div className="w-8 h-8 rounded-full cursor-pointer bg-blue-500 border border-white text-white flex items-center justify-center font-semibold text-lg" 
+                     onClick={() => navigate("/profile")}>
                     {initials}
                 </div>
             </div>
