@@ -62,6 +62,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
   const navigate = useNavigate();
   const [theme, setTheme] = React.useState<any>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  // Add these validation states
   const [fieldErrors, setFieldErrors] = React.useState({
     firstName: false,
     lastName: false,
@@ -69,6 +70,101 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
     email: false,
     dob: false
   });
+  const [dateFieldValidate, setDateFieldValidate] = React.useState(false);
+  const [mobileNumberErrorText, setMobileNumberErrorText] = React.useState('');
+  const [emailErrorText, setEmailErrorText] = React.useState('');
+
+  // Enhanced field validation function
+  const fieldValidation = () => {
+    const formData = watch();
+    let isValid = true;
+    
+    console.log('Field validation started with data:', formData);
+    console.log('Initial validation state:', isValid);
+  
+    // First Name validation
+    if (!formData.legalFirstName?.trim()) {
+      console.log('First name validation failed: empty or undefined');
+      setFieldErrors(prev => ({ ...prev, firstName: true }));
+      isValid = false;
+    } else {
+      console.log('First name validation passed:', formData.legalFirstName);
+      setFieldErrors(prev => ({ ...prev, firstName: false }));
+    }
+  
+    // Last Name validation
+    if (!formData.lastName?.trim()) {
+      console.log('Last name validation failed: empty or undefined');
+      setFieldErrors(prev => ({ ...prev, lastName: true }));
+      isValid = false;
+    } else {
+      console.log('Last name validation passed:', formData.lastName);
+      setFieldErrors(prev => ({ ...prev, lastName: false }));
+    }
+  
+    // Mobile validation
+    if (!formData.mobile?.trim()) {
+      console.log('Mobile validation failed: empty or undefined');
+      setFieldErrors(prev => ({ ...prev, mobile: true }));
+      setMobileNumberErrorText('Mobile is required');
+      isValid = false;
+    } else {
+      const formattedMobile = `(${formData.mobile.slice(0, 3)}) ${formData.mobile.slice(3, 6)}-${formData.mobile.slice(6)}`;
+      console.log('Testing mobile format:', formattedMobile, 'against regex:', phoneRegex);
+      console.log('Mobile regex test result:', phoneRegex.test(formattedMobile));
+      if (!phoneRegex.test(formattedMobile)) {
+        console.log('Mobile validation failed: invalid format');
+        setFieldErrors(prev => ({ ...prev, mobile: true }));
+        setMobileNumberErrorText('Please enter valid mobile number');
+        isValid = false;
+      } else {
+        console.log('Mobile validation passed:', formattedMobile);
+        setFieldErrors(prev => ({ ...prev, mobile: false }));
+        setMobileNumberErrorText('');
+      }
+    }
+  
+    // Email validation
+    if (!formData.email?.trim()) {
+      console.log('Email validation failed: empty or undefined');
+      setFieldErrors(prev => ({ ...prev, email: true }));
+      setEmailErrorText('Email is required');
+      isValid = false;
+    } else {
+      console.log('Testing email format:', formData.email);
+      console.log('Email regex test result:', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email));
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        console.log('Email validation failed: invalid format');
+        setFieldErrors(prev => ({ ...prev, email: true }));
+        setEmailErrorText('Please enter valid Email');
+        isValid = false;
+      } else {
+        console.log('Email validation passed:', formData.email);
+        setFieldErrors(prev => ({ ...prev, email: false }));
+        setEmailErrorText('');
+      }
+    }
+  
+    // DOB validation
+    if (!formData.dob?.trim()) {
+      console.log('DOB validation failed: empty or undefined');
+      setFieldErrors(prev => ({ ...prev, dob: true }));
+      isValid = false;
+    } else {
+      console.log('DOB value:', formData.dob, 'dateFieldValidate state:', dateFieldValidate);
+      if (!dateFieldValidate) {
+        console.log('DOB validation failed: dateFieldValidate is false');
+        setFieldErrors(prev => ({ ...prev, dob: true }));
+        isValid = false;
+      } else {
+        console.log('DOB validation passed:', formData.dob);
+        setFieldErrors(prev => ({ ...prev, dob: false }));
+      }
+    }
+  
+    console.log('Final validation result:', isValid);
+    return isValid;
+  };
 
   React.useEffect(() => {
     getTheme().then(setTheme);
@@ -107,69 +203,141 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
     }));
   };
 
+  const validateManualDob = (dateOfBirth: string) => {
+    console.log('Validating DOB:', dateOfBirth);
+    if (dateOfBirth.length !== 10) {
+      console.log('DOB validation failed: incorrect length');
+      setDateFieldValidate(false);
+      return;
+    }
+
+    try {
+      // Parse MM/DD/YYYY format
+      const month = parseInt(dateOfBirth.substring(0, 2));
+      const date = parseInt(dateOfBirth.substring(3, 5));
+      const year = parseInt(dateOfBirth.substring(6, 10));
+
+      console.log('Parsed DOB:', { month, date, year });
+      
+      const checkDate = dayjs(dateOfBirth, 'MM/DD/YYYY', true);
+      const today = dayjs();
+
+      const isLeapYear = ((year % 4 === 0) && (year % 100 !== 0)) || (year % 400 === 0);
+
+      let isValid = true;
+
+      // Validation checks
+      if (month < 1 || month > 12) {
+        console.log('DOB validation failed: invalid month');
+        isValid = false;
+      } else if (date < 1 || date > 31) {
+        console.log('DOB validation failed: invalid date');
+        isValid = false;
+      } else if (year < 1900) {
+        console.log('DOB validation failed: year before 1900');
+        isValid = false;
+      } else if (date > 29 && month === 2) {
+        console.log('DOB validation failed: invalid February date');
+        isValid = false;
+      } else if (date === 31 && [2, 4, 6, 9, 11].includes(month)) {
+        console.log('DOB validation failed: invalid day for month');
+        isValid = false;
+      } else if (checkDate.isAfter(today)) {
+        console.log('DOB validation failed: future date');
+        isValid = false;
+      } else if (!isLeapYear && month === 2 && date === 29) {
+        console.log('DOB validation failed: February 29 in non-leap year');
+        isValid = false;
+      } else if (!checkDate.isValid()) {
+        console.log('DOB validation failed: invalid date according to dayjs');
+        isValid = false;
+      }
+
+      console.log('DOB validation result:', isValid);
+      setDateFieldValidate(isValid);
+    } catch (error) {
+      console.error('DOB validation error:', error);
+      setDateFieldValidate(false);
+    }
+};
+
+  const onSubmit = (data: FormData) => {
+    console.log('Form submission started with data:', data);
+    console.log('Current field errors:', fieldErrors);
+    console.log('Date field validate status:', dateFieldValidate);
+    
+    // Use the enhanced field validation
+    if (fieldValidation()) {
+      console.log('All validations passed, calling validatePatient');
+      validatePatient(data);
+    } else {
+      console.log('Validation errors found, API not called');
+      // Force form validation to show errors
+      handleSubmit(() => {})();
+    }
+};
+  
   const validatePatient = async (formData: FormData) => {
     try {
+      console.log('validatePatient called with:', formData);
       setIsSubmitting(true);
   
       const patientValidateData = {
         PracticeName: GlobalParams.PRACTICE_NAME,
         FirstName: formData.legalFirstName.trim(),
         LastName: formData.lastName.trim(),
-        Mobile: formData.countryCode + formData.mobile.trim(),
+        Mobile: props.title === "Sign Up as Patient" 
+          ? formData.mobile.trim() 
+          : formData.countryCode + formData.mobile.trim(),
         Email: formData.email.trim(),
         DOB: formData.dob,
         AuthSignUpAsPatient: props.title === "Sign Up as Patient" ? "true" : "false"
       };
+      
+      console.log('Patient validate data:', patientValidateData);
   
-      // Use AuthenticationService instead of direct fetch
       const authService = new AuthenticationService();
+      console.log('Calling authService.validatePatient');
       await authService.validatePatient(patientValidateData);
+      console.log('API response status:', authService.response_Status_Code_API_7);
+      console.log('Patient availability model:', authService.patientAvailabilityResponseModel);
   
-      // Check response status
-      if (authService.response_Status_Code_API_7 === 205) {
-        return;
-      }
+      // Handle response based on status code
+      if (authService.response_Status_Code_API_7 === 200) {
+        const patientAvailabilityModel = authService.patientAvailabilityResponseModel;
+        console.log('API call successful, handling navigation');
   
-      if (authService.response_Status_Code_API_7 !== 200) {
-        throw new Error('Network response was not ok');
-      }
-  
-      // Handle the response
-      const patientAvailabilityModel = authService.patientAvailabilityResponseModel;
-  
-      if (patientAvailabilityModel?.isExist) {
-        navigate('/patient-record-match-found', {
-          state: {
-            email: formData.email,
-            patientNumber: patientAvailabilityModel.patientNumber
-          }
-        });
-      } else {
-        if (patientAvailabilityModel?.accountType === "AuthSignUpAsPatient") {
-          navigate('/signup-completed');
+        if (patientAvailabilityModel?.isExist) {
+          console.log('Patient exists, navigating to match found page');
+          navigate('/record-match-found', {  // Changed from '/patient-record-match-found'
+            state: {
+              email: formData.email,
+              patientNumber: patientAvailabilityModel.patientNumber
+            }
+          });
         } else {
-          navigate('/record-not-match');
+          console.log('Patient does not exist, checking account type');
+          if (patientAvailabilityModel?.accountType === "AuthSignUpAsPatient") {
+            console.log('Auth signup as patient, navigating to signup completed');
+            navigate('/signup-completed');
+          } else {
+            console.log('Record not matched, navigating to record not match');
+            navigate('/record-match-not-found');  // Changed from '/record-not-match'
+          }
         }
+      } else if (authService.response_Status_Code_API_7 !== 205) {
+        // Only show error if it's not a 205 status code
+        console.error('API error with status code:', authService.response_Status_Code_API_7);
+        toast.error('An unexpected error has occurred. Please try again later. If the problem persists, call our office.');
       }
     } catch (error) {
+      console.error('API call error:', error);
       toast.error('An unexpected error has occurred. Please try again later. If the problem persists, call our office.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const onSubmit = (data: FormData) => {
-    // Validate all fields before submission
-    Object.keys(data).forEach(key => {
-      validateField(key, data[key as keyof FormData]);
-    });
-
-    if (!Object.values(fieldErrors).some(error => error)) {
-      validatePatient(data);
-      // Remove the direct navigation to dashboard as it should be handled by validatePatient
-      // navigate('/dashboard');
-    }
-  };
 
   return (
     <div className="flex flex-col items-center justify-start md:justify-center mt-2 min-h-screen w-screen px-4 bg-white">
@@ -178,7 +346,10 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
       </h1>
   
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={(e) => {
+          console.log('Form onSubmit triggered');
+          handleSubmit(onSubmit)(e);
+        }}
         className="bg-white w-full max-w-lg md:p-8 sm:p-6 p-4"
       >
         {/* First Name */}
@@ -293,17 +464,35 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             value={dobController.field.value}
             onChangeRaw={(value: string) => {
               dobController.field.onChange(value);
+              if (value.length === 10) {
+                validateManualDob(value);
+              } else {
+                setDateFieldValidate(false);
+              }
             }}
             onChange={(date: Date) => {
               const formatted = dayjs(date).format('MM/DD/YYYY');
               dobController.field.onChange(formatted);
+              setDateFieldValidate(true);
             }}
             onError={(error: string | null) => {
-              // Handle date validation errors if needed
-              console.log('Date validation error:', error);
+              // Only log actual errors, not null values
+              if (error) {
+                console.log('Date validation error:', error);
+                setFieldErrors(prev => ({
+                  ...prev,
+                  dob: true
+                }));
+                setDateFieldValidate(false);
+              } else {
+                setFieldErrors(prev => ({
+                  ...prev,
+                  dob: false
+                }));
+              }
             }}
             enhancedInput={true}
-            error={!!errors.dob}
+            error={!!errors.dob || fieldErrors.dob}
           />
           {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob.message}</p>}
         </div>
@@ -317,8 +506,13 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
         <div className="mt-7 mb-7 border-t border-gray-400 pt-6 w-full">
           <div className="flex justify-center">
             <button
-              type="submit"
+              type="button" 
               className="bg-blue-500 hover:bg-blue-700 text-white text-base md:text-xl font-medium py-2 px-10 md:px-14 rounded focus:outline-none focus:shadow-outline"
+              onClick={() => {
+                console.log('Directly calling validatePatient');
+                const formData = watch();
+                validatePatient(formData);
+              }}
             >
               Proceed
             </button>

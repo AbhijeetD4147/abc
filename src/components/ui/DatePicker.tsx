@@ -254,7 +254,10 @@ const DatePicker: React.FC<DatePickerProps> = ({
           ref={inputRef}
           type="text"
           inputMode={enhancedInput ? "numeric" : "text"}
-          pattern={enhancedInput ? "[0-9/]*" : undefined}
+          // Remove the pattern attribute entirely
+          // pattern={enhancedInput ? "[0-9/]*" : undefined}
+          
+          // And rely solely on your onKeyDown handler for input validation
           onKeyDown={(e) => {
             if (!enhancedInput) return;
             const allowedKeys = ["Backspace", "ArrowLeft", "ArrowRight", "Delete", "Tab"];

@@ -493,8 +493,9 @@ export class AuthenticationService {
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_7 = 205;
             } else if (response.status === 200) {
-                this.patientAvailabilityResponseModel =
-                    PatientAvailabilityResponseModel.fromJson(JSON.parse(response.data));
+                // Fix: Check if response.data is already an object
+                const responseData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+                this.patientAvailabilityResponseModel = PatientAvailabilityResponseModel.fromJson(responseData);
                 this.response_Status_Code_API_7 = response.status;
             } else {
                 this.maximum_Calling_API_7 = this.maximum_Calling_API_7 + 1;
