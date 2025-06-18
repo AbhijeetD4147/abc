@@ -12,111 +12,93 @@ import { Icon } from "@ketan_nimase/ui"
 const menuItems = [
   {
     icon: <Icon
-      backgroundShape="circle"
-      backgroundShapeColor="primary"
-      badgeColor="warning"
-      badgeContent="10"
-      badgePosition="top"
-      badgeSize="medium"
-      colorVariant="light"
-      height="30px"
-      isBackgroundShape
-      isCursorPointer
-      isbadge
-      name="envelope"
-      stroke
-      width="30px"
-    />, label: "Messages"
+    badgeColor="warning"
+    badgeContent="18"
+    badgePosition="top"
+    colorVariant="light"
+    disabled
+    height="60px"
+    isCursorPointer
+    isbadge
+    name="envelope"
+    stroke
+    width="60px"
+  />, label: "Messages"
   },
   {
     icon: <Icon
-      backgroundShape="circle"
-      backgroundShapeColor="primary"
-      badgeColor="warning"
-      badgeContent="10"
-      badgePosition="top"
-      badgeSize="medium"
-      colorVariant="light"
-      height="30px"
-      isBackgroundShape
-      isCursorPointer
-      isbadge
-      name="calendar"
-      stroke
-      width="30px"
-    />, label: "Appointments"
+    badgeColor="warning"
+    badgeContent="18"
+    badgePosition="top"
+    colorVariant="light"
+    disabled
+    height="60px"
+    isCursorPointer
+    isbadge
+    name="calendar"
+    stroke
+    width="60px"
+  />, label: "Appointments"
   },
   {
     icon: <Icon
-      backgroundShape="circle"
-      backgroundShapeColor="primary"
-      badgeColor="warning"
-      badgeContent="10"
-      badgePosition="top"
-      badgeSize="medium"
-      colorVariant="light"
-      height="30px"
-      isBackgroundShape
-      isCursorPointer
-      isbadge
-      name="file_data"
-      stroke
-      width="30px"
-    />, label: "Policies & Consent Forms"
+    badgeColor="warning"
+    badgeContent="18"
+    badgePosition="top"
+    colorVariant="light"
+    disabled
+    height="60px"
+    isCursorPointer
+    isbadge
+    name="file_data"
+    stroke
+    width="60px"
+  />, label: "Policies & Consent Forms"
   },
   {
     icon: <Icon
-      backgroundShape="circle"
-      backgroundShapeColor="primary"
-      badgeColor="warning"
-      badgeContent="10"
-      badgePosition="top"
-      badgeSize="medium"
-      colorVariant="light"
-      height="30px"
-      isBackgroundShape
-      isCursorPointer
-      isbadge
-      name="forms"
-      stroke
-      width="30px"
-    />, label: "Health Summary"
+    badgeColor="warning"
+    badgeContent="18"
+    badgePosition="top"
+    colorVariant="light"
+    disabled
+    height="60px"
+    isCursorPointer
+    isbadge
+    name="forms"
+    stroke
+    width="60px"
+  />, label: "Health Summary"
   },
   {
     icon: <Icon
-      backgroundShape="circle"
-      backgroundShapeColor="primary"
-      badgeColor="warning"
-      badgeContent="10"
-      badgePosition="top"
-      badgeSize="medium"
-      colorVariant="light"
-      height="30px"
-      isBackgroundShape
-      isCursorPointer
-      isbadge
-      name="eye"
-      stroke
-      width="30px"
-    />, label: "Eyewear & Rx"
+    badgeColor="warning"
+    badgeContent="18"
+    badgePosition="top"
+    colorVariant="light"
+    disabled
+    height="60px"
+    isCursorPointer
+    isbadge
+    name="eye"
+    stroke
+    width="60px"
+  />, label: "Eyewear & Rx"
   },
   {
     icon: <Icon
-      backgroundShape="circle"
-      backgroundShapeColor="primary"
-      badgeColor="warning"
-      badgeContent="10"
-      badgePosition="top"
-      badgeSize="medium"
-      colorVariant="light"
-      height="30px"
-      isBackgroundShape
-      isCursorPointer
-      isbadge
-      name="dollar"
-      stroke
-      width="30px"
-    />, label: "Bills & Payments"
+    badgeColor="warning"
+    badgeContent="18"
+    badgePosition="top"
+    colorVariant="light"
+    disabled
+    height="60px"
+    isCursorPointer
+    isbadge
+    name="dollar"
+    stroke
+    width="60px"
+  />, label: "Bills & Payments"
   },
 
 ];
@@ -174,28 +156,28 @@ const DashboardPage: FC = () => {
   return (
     <div className="flex flex-col h-screen w-screen font-[Segoe UI]">
       {/* Navbar */}
-      <div className="w-full bg-white px-10 py-1 border-b">
+      <div className="w-full bg-white px-4 sm:px-6 lg:px-10 py-1 border-b">
         <div className="flex justify-between items-center">
           {/* Logo + Company Name */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <img
               src="#"
               alt={'Logo'}
-              className="w-[50px] h-[50px] object-contain"
+              className="w-[40px] h-[40px] sm:w-[50px] sm:h-[50px] object-contain"
             />
-            <div className="text-2xl text-black font-normal">Dynamic Company Name</div>
+            <div className="text-lg sm:text-xl lg:text-2xl text-black font-normal hidden sm:block">Dynamic Company Name</div>
           </div>
 
           {/* User Info + Menu */}
-          <div className="flex items-center gap-4 relative">
+          <div className="flex items-center gap-2 sm:gap-4 relative">
             <div
-              className="w-10 h-10 bg-blue-500 text-white flex items-center justify-center rounded-full text-[18px] font-bold cursor-pointer hover:bg-blue-600 transition"
+              className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 text-white flex items-center justify-center rounded-full text-sm sm:text-[18px] font-bold cursor-pointer hover:bg-blue-600 transition"
               onClick={() => navigate("/profile")}
             >
               {initials}
             </div>
 
-            <span className="text-[22px] font-normal">Dynamic Patient Name</span>
+            <span className="text-base sm:text-lg lg:text-[22px] font-normal hidden sm:block">Dynamic Patient Name</span>
 
             {/* FAB Menu */}
             <div className="relative">
@@ -231,23 +213,23 @@ const DashboardPage: FC = () => {
         </div>
       </div>
       {/* Main Content */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 flex-col lg:flex-row">
         {/* Sidebar */}
-        <div className="w-[50%] bg-blue-500 text-white flex flex-col justify-center items-center gap-4 px-16">
-          <div className="grid grid-cols-3 gap-y-6 gap-x-1">
+        <div className="w-full lg:w-[50%] bg-blue-500 text-white flex flex-col justify-center items-center gap-4 px-4 sm:px-8 lg:px-16 py-8 lg:py-0">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-1">
             {menuItems.map((item, idx) => (
               <div key={idx} className="flex flex-col items-center text-center">
-                <div className="border-2 rounded-full p-8 flex items-center justify-center hover:bg-blue-600">
+                <div className="border-2 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center hover:bg-blue-600 cursor-pointer">
                   {item.icon}
                 </div>
-                <p className="text-xl mt-3">{item.label}</p>
+                <p className="text-base sm:text-lg lg:text-xl mt-2 lg:mt-3">{item.label}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Content */}
-        <div className="w-[50%] bg-white p-10 flex flex-col justify-between">
+        <div className="w-full lg:w-[50%] bg-white p-4 sm:p-6 lg:p-10 flex flex-col justify-between">
           {hasUpcomingAppointment ? (
             <>
               {/* Upcoming Appointment */}
@@ -260,21 +242,19 @@ const DashboardPage: FC = () => {
               )}
 
               {/* Upcoming Appointment */}
-              <div className="mt-10">
+              <div className="mt-4 sm:mt-6 lg:mt-10">
                 {!hasArrived ? (
                   <>
-                    <h2 className="text-4xl font-normal mb-4 pt-20">You have an upcoming appointment</h2>
-                    <p className="text-2xl font-normal text-gray-600">
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-normal mb-4 pt-8 sm:pt-12 lg:pt-20">You have an upcoming appointment</h2>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-normal text-gray-600">
                       {formattedTime}
                       <br />
                       Reason: Annual Checkup
                     </p>
-                    <div className="flex gap-12 mt-10">
+                    <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 lg:gap-12 mt-6 sm:mt-8 lg:mt-10">
                       <div className="flex flex-col items-center cursor-pointer group">
                         <div className="w-18 h-18 flex items-center justify-center rounded-full p-3 group-hover:bg-blue-200 transition-colors">
                           <Icon
-                            backgroundShape="circle"
-                            backgroundShapeColor="#f5f5f5"
                             badgeColor="success"
                             colorVariant="dark"
                             height="50px"

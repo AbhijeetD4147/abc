@@ -12,7 +12,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.0.1",
-    "@ketan_nimase/ui": "^0.1.0",
+    "@ketan_nimase/ui": "^0.1.1",
     "@tailwindcss/typography": "^0.5.16",
     "axios": "^1.9.0",
     "clsx": "^2.1.1",
