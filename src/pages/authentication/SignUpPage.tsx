@@ -9,6 +9,7 @@ import { GlobalParams } from '../../utils/GlobalParameters';
 import { toast } from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { Info } from 'lucide-react';
+import { AuthenticationService } from '../../services/authentication/UserService';
 
 interface SignUpPageProps {
   title?: string;
@@ -92,7 +93,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
   const validatePatient = async (formData: FormData) => {
     try {
       setIsSubmitting(true);
-
+  
       const patientValidateData = {
         PracticeName: GlobalParams.PRACTICE_NAME,
         FirstName: formData.legalFirstName.trim(),
@@ -102,36 +103,32 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
         DOB: formData.dob,
         AuthSignUpAsPatient: props.title === "Sign Up as Patient" ? "true" : "false"
       };
-
-      const response = await fetch(`${process.env.VITE_API_BASE_URL}/api/PatientPortal/ValidatePatient`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GlobalParams.TOKEN}`,
-        },
-        body: JSON.stringify(patientValidateData)
-      });
-
-      // Handle specific response status codes
-      if (response.status === 205) {
+  
+      // Use AuthenticationService instead of direct fetch
+      const authService = new AuthenticationService();
+      await authService.validatePatient(patientValidateData);
+  
+      // Check response status
+      if (authService.response_Status_Code_API_7 === 205) {
         return;
       }
-
-      if (response.status !== 200) {
+  
+      if (authService.response_Status_Code_API_7 !== 200) {
         throw new Error('Network response was not ok');
       }
-
-      const data = await response.json();
-
-      if (data.isExist) {
+  
+      // Handle the response
+      const patientAvailabilityModel = authService.patientAvailabilityResponseModel;
+  
+      if (patientAvailabilityModel?.isExist) {
         navigate('/patient-record-match-found', {
           state: {
             email: formData.email,
-            patientNumber: data.patientNumber
+            patientNumber: patientAvailabilityModel.patientNumber
           }
         });
       } else {
-        if (data.accountType === "AuthSignUpAsPatient") {
+        if (patientAvailabilityModel?.accountType === "AuthSignUpAsPatient") {
           navigate('/signup-completed');
         } else {
           navigate('/record-not-match');
@@ -152,8 +149,9 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
 
     if (!Object.values(fieldErrors).some(error => error)) {
       validatePatient(data);
+      // Remove the direct navigation to dashboard as it should be handled by validatePatient
+      // navigate('/dashboard');
     }
-    navigate('/dashboard');
   };
 
   return (
