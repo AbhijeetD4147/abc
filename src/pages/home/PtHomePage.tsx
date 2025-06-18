@@ -7,6 +7,7 @@ import HomeService from '../../services/home/HomeService';
 import { GlobalParams } from '../../utils/GlobalParameters';
 import checkMark from '../../assets/check-mark.png';
 import MaximEyes from '../../assets/maximeyeslogo.png';
+import { Loader } from '@ketan_nimase/ui';
 
 interface ThemeData {
   primaryTextColor: string;
@@ -179,8 +180,8 @@ const PtHomePage: React.FC = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      <div className="flex justify-center items-center h-screen w-screen">
+        <Loader loaderType="spin" />
       </div>
     );
   }

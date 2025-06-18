@@ -133,13 +133,15 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
                 <div className="w-full max-w-md">
                     {/* Lock Icon - Centered */}
                     <div className="flex justify-center mb-8">
-                        <div className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center">
+                    <div className="border-3 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center">
                             <Icon
-                                name="lock"
-                                height="40px"
-                                width="40px"
                                 colorVariant="light"
+                                disabled
+                                height="60px"
+                                isbadge
+                                name="lock"
                                 stroke
+                                width="60px"
                             />
                         </div>
                     </div>

@@ -4,6 +4,7 @@ import { GlobalParams } from '../../utils/GlobalParameters';
 import Footer from "../../components/ui/Footer";
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { Loader } from '@ketan_nimase/ui';
 
 interface PageProps {
     logoUrl: string;
@@ -24,13 +25,13 @@ const RecoverUsername: React.FC<PageProps> = () => {
             try {
                 // TODO: Replace with actual API call
                 await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
-                
+
                 // Simulated API response
                 const apiResponse = {
                     success: true,
                     username: 'KetNim1016'
                 };
-                
+
                 if (apiResponse.success) {
                     setUsername(apiResponse.username);
                 } else {
@@ -79,30 +80,30 @@ const RecoverUsername: React.FC<PageProps> = () => {
                         <div className="w-24 h-24 rounded-full border-4 border-white flex items-center justify-center bg-transparent">
                             {/* User icon with lock */}
                             <div className="relative">
-                                <svg 
-                                    className="w-12 h-12 text-white" 
-                                    fill="none" 
-                                    stroke="white" 
+                                <svg
+                                    className="w-12 h-12 text-white"
+                                    fill="none"
+                                    stroke="white"
                                     viewBox="0 0 24 24"
                                 >
-                                    <path 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round" 
-                                        strokeWidth={2} 
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                     />
                                 </svg>
                                 {/* Lock icon */}
                                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                                    <svg 
-                                        className="w-4 h-4 text-blue-600" 
-                                        fill="currentColor" 
+                                    <svg
+                                        className="w-4 h-4 text-blue-600"
+                                        fill="currentColor"
                                         viewBox="0 0 20 20"
                                     >
-                                        <path 
-                                            fillRule="evenodd" 
-                                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" 
-                                            clipRule="evenodd" 
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                            clipRule="evenodd"
                                         />
                                     </svg>
                                 </div>
@@ -118,8 +119,8 @@ const RecoverUsername: React.FC<PageProps> = () => {
                     {/* Username Display */}
                     <div className="space-y-4 mb-8">
                         {isLoading ? (
-                            <div className="flex justify-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                            <div className="flex justify-center items-center h-screen w-screen">
+                                <Loader loaderType="spin" />
                             </div>
                         ) : (
                             <>

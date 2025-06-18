@@ -29,6 +29,7 @@ import PatientTermsAndConditions from "./pages/authentication/PatientTermsAndCon
 import RecordMatchFound from "./pages/authentication/RecordMatchFound";
 import RecordMatchNotFound from "./pages/authentication/RecordMatchNotFound";
 import HomeService from "./services/home/HomeService";
+import { Loader } from "@ketan_nimase/ui";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -94,7 +95,7 @@ function App() {
 
         const route = decideInitialRoute(queryType);
         setInitialRoute(route);
-        
+
         // Add this code to fetch the logo during initialization
         // const homeService = new HomeService();
         // await homeService.getHomeData('Home');
@@ -125,7 +126,11 @@ function App() {
     }
   };
 
-  if (!initialRoute) return <div>Loading...</div>;
+  if (!initialRoute) return (
+  <div className="flex justify-center items-center min-h-screen w-screen">
+    <Loader loaderType="spin" />
+  </div>
+  );
 
   return (
     <Router>

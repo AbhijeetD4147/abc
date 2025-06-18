@@ -144,7 +144,7 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
 
                 if (response && response.userId && response.userId > 0) {
                     toast.success('Username recovery instructions have been sent to your email');
-                    
+
                     // Store email in localStorage for the credentials-sent page
                     localStorage.setItem('recovery_email', email.trim());
 
@@ -220,22 +220,16 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
                 <div className="w-full max-w-md">
                     {/* Header Icon */}
                     <div className="flex justify-center mb-8 relative">
-                        <div className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center">
+                        <div className="border-2 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center hover:bg-blue-600 cursor-pointer">
                             <Icon
+                                colorVariant="light"
+                                disabled
+                                height="60px"
+                                isCursorPointer
+                                isbadge
                                 name="user"
-                                height="40px"
-                                width="40px"
-                                colorVariant="light"
                                 stroke
-                            />
-                        </div>
-                        <div className="absolute top-14 left-1/2 transform -translate-x-1/2">
-                            <Icon
-                                name="lock"
-                                height="20px"
-                                width="20px"
-                                colorVariant="light"
-                                stroke
+                                width="60px"
                             />
                         </div>
                     </div>

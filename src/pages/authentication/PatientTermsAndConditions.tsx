@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getTheme } from "../../utils/ThemeSelection";
 import { GlobalParams } from '../../utils/GlobalParameters';
-import { Button, Icon } from "@ketan_nimase/ui";
+import { Button, Icon, Loader } from "@ketan_nimase/ui";
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,14 +16,14 @@ const PatientTermsAndConditions: React.FC<PatientTermsAndConditionsProps> = ({ o
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasSignature, setHasSignature] = useState(false);
-    
+
     // State variables
     const [isTermsChecked, setIsTermsChecked] = useState(false);
     const [isButtonClicked, setIsButtonClicked] = useState(false);
     const [termsData, setTermsData] = useState('');
     const [patientName, setPatientName] = useState('');
     const [loading, setLoading] = useState(true);
-    
+
     // Current date formatting
     const currentDate = new Date().toLocaleDateString('en-US', {
         month: '2-digit',
@@ -54,7 +54,7 @@ const PatientTermsAndConditions: React.FC<PatientTermsAndConditionsProps> = ({ o
             // TODO: Replace with actual API call
             // Simulating API call
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
+
             // Filler content - will be replaced with backend data
             setTermsData(`PATIENT PORTAL TERMS OF SERVICE AND PRIVACY AGREEMENT
 
@@ -95,7 +95,7 @@ Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium dolor
 By signing below, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and Privacy Agreement. You also confirm that you are authorized to accept these terms on behalf of the patient if you are acting as a legal guardian or authorized representative.
 
 [Additional terms and conditions will be loaded from backend API]`);
-            
+
             setPatientName('Sample Patient Name'); // Will be replaced with actual patient name from API
             setLoading(false);
         } catch (error) {
@@ -108,10 +108,10 @@ By signing below, you acknowledge that you have read, understood, and agree to b
         try {
             // TODO: Replace with actual API call
             await new Promise(resolve => setTimeout(resolve, 2000));
-            
+
             // Simulate successful response
             const response = 'true';
-            
+
             if (response === 'true') {
                 if (optedPatient) {
                     clearSignature();
@@ -148,7 +148,7 @@ By signing below, you acknowledge that you have read, understood, and agree to b
 
     const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return;
-        
+
         const canvas = canvasRef.current;
         if (canvas) {
             const rect = canvas.getBoundingClientRect();
@@ -186,7 +186,7 @@ By signing below, you acknowledge that you have read, understood, and agree to b
 
     const handleProceed = async () => {
         setIsButtonClicked(true);
-        
+
         if (isTermsChecked) {
             if (hasSignature) {
                 const signatureData = getSignatureData();
@@ -203,8 +203,8 @@ By signing below, you acknowledge that you have read, understood, and agree to b
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="flex justify-center items-center h-screen w-screen">
+                <Loader loaderType="spin" />
             </div>
         );
     }
@@ -265,7 +265,7 @@ By signing below, you acknowledge that you have read, understood, and agree to b
                                     />
                                 </button>
                             </div>
-                            
+
                             <canvas
                                 ref={canvasRef}
                                 width={400}

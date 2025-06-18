@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { getTheme } from "../../utils/ThemeSelection";
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { Icon } from '@ketan_nimase/ui';
+import { Icon, Loader } from '@ketan_nimase/ui';
 
 interface RecordMatchNotFoundProps {
     onTryAgain?: () => void;
@@ -75,9 +75,8 @@ const RecordMatchNotFound: React.FC<RecordMatchNotFoundProps> = ({ onTryAgain })
                         style={{ backgroundColor: theme.BGColor }}
                     >
                         {isLoading ? (
-                            <div className="flex items-center justify-center space-x-2">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                <span>Loading...</span>
+                            <div className="flex justify-center items-center h-screen w-screen">
+                                <Loader loaderType="spin" />
                             </div>
                         ) : (
                             'Try Again'
