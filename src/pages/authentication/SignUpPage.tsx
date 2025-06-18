@@ -22,9 +22,8 @@ interface SignUpPageProps {
   authUserId?: string;
 }
 
-// Enhanced validation patterns from sample code
+// Enhanced validation patterns
 const phoneRegex = /^\(\d{3}\)[-.]?\d{3}[-.]?\d{4}$/;
-const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
 
 const formSchema = z.object({
   legalFirstName: z.string().min(1, 'First Name is required!'),
@@ -36,7 +35,25 @@ const formSchema = z.object({
   email: z.string()
     .email('Email format is invalid!')
     .min(1, 'Email is required!'),
-  dob: z.string().regex(dateRegex, 'DOB is required!')
+  dob: z.string()
+    .min(1, 'DOB is required!')
+    .refine((val) => {
+      if (!val.trim()) return false;
+      
+      // Try multiple date formats
+      const formats = ['MM/DD/YYYY', 'M/D/YYYY', 'MM/D/YYYY', 'M/DD/YYYY'];
+      
+      for (const format of formats) {
+        const parsed = dayjs(val, format, true);
+        if (parsed.isValid()) {
+          return true;
+        }
+      }
+      
+      return false;
+    }, {
+      message: 'Please enter a valid date in MM/DD/YYYY format'
+    })
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -252,15 +269,14 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
               className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
               style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
             />
-            {/* Tooltip */}
             <div className="relative group inline-block">
-              <div className="w-6 h-6 flex items-center justify-center border-2 border-blue-500 text-blue-500 rounded-full text-sm font-bold cursor-pointer">
+              <div className="w-6 h-6 flex items-center justify-center border-2 border-blue-500 text-blue-500 rounded-full text-sm font-bold cursor-pointer hover:bg-blue-50 transition-colors">
                 i
               </div>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-[240px] bg-white border border-gray-300 text-gray-800 text-sm rounded px-3 py-2 
-                opacity-0 group-hover:opacity-100 transition-opacity duration-300 
-                pointer-events-none shadow-lg z-10">
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-[240px] bg-white border border-gray-300 text-gray-800 text-sm rounded px-3 py-2 shadow-lg z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-index-100">
                 Use an email address you check regularly to receive important account messages.
+                {/* Arrow pointing up */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-300"></div>
               </div>
             </div>
           </div>
@@ -273,13 +289,21 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             DOB
           </label>
           <DatePicker
-            restrictDateSelection="after"
+            restrictDateSelection="before"
             value={dobController.field.value}
+            onChangeRaw={(value: string) => {
+              dobController.field.onChange(value);
+            }}
             onChange={(date: Date) => {
               const formatted = dayjs(date).format('MM/DD/YYYY');
               dobController.field.onChange(formatted);
             }}
+            onError={(error: string | null) => {
+              // Handle date validation errors if needed
+              console.log('Date validation error:', error);
+            }}
             enhancedInput={true}
+            error={!!errors.dob}
           />
           {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob.message}</p>}
         </div>

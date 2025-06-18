@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../lib/utils";
 import Calender from "/calendar-logo.png";
 import { getTheme } from "../../utils/ThemeSelection";
 import type { ThemeColors } from "../../utils/ThemeSelection";
+
+// Enable custom parse format plugin
+dayjs.extend(customParseFormat);
 
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -74,9 +78,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
     const currentDate = dayjs();
     let isSelectable = true;
 
-    if (restrictDateSelection === "before" && date.isBefore(currentDate, "day")) {
+    if (restrictDateSelection === "before" && date.isAfter(currentDate, "day")) {
       isSelectable = false;
-    } else if (restrictDateSelection === "after" && date.isAfter(currentDate, "day")) {
+    } else if (restrictDateSelection === "after" && date.isBefore(currentDate, "day")) {
       isSelectable = false;
     }
 
@@ -89,9 +93,10 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputValue = e.target.value;
+    
     if (enhancedInput) {
       const numbersOnly = inputValue.replace(/\D/g, "");
-
+    
       let formattedDate = "";
       for (let i = 0; i < numbersOnly.length && i < 8; i++) {
         if (i === 2 || i === 4) formattedDate += "/";
@@ -99,7 +104,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
       }
       inputValue = formattedDate;
       onChangeRaw?.(formattedDate);
-
+    
       if (numbersOnly.length === 8) {
         const mm = parseInt(numbersOnly.substring(0, 2));
         const dd = parseInt(numbersOnly.substring(2, 4));
@@ -107,18 +112,81 @@ const DatePicker: React.FC<DatePickerProps> = ({
         const now = new Date().getFullYear();
         const min = minYear ?? now - 150;
         const max = maxYear ?? now;
-
+    
         let errorMessage = null;
         if (mm < 1 || mm > 12) errorMessage = "Invalid month";
         else if (dd < 1 || dd > 31) errorMessage = "Invalid day";
         else if (yyyy < min || yyyy > max) errorMessage = `Invalid year. Allowed: ${min} - ${max}`;
-
+        else {
+          // Create and validate the actual date
+          const dateString = `${mm.toString().padStart(2, '0')}/${dd.toString().padStart(2, '0')}/${yyyy}`;
+          const parsedDate = dayjs(dateString, "MM/DD/YYYY", true);
+          
+          if (!parsedDate.isValid()) {
+            errorMessage = "Invalid date";
+          } else {
+            // Update the selected date if valid
+            setSelectedDate(parsedDate);
+            onChange?.(parsedDate.toDate());
+          }
+        }
+    
         onError?.(errorMessage);
       } else {
         onError?.(null);
       }
     } else {
+      // Handle free-form text input for formats like "January 15, 2024"
       onChangeRaw?.(inputValue);
+      
+      if (inputValue.trim()) {
+        // Try to parse various date formats
+        const formats = [
+          "MMMM D, YYYY",    // January 15, 2024
+          "MMM D, YYYY",     // Jan 15, 2024
+          "MM/DD/YYYY",      // 01/15/2024
+          "M/D/YYYY",        // 1/15/2024
+          "YYYY-MM-DD",      // 2024-01-15
+          "DD/MM/YYYY",      // 15/01/2024
+          "D/M/YYYY"         // 15/1/2024
+        ];
+        
+        let parsedDate = null;
+        let isValid = false;
+        
+        for (const format of formats) {
+          parsedDate = dayjs(inputValue, format, true);
+          if (parsedDate.isValid()) {
+            isValid = true;
+            break;
+          }
+        }
+        
+        // Also try dayjs's built-in parsing as fallback
+        if (!isValid) {
+          parsedDate = dayjs(inputValue);
+          isValid = parsedDate.isValid();
+        }
+        
+        if (isValid && parsedDate) {
+          const now = new Date().getFullYear();
+          const min = minYear ?? now - 150;
+          const max = maxYear ?? now;
+          const year = parsedDate.year();
+          
+          if (year >= min && year <= max) {
+            setSelectedDate(parsedDate);
+            onChange?.(parsedDate.toDate());
+            onError?.(null);
+          } else {
+            onError?.(`Invalid year. Allowed: ${min} - ${max}`);
+          }
+        } else {
+          onError?.("Invalid date format");
+        }
+      } else {
+        onError?.(null);
+      }
     }
   };
 
@@ -185,12 +253,12 @@ const DatePicker: React.FC<DatePickerProps> = ({
         <input
           ref={inputRef}
           type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
+          inputMode={enhancedInput ? "numeric" : "text"}
+          pattern={enhancedInput ? "[0-9/]*" : undefined}
           onKeyDown={(e) => {
             if (!enhancedInput) return;
             const allowedKeys = ["Backspace", "ArrowLeft", "ArrowRight", "Delete", "Tab"];
-            if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
+            if (!/[0-9/]/.test(e.key) && !allowedKeys.includes(e.key)) {
               e.preventDefault();
             }
           }}
@@ -205,7 +273,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
           )}
           value={value}
           onChange={handleInputChange}
-          placeholder="MM/DD/YYYY"
+          placeholder={enhancedInput ? "MM/DD/YYYY" : "Enter date (e.g., January 15, 2024)"}
         />
         <img
           src={Calender}
@@ -242,7 +310,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
                       Select Date
                     </span>
                     <span className="mt-4 text-2xl font-semibold" style={{ color: theme.primaryTextColor }}>
-                      {selectedDate.format("ddd, MMM D")}
+                      {selectedDate.format("MM/DD/YYYY")}
                     </span>
                   </div>
 
