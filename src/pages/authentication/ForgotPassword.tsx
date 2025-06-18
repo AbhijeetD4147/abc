@@ -5,6 +5,10 @@ import Footer from "../../components/ui/Footer";
 import { Button, Icon } from "@ketan_nimase/ui";
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { AuthenticationService } from '../../services/authentication/UserService';
+import { ResetPasswordLinkRequestModel } from '../../model/patient_portal/ResetPasswordLinkRequestModel';
+import { ForgotPasswordGUIDVerificationResponseModel } from '../../model/patient_portal/ForgotPasswordGUIDVerificationResponseModel';
+import { ForgotUpdatePasswordResponseModel } from '../../model/patient_portal/ForgotUpdatePasswordResponseModel';
 
 interface PageProps {
     logoUrl: string;
@@ -22,16 +26,27 @@ const ForgotPassword: React.FC<PageProps> = () => {
     const [captchaError, setCaptchaError] = useState('');
     const navigate = useNavigate();
 
-    // Generate random captcha
-    const generateCaptcha = () => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let result = '';
-        for (let i = 0; i < 4; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
+    // Replace client-side captcha generation with API call
+    const generateCaptcha = async () => {
+        try {
+            setIsLoading(true);
+            // Create instance of AuthenticationService
+            const authService = new AuthenticationService();
+            await authService.getCaptcha();
+
+            if (authService.response_Status_Code_API_11 === 200) {
+                setCaptchaCode(authService.captchaCode || '');
+                setCaptchaInput('');
+                setCaptchaError('');
+            } else {
+                toast.error('Failed to generate captcha. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error generating captcha:', error);
+            toast.error('Failed to generate captcha. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
-        setCaptchaCode(result);
-        setCaptchaInput('');
-        setCaptchaError('');
     };
 
     // Initialize captcha on component mount
@@ -96,18 +111,43 @@ const ForgotPassword: React.FC<PageProps> = () => {
         setIsLoading(true);
 
         try {
-            // TODO: Replace with actual API call
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+            // Create instance of AuthenticationService
+            const authService = new AuthenticationService();
 
-            toast.success('Password recovery instructions have been sent to your registered email');
+            // Create request model
+            const resetPasswordLinkRequestModel = new ResetPasswordLinkRequestModel({
+                userName: username,
+                urlName: GlobalParams.PRACTICE_NAME
+            });
+
+            // Call API to send reset link
+            await authService.resetLinkForForgotPassword(resetPasswordLinkRequestModel);
+
+            if (authService.response_Status_Code_API_6 === 200) {
+                const response = authService.resetLinkForgotPasswordSendResponse;
+                console.log('API response:', response);
+                console.log('Email response:', response?.emailResponse);
+                
+                if (response?.emailResponse === 'Mail Sent Successfully.' || response?.emailResponse === 'Success') {
+                    toast.success('Password recovery instructions have been sent to your registered email');
+                    console.log('Navigating to /password-reset-sent');
+                    navigate('/password-reset-sent');
+                } else if (response?.isAccountLocked) {
+                    toast.error(`Your account is locked. Please try again after ${response.timeRemaining} minutes.`);
+                } else {
+                    toast.error('Failed to send recovery instructions. Please try again.');
+                }
+            } else {
+                toast.error('Failed to send recovery instructions. Please try again.');
+            }
 
             // Reset form
             setUsername('');
             setCaptchaInput('');
             generateCaptcha();
-            navigate('/credentials-sent');
 
         } catch (error) {
+            console.error('Error sending reset link:', error);
             toast.error('Failed to send recovery instructions. Please try again.');
             generateCaptcha(); // Refresh captcha on error
         } finally {
@@ -132,6 +172,111 @@ const ForgotPassword: React.FC<PageProps> = () => {
         // TODO: Navigate back to login page
         window.history.back();
     };
+
+
+    // // Add this method to verify GUID when component loads
+    // useEffect(() => {
+    //     const verifyGuid = async () => {
+    //         if (props.Guid && props.Guid.trim() !== "") {
+    //             setIsLoading(true);
+    //             try {
+    //                 const authService = new AuthenticationService();
+    //                 const forgotUsernameGuidRequestModel = {
+    //                     guid: props.Guid
+    //                 };
+
+    //                 await authService.verifyGuidForResetPassword(forgotUsernameGuidRequestModel);
+
+    //                 if (authService.response_Status_Code_API_10 === 200) {
+    //                     const response = authService.forgotPasswordGUIDVerificationResponseModel;
+
+    //                     if (response?.status === "Valid") {
+    //                         // Set state to show reset password form
+    //                         setCurrentFlow("flowFour"); // Assuming you have a state variable for flow control
+    //                     } else if (response?.status === "Expired") {
+    //                         // Set state to show link expired message
+    //                         setCurrentFlow("flowThree");
+    //                         setLocationPhone(response?.locationPhone || "");
+    //                     } else {
+    //                         // Handle invalid GUID
+    //                         toast.error("Invalid reset link. Please request a new one.");
+    //                         setCurrentFlow("flowOne");
+    //                     }
+    //                 } else {
+    //                     // Handle API error
+    //                     toast.error("Failed to verify reset link. Please try again.");
+    //                     setCurrentFlow("flowOne");
+    //                 }
+    //             } catch (error) {
+    //                 console.error("Error verifying GUID:", error);
+    //                 toast.error("Failed to verify reset link. Please try again.");
+    //                 setCurrentFlow("flowOne");
+    //             } finally {
+    //                 setIsLoading(false);
+    //             }
+    //         }
+    //     };
+
+    //     verifyGuid();
+    // }, [props.Guid]);
+
+    // Add this method to handle password update
+    const updatePassword = async (password: string, confirmPassword: string) => {
+        if (password !== confirmPassword) {
+            toast.error("Passwords do not match");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const authService = new AuthenticationService();
+            const passwordResetModel = {
+                guid: GlobalParams.SESSION_GUID,
+                password: password
+            };
+
+            await authService.changePassword(passwordResetModel);
+
+            if (authService.response_Status_Code_API_24 === 200) {
+                const response = authService.forgotUpdatePasswordResponseModel;
+
+                if (response?.status === "Success") {
+                    toast.success("Password updated successfully");
+                    navigate("/login");
+                } else {
+                    toast.error(response?.text || "Failed to update password. Please try again.");
+                }
+            } else {
+                toast.error("Failed to update password. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error updating password:", error);
+            toast.error("Failed to update password. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Add state for flow control
+    const [currentFlow, setCurrentFlow] = useState("flowOne"); // flowOne, flowTwo, flowThree, flowFour
+    const [locationPhone, setLocationPhone] = useState("");
+
+    // Render different UI based on current flow
+    // const renderContent = () => {
+    //     switch (currentFlow) {
+    //         case "flowOne":
+    //             return renderFlowOne(); // Username and captcha input
+    //         case "flowTwo":
+    //             return renderFlowTwo(); // Email sent confirmation
+    //         case "flowThree":
+    //             return renderFlowThree(); // Link expired message
+    //         case "flowFour":
+    //             return renderFlowFour(); // Reset password form
+    //         default:
+    //             return renderFlowOne();
+    //     }
+    // };
+
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen w-screen">

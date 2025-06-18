@@ -144,6 +144,9 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
 
                 if (response && response.userId && response.userId > 0) {
                     toast.success('Username recovery instructions have been sent to your email');
+                    
+                    // Store email in localStorage for the credentials-sent page
+                    localStorage.setItem('recovery_email', email.trim());
 
                     // Reset form
                     setEmail('');

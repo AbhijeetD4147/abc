@@ -4,81 +4,90 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:first_insight/model/home/home_model.dart';
+import 'package:first_insight/model/patient_portal/ForgotPasswordGUIDVerificationResponseModel.dart';
+import 'package:first_insight/model/patient_portal/ForgotUpdatePasswordRequestModel.dart';
+import 'package:first_insight/model/patient_portal/ForgotUpdatePasswordResponseModel.dart';
 import 'package:first_insight/model/patient_portal/ForgotUserNameGUIDVerificationRequestModel.dart';
-import 'package:first_insight/model/patient_portal/ForgotUsernameGuidResponseModel.dart';
-import 'package:first_insight/model/patient_portal/ResetLinkSendRequestModel.dart';
 import 'package:first_insight/model/patient_portal/ResetLinkSendResponse.dart';
+import 'package:first_insight/model/patient_portal/ResetPasswordLinkRequestModel.dart';
 import 'package:first_insight/screens/authentication/login_screen.dart';
+import 'package:first_insight/screens/home/pt_home.dart';
 import 'package:first_insight/services/authentication/user_service.dart';
 import 'package:first_insight/services/home/home_service.dart';
 import 'package:first_insight/utils/theme_selection_service.dart';
 import 'package:first_insight/utils/global_params.dart';
+import 'package:first_insight/utils/appSizeStyles.dart';
+import 'package:first_insight/utils/validators.dart';
 import 'package:first_insight/utils/base_textstyle.dart';
 import 'package:first_insight/utils/base_widget.dart';
 import 'package:first_insight/utils/responsive.dart';
-import 'package:first_insight/utils/validators.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:hovering/hovering.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:sizer/sizer.dart';
 import 'package:toastification/toastification.dart';
 
-class ForgotUsernameScreen extends StatefulWidget {
-  var Guid = "";
+class ForgotPasswordScreen extends StatefulWidget {
+  var Guid;
   var locationPhone;
-
-  ForgotUsernameScreen({super.key, this.Guid = "", locationPhone});
+  ForgotPasswordScreen({super.key, this.Guid = "", this.locationPhone});
 
   @override
-  State<ForgotUsernameScreen> createState() => ForgotUsernameScreenState();
+  State<ForgotPasswordScreen> createState() => ForgotPasswordScreenState();
 }
 
-class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
+class ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     with TickerProviderStateMixin {
-  TextEditingController emailTextEditingController = TextEditingController();
-  bool _validateEmail = false;
-  String? emailErrorText;
+  double height = 0.0;
+  double width = 0.0;
+  final maxLines = 1;
+
+  bool isSendEmailPopupVisible = false;
+
+  TextEditingController usernameTextEditingController = TextEditingController();
+  bool _validateUsername = false;
 
   TextEditingController captchaTextEditingController = TextEditingController();
   bool _validateCaptcha = false;
   bool _captchaMatch = false;
   var captchaCode = "";
 
-  bool flow1 = true;
-  bool flow2 = false;
-  bool flow3 = false;
-  bool flow4 = false;
-
-  UsernameGuidModel? usernameGuidModel;
-  AnimationController? controller;
-  ResetLinkSendResponse? resetLinkSendResponse;
-  AuthenticationService authenticationService = new AuthenticationService();
-
-  bool loading = false;
-  bool? captchaLoading;
-  String? logo;
-
-  List<HomeDataModel> homeDataList = [];
-  final FocusNode _focusNode1 = FocusNode();
-  final FocusNode _focusNode2 = FocusNode();
+  TextEditingController passwordTextEditingController = TextEditingController();
+  TextEditingController confirmPasswordTextEditingController =
+      TextEditingController();
+  bool _validatePassword = false;
+  bool _validateConfirmPassword = false;
+  String? _errorPasswordText;
+  String? _errorConfirmPasswordText;
 
   String? locationPhone;
 
-  @override
-  void dispose() {
-    emailTextEditingController.dispose();
-    captchaTextEditingController.dispose();
-    _focusNode1.dispose();
-    _focusNode2.dispose();
-    super.dispose();
-  }
+  bool flow1 = true;
+  bool flow2 = false;
+  bool flow3 = false;
+  int isResendLinkSecondTime = 0;
 
-  String get timerString {
-    Duration duration = controller!.duration! * controller!.value;
-    return (duration.inSeconds % 60).toString().length == 2
-        ? '0${duration.inMinutes} : ${(duration.inSeconds % 60).toString()} minutes'
-        : '0${duration.inMinutes} : 0${(duration.inSeconds % 60).toString()} minutes';
-  }
+  bool passwordCharLong = false;
+  bool passwordUpperCase = false;
+  bool passwordLowerCase = false;
+  bool passwordNumber = false;
+  bool passwordSpecialChars = false;
+
+  ForgotPasswordGUIDVerificationResponseModel?
+      forgotPasswordGUIDVerificationResponseModel;
+  ForgotUpdatePasswordResponseModel? forgotUpdatePasswordResponseModel;
+
+  AnimationController? controller;
+  bool loading = true;
+  bool? captchaLoading;
+  String? logo;
+  ResetLinkSendResponse? resetLinkSendResponse;
+  List<HomeDataModel> homeDataList = [];
+  AuthenticationService authenticationService = new AuthenticationService();
+  HomeService homeService = new HomeService();
 
   @override
   void initState() {
@@ -103,7 +112,6 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
     setState(() {
       logo = GlobalParams.LOGO;
     });
-
     await authenticationService.getCaptcha();
     if (authenticationService.response_Status_Code_API_11 == 200) {
       setState(() {
@@ -131,27 +139,30 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
     });
     ForgotUsernameGuidRequestModel forgotUsernameGuidRequestModel =
         ForgotUsernameGuidRequestModel();
-    forgotUsernameGuidRequestModel.patientGUID = widget.Guid;
 
+    forgotUsernameGuidRequestModel.patientGUID = widget.Guid;
     await authenticationService
-        .verifyGuidForResetUsername(forgotUsernameGuidRequestModel);
-    if (authenticationService.response_Status_Code_API_8 == 200) {
+        .verifyGuidForResetPassword(forgotUsernameGuidRequestModel);
+
+    if (authenticationService.response_Status_Code_API_10 == 200) {
       setState(() {
-        usernameGuidModel = authenticationService.usernameGuidModel;
-        if (usernameGuidModel!.status!.toLowerCase() == "true") {
+        forgotPasswordGUIDVerificationResponseModel =
+            authenticationService.forgotPasswordGUIDVerificationResponseModel;
+        if (forgotPasswordGUIDVerificationResponseModel!.status!
+                .toLowerCase() ==
+            "true") {
           flow1 = false;
           flow2 = false;
           flow3 = false;
-          flow4 = true;
         } else {
           flow1 = false;
           flow2 = false;
           flow3 = true;
-          flow4 = false;
         }
-        locationPhone = usernameGuidModel?.locationPhone;
+        locationPhone =
+            forgotPasswordGUIDVerificationResponseModel?.locationPhone;
       });
-      HomeService homeService = HomeService();
+
       await homeService.getHomeData("Other");
       if (homeService.response_Status_Code_API == 200) {
         setState(() {
@@ -177,7 +188,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
         }
       }
     } else {
-      if (authenticationService.response_Status_Code_API_8 != 205) {
+      if (authenticationService.response_Status_Code_API_10 != 205) {
         setState(() {
           loading = false;
         });
@@ -191,41 +202,56 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
     }
   }
 
-  sendMail() async {
+  String get timerString {
+    Duration duration = controller!.duration! * controller!.value;
+    return (duration.inSeconds % 60).toString().length == 2
+        ? '0${duration.inMinutes} : ${(duration.inSeconds % 60).toString()} minutes'
+        : '0${duration.inMinutes} : 0${(duration.inSeconds % 60).toString()} minutes';
+  }
+
+  Future<void> sendMail() async {
     setState(() {
+      isResendLinkSecondTime = isResendLinkSecondTime + 1;
       loading = true;
     });
 
-    ResetLinkSendRequestModel resetLinkSendRequestModel =
-        ResetLinkSendRequestModel();
-    resetLinkSendRequestModel.userEmail =
-        emailTextEditingController.text.trim();
-    resetLinkSendRequestModel.urlName = GlobalParams.PRACTICE_NAME;
-
+    ResetPasswordLinkRequestModel resetPasswordLinkRequestModel =
+        ResetPasswordLinkRequestModel();
+    resetPasswordLinkRequestModel.userName =
+        usernameTextEditingController.text.trim();
+    resetPasswordLinkRequestModel.urlName = GlobalParams.PRACTICE_NAME;
     await authenticationService
-        .resetLinkForForgotUserName(resetLinkSendRequestModel);
+        .resetLinkForForgotPassword(resetPasswordLinkRequestModel);
 
-    if (authenticationService.response_Status_Code_API_5 == 200) {
+    if (authenticationService.response_Status_Code_API_6 == 200) {
       setState(() {
         resetLinkSendResponse =
-            authenticationService.resetLinkForgotUsernameSendResponse;
+            authenticationService.resetLinkForgotPasswordSendResponse;
         if (resetLinkSendResponse!.userId! > 0) {
-          controller!.reverse(
-              from: controller!.value == 0.0 ? 1.0 : controller!.value);
-          showToast(
-            context,
-            message: 'Reset username email sent',
-            type: ToastificationType.success,
-          );
-          loading = false;
-          flow1 = false;
-          flow2 = true;
-          flow3 = false;
-          flow4 = false;
+          if (resetLinkSendResponse!.isAccountLocked!) {
+            loading = false;
+            Get.to(LoginScreen(
+              callFrom: "Account Locked",
+              accountLockedDateTime:
+                  resetLinkSendResponse!.accountLockedDateTime!,
+            ));
+          } else {
+            controller!.reverse(
+                from: controller!.value == 0.0 ? 1.0 : controller!.value);
+            showToast(
+              context,
+              message: 'Reset password email sent',
+              type: ToastificationType.success,
+            );
+            loading = false;
+            flow1 = false;
+            flow2 = true;
+            flow3 = false;
+          }
         }
       });
     } else {
-      if (authenticationService.response_Status_Code_API_5 != 205) {
+      if (authenticationService.response_Status_Code_API_6 != 205) {
         setState(() {
           loading = false;
         });
@@ -241,6 +267,9 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
 
   @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+    width = MediaQuery.of(context).size.width;
+
     return SafeArea(
       child: Scaffold(
         body: loading
@@ -260,7 +289,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
   Widget mobileView() {
     return Column(
       children: [
-        Flexible(
+        Expanded(
           flex: 1,
           child: logoSection(),
         ),
@@ -268,7 +297,9 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
           flex: 2,
           child: Container(
             color: ThemeSelection.BGColor,
-            child: SingleChildScrollView(child: usernameSection()),
+            child: SingleChildScrollView(
+              child: passwordSection(),
+            ),
           ),
         ),
       ],
@@ -290,14 +321,14 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
           flex: 1,
           child: Container(
             color: ThemeSelection.BGColor,
-            child: usernameSection(),
+            child: passwordSection(),
           ),
         )
       ],
     );
   }
 
-  Widget usernameSection() {
+  Widget passwordSection() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -324,7 +355,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
               padding: EdgeInsets.only(bottom: 1.h),
               child: Icon(
                 const IconData(
-                  0xE164,
+                  0xE163,
                   fontFamily: 'metro',
                 ),
                 size: Responsive.isMobile(context) ? 65.sp : 20.sp,
@@ -334,7 +365,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
           ),
           Center(
             child: Text(
-              'Recover your Username',
+              'Recover your account',
               style: TextStyle(
                 color: ThemeSelection.secondaryTextColor,
                 fontFamily: 'SegoeUi',
@@ -347,7 +378,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
             height: 2.h,
           ),
           Text(
-            'We can help you reset your Username.\nFollow the instruction below.',
+            'We can help you reset your password.\nFollow the instruction below.',
             style: TextStyle(
               color: ThemeSelection.secondaryTextColor,
               fontFamily: 'SegoeUi',
@@ -363,24 +394,18 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
             height: 4.h,
           ),
           customTextFormField(
+            key: ValueKey("Username"),
             context,
-            hintText: "Your Email Address",
+            hintText: "Username",
             readOnly: false,
-            textEditingController: emailTextEditingController,
-            focusNode: _focusNode1,
+            textEditingController: usernameTextEditingController,
             maxLines: 1,
             onChanged: (val) {
               setState(() {
-                if (emailTextEditingController.text.trim().isNotEmpty) {
-                  if (emailTextEditingController.text.trim().emailValidate) {
-                    _validateEmail = false;
-                  } else {
-                    _validateEmail = true;
-                    emailErrorText = 'Please enter valid Email';
-                  }
+                if (usernameTextEditingController.text.trim().isNotEmpty) {
+                  _validateUsername = false;
                 } else {
-                  _validateEmail = true;
-                  emailErrorText = 'Email is required';
+                  _validateUsername = true;
                 }
               });
             },
@@ -392,11 +417,10 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
                 color: ThemeSelection.greyBorderColor,
               ),
             ),
-            validate: _validateEmail,
+            validate: _validateUsername,
             inlineError: false,
-            key: ValueKey("Email"),
           ),
-          _validateEmail
+          _validateUsername
               ? Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(5),
@@ -406,9 +430,9 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
                   padding:
                       EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 0.5.w),
                   child: Text(
-                    emailErrorText!,
+                    'Username is required',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: ThemeSelection.secondaryTextColor,
                     ),
                   ),
                 )
@@ -423,14 +447,16 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
                 width: Responsive.isMobile(context) ? 20.w : 5.w,
                 height: 5.h,
                 child: Center(
-                  child: Text(captchaCode,
-                      style: TextStyle(
-                        fontFamily: 'SegoeUi',
-                        fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
-                        fontWeight: FontWeight.bold,
-                        color: ThemeSelection.greyBorderColor,
-                      ),
-                      key: ValueKey("CaptchaCode")),
+                  child: Text(
+                    captchaCode,
+                    style: TextStyle(
+                      fontFamily: 'SegoeUi',
+                      fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
+                      fontWeight: FontWeight.bold,
+                      color: ThemeSelection.greyBorderColor,
+                    ),
+                    key: ValueKey("Username"),
+                  ),
                 ),
               ),
               SizedBox(
@@ -438,25 +464,64 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
               ),
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 1.h),
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      _captchaMatch = false;
-                      captchaCode = "";
-                    });
-                    getCaptchaCode();
-                  },
-                  child: Text(
-                    "Refresh",
-                    style: TextStyle(
-                      fontFamily: 'SegoeUi',
-                      letterSpacing: 0.5,
-                      decoration: TextDecoration.underline,
-                      decorationColor: ThemeSelection.secondaryTextColor,
-                      fontSize: Responsive.isMobile(context) ? 12.sp : 3.sp,
-                      color: ThemeSelection.secondaryTextColor,
+                child: MouseRegion(
+                  key: ValueKey("Refresh"),
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _captchaMatch = false;
+                        captchaCode = "";
+                      });
+                      getCaptchaCode();
+                    },
+                    child: HoverWidget(
+                      child: Container(
+                        padding: EdgeInsets.only(bottom: 0.5.h),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: ThemeSelection.secondaryTextColor,
+                              width: 0.1.h,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          "Refresh",
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontFamily: 'SegoeUi',
+                            letterSpacing: 0.5,
+                            fontSize:
+                                Responsive.isMobile(context) ? 12.sp : 3.sp,
+                            color: ThemeSelection.secondaryTextColor,
+                          ),
+                        ),
+                      ),
+                      hoverChild: Container(
+                        padding: EdgeInsets.only(bottom: 0.5.h),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: ThemeSelection.whiteLinkHoverColor,
+                              width: 0.1.h,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          "Refresh",
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontFamily: 'SegoeUi',
+                            letterSpacing: 0.5,
+                            fontSize:
+                                Responsive.isMobile(context) ? 12.sp : 3.sp,
+                            color: ThemeSelection.whiteLinkHoverColor,
+                          ),
+                        ),
+                      ),
+                      onHover: (event) {},
                     ),
-                    key: ValueKey("Refresh Captcha"),
                   ),
                 ),
               ),
@@ -482,15 +547,11 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
             hintText: "",
             readOnly: false,
             textEditingController: captchaTextEditingController,
-            focusNode: _focusNode2,
             maxLines: 1,
             onChanged: (val) {
               setState(() {
-                if (captchaTextEditingController.text
-                    .toString()
-                    .trim()
-                    .isNotEmpty) {
-                  if (captchaTextEditingController.text.toString().trim() ==
+                if (captchaTextEditingController.text.trim().isNotEmpty) {
+                  if (captchaTextEditingController.text.trim() ==
                       captchaCode.trim()) {
                     _validateCaptcha = false;
                     _captchaMatch = false;
@@ -506,7 +567,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
             },
             validate: _validateCaptcha,
             inlineError: false,
-            key: ValueKey("CaptchaCode Textfield"),
+            key: ValueKey("CaptchaCode textfield"),
           ),
           _validateCaptcha || _captchaMatch
               ? Container(
@@ -534,54 +595,64 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
+            children: [
               Flexible(
-                key: ValueKey("Cancel"),
-                child: ghostButton(
-                  context,
-                  "Cancel",
-                  () {
-                    Get.back();
-                  },
+                child: SizedBox(
+                  key: ValueKey("Cancel"),
+                  child: ghostButton(
+                    context,
+                    "Cancel",
+                    () {
+                      Get.back();
+                    },
+                  ),
                 ),
               ),
               SizedBox(
                 width: Responsive.isMobile(context) ? 5.w : 1.w,
               ),
               Flexible(
-                key: ValueKey("Next"),
-                child: ghostButton(
-                  context,
-                  "Next",
-                  () {
-                    if (emailTextEditingController.text.trim().isNotEmpty) {
-                      if (captchaTextEditingController.text.trim().isNotEmpty) {
-                        if (captchaTextEditingController.text.trim() ==
-                            captchaCode.trim()) {
-                          sendMail();
+                child: SizedBox(
+                  key: ValueKey("Next"),
+                  child: ghostButton(
+                    context,
+                    "Next",
+                    () {
+                      if (usernameTextEditingController.text
+                          .trim()
+                          .isNotEmpty) {
+                        if (captchaTextEditingController.text
+                            .trim()
+                            .isNotEmpty) {
+                          if (captchaTextEditingController.text.trim() ==
+                              captchaCode.trim()) {
+                            setState(() {
+                              isResendLinkSecondTime = 1;
+                            });
+                            sendMail();
+                          }
                         }
                       }
-                    }
-                    if (emailTextEditingController.text.trim().isEmpty) {
-                      setState(() {
-                        _validateEmail = true;
-                        emailErrorText = 'Email is required';
-                      });
-                    }
-                    if (captchaTextEditingController.text.trim().isEmpty) {
-                      setState(() {
-                        _validateCaptcha = true;
-                      });
-                    }
-                    if (captchaTextEditingController.text.trim().isNotEmpty) {
-                      if (captchaTextEditingController.text.trim() !=
-                          captchaCode.trim()) {
+                      if (usernameTextEditingController.text.trim().isEmpty) {
                         setState(() {
-                          _captchaMatch = true;
+                          _validateUsername = true;
                         });
                       }
-                    }
-                  },
+                      if (captchaTextEditingController.text.trim().isEmpty) {
+                        setState(() {
+                          _validateCaptcha = true;
+                        });
+                      }
+                      if (captchaTextEditingController.text.trim().isNotEmpty) {
+                        if (captchaTextEditingController.text.trim() !=
+                            captchaCode.trim()) {
+                          setState(() {
+                            _captchaMatch = true;
+                          });
+                        }
+                      }
+                    },
+                  ),
                 ),
               ),
             ],
@@ -613,7 +684,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
           ),
           Center(
             child: Text(
-              'Recover your Username',
+              'Recover your account',
               style: TextStyle(
                 color: ThemeSelection.secondaryTextColor,
                 fontFamily: 'SegoeUi',
@@ -626,7 +697,9 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
             height: 2.h,
           ),
           Text(
-            'We have sent a verification email.',
+            isResendLinkSecondTime > 2
+                ? "The link you have clicked on has expired and we have sent you a new link, Please check your email. This link will be active for 60 minutes."
+                : 'We have sent a reset password email.',
             style: TextStyle(
               color: ThemeSelection.secondaryTextColor,
               fontFamily: 'SegoeUi',
@@ -648,7 +721,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
             animation: controller!,
             builder: (context, child) {
               return Text.rich(
-                key: ValueKey("Resend Email"),
+                key: ValueKey("Resend email"),
                 TextSpan(
                   text: 'Check your spam folder or ',
                   style: TextStyle(
@@ -666,7 +739,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
                         },
                       text: controller!.isAnimating
                           ? '\n\n\nResend email in:\n'
-                          : 'Resend email',
+                          : 'Resend email.',
                       style: TextStyle(
                         fontFamily: 'SegoeUi',
                         fontSize: Responsive.isMobile(context) ? 15.sp : 3.5.sp,
@@ -727,25 +800,29 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
           SizedBox(
             height: 2.h,
           ),
-          Text(
-            'You have tried to use the  that has expired. To request new link, call ${locationPhone ?? ""}',
-            style: TextStyle(
-              color: ThemeSelection.secondaryTextColor,
-              fontFamily: 'SegoeUi',
-              fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
+          Text.rich(
+            key: ValueKey("Location phone"),
+            TextSpan(
+              text:
+                  'You have tried to use the one-time login link that has expired. To request new link, call ${locationPhone ?? ""}',
+              style: TextStyle(
+                fontFamily: 'SegoeUi',
+                fontSize: Responsive.isMobile(context) ? 15.sp : 3.5.sp,
+                color: ThemeSelection.secondaryTextColor,
+              ),
+              children: <TextSpan>[
+                TextSpan(
+                  recognizer: TapGestureRecognizer()..onTap = () {},
+                  text: "",
+                  style: TextStyle(
+                    fontFamily: 'SegoeUi',
+                    fontSize: Responsive.isMobile(context) ? 15.sp : 3.5.sp,
+                    fontWeight: FontWeight.normal,
+                    color: ThemeSelection.PrimaryAction,
+                  ),
+                )
+              ],
             ),
-          ),
-          SizedBox(
-            height: 2.h,
-          ),
-          Text(
-            '',
-            style: TextStyle(
-              fontFamily: 'SegoeUi',
-              fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
-              color: ThemeSelection.PrimaryAction,
-            ),
-            key: ValueKey("Location Phone"),
           ),
         ],
       ),
@@ -764,7 +841,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
               padding: EdgeInsets.only(bottom: 1.h),
               child: Icon(
                 const IconData(
-                  0xE164,
+                  0xE162,
                   fontFamily: 'metro',
                 ),
                 size: Responsive.isMobile(context) ? 65.sp : 20.sp,
@@ -774,7 +851,7 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
           ),
           Center(
             child: Text(
-              'Your Username',
+              'Reset Your Password',
               style: TextStyle(
                 color: ThemeSelection.secondaryTextColor,
                 fontFamily: 'SegoeUi',
@@ -786,47 +863,472 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
           SizedBox(
             height: 2.h,
           ),
-          Text.rich(
-            key: ValueKey("Username"),
-            TextSpan(
-              text: 'Your username is ',
-              style: TextStyle(
-                fontFamily: 'SegoeUi',
-                fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
-                color: ThemeSelection.secondaryTextColor,
-              ),
-              children: <TextSpan>[
-                TextSpan(
-                  text: usernameGuidModel!.userName,
-                  style: TextStyle(
-                    fontFamily: 'SegoeUi',
-                    fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
-                    color: ThemeSelection.PrimaryAction,
-                  ),
-                ),
-              ],
-            ),
-          ),
           Text(
-            'You can change your username once you Sign In.',
+            'Choose a new password to reset account.',
             style: TextStyle(
+              color: ThemeSelection.secondaryTextColor,
               fontFamily: 'SegoeUi',
               fontSize: Responsive.isMobile(context) ? 15.sp : 4.sp,
-              color: ThemeSelection.secondaryTextColor,
             ),
+          ),
+          SizedBox(
+            height: 2.h,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    customTextFormField(
+                      context,
+                      hintText: "Password",
+                      obscureText: true,
+                      readOnly: false,
+                      textEditingController: passwordTextEditingController,
+                      onChanged: (val) {
+                        setState(() {
+                          if (passwordTextEditingController.text
+                              .trim()
+                              .isNotEmpty) {
+                            if (passwordTextEditingController.text
+                                .trim()
+                                .lengthValidation) {
+                              passwordCharLong = true;
+                            } else {
+                              passwordCharLong = false;
+                            }
+                            if (passwordTextEditingController.text
+                                .trim()
+                                .containsNumbers) {
+                              passwordNumber = true;
+                            } else {
+                              passwordNumber = false;
+                            }
+                            if (passwordTextEditingController.text
+                                .trim()
+                                .containsSpecialChars) {
+                              passwordSpecialChars = true;
+                            } else {
+                              passwordSpecialChars = false;
+                            }
+                            if (passwordTextEditingController.text
+                                .trim()
+                                .containsUppercase) {
+                              passwordUpperCase = true;
+                            } else {
+                              passwordUpperCase = false;
+                            }
+                            if (passwordTextEditingController.text
+                                .trim()
+                                .containsLowercase) {
+                              passwordLowerCase = true;
+                            } else {
+                              passwordLowerCase = false;
+                            }
+                            if (passwordCharLong &&
+                                passwordNumber &&
+                                passwordSpecialChars &&
+                                passwordUpperCase &&
+                                passwordLowerCase) {
+                              _validatePassword = false;
+                              _errorPasswordText = "";
+                            } else {
+                              _validatePassword = true;
+                              _errorPasswordText =
+                                  "Password needs to follow criteria";
+                            }
+                          } else {
+                            _validatePassword = true;
+                            passwordCharLong = false;
+                            passwordNumber = false;
+                            passwordSpecialChars = false;
+                            passwordUpperCase = false;
+                            passwordLowerCase = false;
+                            _errorPasswordText = "Password is required";
+                          }
+                        });
+                      },
+                      inputFormatters: [LengthLimitingTextInputFormatter(255)],
+                      prefixIcon: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          color: Colors.black12,
+                        ),
+                        margin: EdgeInsets.only(right: 0.5.w),
+                        child: Icon(
+                          const IconData(0xE168, fontFamily: 'metro'),
+                          size: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                          color: ThemeSelection.greyBorderColor,
+                        ),
+                      ),
+                      validate: _validatePassword,
+                      inlineError: false,
+                      key: ValueKey("Password"),
+                    ),
+                    _validatePassword
+                        ? Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(5),
+                              color: ThemeSelection.textfieldInlineColor,
+                            ),
+                            alignment: Alignment.topLeft,
+                            padding: EdgeInsets.symmetric(
+                                vertical: 0.5.h, horizontal: 0.5.w),
+                            child: Text(
+                              _errorPasswordText!,
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                          )
+                        : SizedBox(),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: 1.w,
+              ),
+              customHoverTooltip(
+                context,
+                toolTipMessage:
+                    "Choose a password that you don\'t use for other websites.",
+                iconData: Symbols.info,
+                hoverColor: ThemeSelection.iconHoverPrimaryColor,
+                iconColor: ThemeSelection.iconDefaultTertiaryColor,
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 2.h,
+          ),
+          customTextFormField(
+            context,
+            hintText: "Confirm Password",
+            readOnly: false,
+            obscureText: true,
+            textEditingController: confirmPasswordTextEditingController,
+            inputFormatters: [LengthLimitingTextInputFormatter(255)],
+            onChanged: (val) {
+              setState(() {
+                if (confirmPasswordTextEditingController.text
+                    .trim()
+                    .isNotEmpty) {
+                  if (confirmPasswordTextEditingController.text.trim() ==
+                      passwordTextEditingController.text.trim()) {
+                    _validateConfirmPassword = false;
+                    _errorConfirmPasswordText = "";
+                  } else {
+                    _validateConfirmPassword = true;
+                    _errorConfirmPasswordText =
+                        'Confirm Password does not match the Password';
+                  }
+                } else {
+                  _validateConfirmPassword = true;
+                  _errorConfirmPasswordText = 'Confirm Password is required';
+                }
+              });
+            },
+            prefixIcon: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                color: Colors.black12,
+              ),
+              margin: EdgeInsets.only(right: 0.5.w),
+              child: Icon(
+                const IconData(0xE168, fontFamily: 'metro'),
+                size: Responsive.isMobile(context) ? 12.sp : 3.sp,
+                color: ThemeSelection.greyBorderColor,
+              ),
+            ),
+            validate: _validateConfirmPassword,
+            inlineError: false,
+            key: ValueKey("Confirm Password"),
+          ),
+          _validateConfirmPassword
+              ? Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    color: ThemeSelection.textfieldInlineColor,
+                  ),
+                  alignment: Alignment.topLeft,
+                  padding:
+                      EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 0.5.w),
+                  child: Text(
+                    _errorConfirmPasswordText!,
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                )
+              : SizedBox(),
+          SizedBox(
+            height: 2.h,
+          ),
+          Text(
+            "Password Criteria",
+            style: TextStyle(
+              fontFamily: 'SegoeUi',
+              fontWeight: FontWeight.normal,
+              color: ThemeSelection.secondaryTextColor,
+              fontSize: AppSizeStyles.getSubHeadingTextSize(context, width),
+            ),
+          ),
+          SizedBox(
+            height: 1.h,
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              passwordCharLong
+                  ? Container(
+                      child: Icon(
+                        const IconData(0xE120, fontFamily: 'metro'),
+                        color: ThemeSelection.denaryTextColor,
+                        size: 8.0,
+                      ),
+                    )
+                  : Container(
+                      height: 8.0,
+                      width: 8.0,
+                      decoration: new BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+              SizedBox(
+                width: width * 0.008,
+              ),
+              Text(
+                Responsive.isMobile(context)
+                    ? "At least 8 characters long"
+                    : "At least 8 characters long (longer password are more secure)",
+                style: TextStyle(
+                    fontFamily: 'SegoeUi',
+                    fontWeight: FontWeight.normal,
+                    color: passwordCharLong
+                        ? ThemeSelection.denaryTextColor
+                        : ThemeSelection.secondaryTextColor,
+                    fontSize: AppSizeStyles.getSmallTextSize(context, width)),
+              ),
+            ],
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              passwordUpperCase
+                  ? Container(
+                      child: Icon(
+                        const IconData(0xE120, fontFamily: 'metro'),
+                        color: ThemeSelection.denaryTextColor,
+                        size: 8.0,
+                      ),
+                    )
+                  : Container(
+                      height: 8.0,
+                      width: 8.0,
+                      decoration: new BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+              SizedBox(
+                width: width * 0.008,
+              ),
+              Text(
+                "At least 1 uppercase letter (A, B, C...)",
+                style: TextStyle(
+                    fontFamily: 'SegoeUi',
+                    fontWeight: FontWeight.normal,
+                    color: passwordUpperCase
+                        ? ThemeSelection.denaryTextColor
+                        : ThemeSelection.secondaryTextColor,
+                    fontSize: AppSizeStyles.getSmallTextSize(context, width)),
+              ),
+            ],
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              passwordLowerCase
+                  ? Container(
+                      child: Icon(
+                        const IconData(0xE120, fontFamily: 'metro'),
+                        color: ThemeSelection.denaryTextColor,
+                        size: 8.0,
+                      ),
+                    )
+                  : Container(
+                      height: 8.0,
+                      width: 8.0,
+                      decoration: new BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+              SizedBox(
+                width: width * 0.008,
+              ),
+              Text(
+                "At least 1 lowercase letter (a, b, c...)",
+                style: TextStyle(
+                    fontFamily: 'SegoeUi',
+                    fontWeight: FontWeight.normal,
+                    color: passwordLowerCase
+                        ? ThemeSelection.denaryTextColor
+                        : ThemeSelection.secondaryTextColor,
+                    fontSize: AppSizeStyles.getSmallTextSize(context, width)),
+              ),
+            ],
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              passwordNumber
+                  ? Container(
+                      child: Icon(
+                        const IconData(0xE120, fontFamily: 'metro'),
+                        color: ThemeSelection.denaryTextColor,
+                        size: 8.0,
+                      ),
+                    )
+                  : Container(
+                      height: 8.0,
+                      width: 8.0,
+                      decoration: new BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+              SizedBox(
+                width: width * 0.008,
+              ),
+              Text(
+                "At least 1 number (1, 2, 3...)",
+                style: TextStyle(
+                    fontFamily: 'SegoeUi',
+                    fontWeight: FontWeight.normal,
+                    color: passwordNumber
+                        ? ThemeSelection.denaryTextColor
+                        : ThemeSelection.secondaryTextColor,
+                    fontSize: AppSizeStyles.getSmallTextSize(context, width)),
+              ),
+            ],
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              passwordSpecialChars
+                  ? Container(
+                      child: Icon(
+                        const IconData(0xE120, fontFamily: 'metro'),
+                        color: ThemeSelection.denaryTextColor,
+                        size: 8.0,
+                      ),
+                    )
+                  : Container(
+                      height: 8.0,
+                      width: 8.0,
+                      decoration: new BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+              SizedBox(
+                width: width * 0.008,
+              ),
+              Text(
+                "At least 1 special character/punctuation (%, @, #, ?...)",
+                style: TextStyle(
+                    fontFamily: 'SegoeUi',
+                    fontWeight: FontWeight.normal,
+                    color: passwordSpecialChars
+                        ? ThemeSelection.denaryTextColor
+                        : ThemeSelection.secondaryTextColor,
+                    fontSize: AppSizeStyles.getSmallTextSize(context, width)),
+              ),
+            ],
           ),
           SizedBox(
             height: 5.h,
           ),
-          Container(
-            key: ValueKey("Sign In"),
-            child: ghostButton(
-              context,
-              "Sign In",
-              () {
-                Get.offAll(LoginScreen(callFrom: "Update Username"));
-              },
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                key: ValueKey('Cancel'),
+                flex: 1,
+                child: ghostButton(
+                  context,
+                  "Cancel",
+                  () {
+                    Get.offAll(PtHomeScreen());
+                  },
+                ),
+              ),
+              SizedBox(
+                width: 10,
+              ),
+              Flexible(
+                key: ValueKey('Confirm'),
+                flex: 1,
+                child: ghostButton(
+                  context,
+                  "Confirm",
+                  () {
+                    if (passwordTextEditingController.text.trim().isNotEmpty &&
+                        confirmPasswordTextEditingController.text
+                            .trim()
+                            .isNotEmpty &&
+                        !_validatePassword &&
+                        !_validateConfirmPassword) {
+                      updatePassword(widget.Guid,
+                          confirmPasswordTextEditingController.text.trim());
+                    } else {
+                      if (passwordTextEditingController.text.trim().isEmpty) {
+                        setState(() {
+                          _validatePassword = true;
+                          _errorPasswordText = 'Password is required';
+                        });
+                      }
+                      if (confirmPasswordTextEditingController.text
+                          .trim()
+                          .isEmpty) {
+                        setState(() {
+                          _validateConfirmPassword = true;
+                          _errorConfirmPasswordText =
+                              'Confirm Password is required';
+                        });
+                      }
+                    }
+                    if (confirmPasswordTextEditingController.text
+                            .trim()
+                            .isNotEmpty &&
+                        passwordTextEditingController.text.trim().isNotEmpty &&
+                        confirmPasswordTextEditingController.text.trim() !=
+                            passwordTextEditingController.text.trim()) {
+                      setState(() {
+                        _validateConfirmPassword = true;
+                        _errorConfirmPasswordText =
+                            'Confirm Password does not match the Password';
+                      });
+                    }
+                    if (passwordTextEditingController.text.trim().isNotEmpty &&
+                        _validatePassword) {
+                      setState(() {
+                        _errorPasswordText =
+                            'Password needs to follow criteria';
+                      });
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -837,22 +1339,23 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 5.h),
-            child: Center(
-              child: Image.memory(
-                Base64Decoder().convert(logo!),
-                gaplessPlayback: true,
-                scale: Responsive.isMobile(context)
-                    ? 2
-                    : Responsive.isTablet(context)
-                        ? 2
-                        : 1,
+        if (logo != null)
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 5.h),
+              child: Center(
+                child: Image.memory(
+                  Base64Decoder().convert(logo!),
+                  gaplessPlayback: true,
+                  scale: Responsive.isMobile(context)
+                      ? 2
+                      : Responsive.isTablet(context)
+                          ? 2
+                          : 1,
+                ),
               ),
             ),
           ),
-        ),
         Padding(
           padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 1.w),
           child: Row(
@@ -874,5 +1377,47 @@ class ForgotUsernameScreenState extends State<ForgotUsernameScreen>
         ),
       ],
     );
+  }
+
+  Future<void> updatePassword(String guid, String password) async {
+    PasswordModel passwordModel = PasswordModel();
+    passwordModel.guid = guid;
+    passwordModel.password = password;
+
+    await authenticationService.changePassword(passwordModel);
+    if (authenticationService.response_Status_Code_API_24 == 200) {
+      setState(() {
+        forgotUpdatePasswordResponseModel =
+            authenticationService.forgotUpdatePasswordResponseModel;
+        if (forgotUpdatePasswordResponseModel!.status!.toLowerCase() ==
+            "true") {
+          Get.offAll(LoginScreen(callFrom: "Update Password"));
+        } else {
+          showCustomDialog(
+            context,
+            title: forgotUpdatePasswordResponseModel!.text,
+            firstButtonText: "Ok",
+            secondButtonText: "",
+            iconData: Symbols.warning,
+            firstButtonFunction: () {
+              Get.back();
+            },
+            secondButtonFunction: () {},
+          );
+        }
+      });
+    } else {
+      if (authenticationService.response_Status_Code_API_24 != 205) {
+        setState(() {
+          loading = false;
+        });
+        showToast(
+          context,
+          message:
+              'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
+          type: ToastificationType.error,
+        );
+      }
+    }
   }
 }

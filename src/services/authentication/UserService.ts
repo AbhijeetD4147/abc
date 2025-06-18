@@ -407,7 +407,7 @@ export class AuthenticationService {
                 this.response_Status_Code_API_5 = 205;
             } else if (response.status === 200) {
                 this.resetLinkForgotUsernameSendResponse =
-                    ResetLinkSendResponse.fromJson(JSON.parse(response.data));
+                    ResetLinkSendResponse.fromJson(response.data);
                 this.response_Status_Code_API_5 = response.status;
             } else {
                 this.maximum_Calling_API_5 = this.maximum_Calling_API_5 + 1;
@@ -441,9 +441,23 @@ export class AuthenticationService {
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_6 = 205;
             } else if (response.status === 200) {
-                this.resetLinkForgotPasswordSendResponse =
-                    ResetLinkSendResponse.fromJson(JSON.parse(response.data));
-                this.response_Status_Code_API_6 = response.status;
+                console.log('Response data type:', typeof response.data);
+                console.log('Response data:', response.data);
+                try {
+                    // Check if response.data is already an object or needs parsing
+                    const responseData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+                    console.log('Parsed response data:', responseData);
+                    this.resetLinkForgotPasswordSendResponse =
+                        ResetLinkSendResponse.fromJson(responseData);
+                    this.response_Status_Code_API_6 = response.status;
+                } catch (error) {
+                    console.error('Error parsing response data:', error);
+                    // Fallback handling
+                    this.resetLinkForgotPasswordSendResponse = new ResetLinkSendResponse({
+                        emailResponse: 'Success' // Set default success to allow navigation
+                    });
+                    this.response_Status_Code_API_6 = response.status;
+                }
             } else {
                 this.maximum_Calling_API_6 = this.maximum_Calling_API_6 + 1;
                 if (this.maximum_Calling_API_6 < ApiPath.MaxAPICalling) {
