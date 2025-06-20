@@ -136,7 +136,7 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
                     <div className="border-3 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center">
                             <Icon
                                 colorVariant="light"
-                                disabled
+                                
                                 height="60px"
                                 isbadge
                                 name="lock"

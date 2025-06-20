@@ -307,7 +307,7 @@ const ForgotPassword: React.FC<PageProps> = () => {
                         <div className="border-2 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center hover:bg-blue-600 cursor-pointer">
                             <Icon
                                 colorVariant="light"
-                                disabled
+                            
                                 height="60px"
                                 isCursorPointer
                                 isbadge
