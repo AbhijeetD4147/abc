@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Archive, Trash2, Mail, MailOpen, X, Paperclip, Send, ArrowLeft, MoreVertical, Check, Square } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { Navbar } from "../../components/ui/Navbar";
 import { Button, Icon } from "@ketan_nimase/ui";
 import dayjs from "dayjs";
@@ -22,6 +22,23 @@ interface Message {
     isRead: boolean;
     messageType?: string;
     tempMessageType?: string;
+    // Threading properties
+    threadId?: string;
+    parentMessageId?: string;
+    isThreadParent?: boolean;
+    threadCount?: number;
+    replyTo?: string;
+}
+
+// Thread interface for organizing messages
+interface MessageThread {
+    id: string;
+    subject: string;
+    participants: string[];
+    messages: Message[];
+    lastMessageDate: string;
+    unreadCount: number;
+    isExpanded: boolean;
 }
 
 interface ComposeMessage {
@@ -39,7 +56,7 @@ const Messages: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
     const [showUnreadOnly, setShowUnreadOnly] = useState(false);
-    
+
     // Search State
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
@@ -67,7 +84,36 @@ const Messages: React.FC = () => {
             ],
             isRead: false,
             isSent: false,
-            isArchived: false
+            isArchived: false,
+            threadId: "thread_1",
+            isThreadParent: true,
+            threadCount: 3
+        },
+        {
+            id: "1_reply_1",
+            sender: "You",
+            subject: "Re: Your glasses are ready",
+            date: "06/12/2025",
+            content: ["Thank you for letting me know. I'll pick them up on Monday morning."],
+            isRead: true,
+            isSent: true,
+            isArchived: false,
+            threadId: "thread_1",
+            parentMessageId: "1",
+            replyTo: "Roy Woodsworth"
+        },
+        {
+            id: "1_reply_2",
+            sender: "Roy Woodsworth",
+            subject: "Re: Your glasses are ready",
+            date: "06/12/2025",
+            content: ["Perfect! We'll have them ready for you. See you Monday!"],
+            isRead: false,
+            isSent: false,
+            isArchived: false,
+            threadId: "thread_1",
+            parentMessageId: "1_reply_1",
+            replyTo: "You"
         },
         {
             id: "2",
@@ -77,7 +123,10 @@ const Messages: React.FC = () => {
             content: ["This is your television visit summary."],
             isRead: false,
             isSent: true,
-            isArchived: false
+            isArchived: false,
+            threadId: "thread_2",
+            isThreadParent: true,
+            threadCount: 1
         },
         {
             id: "3",
@@ -87,10 +136,96 @@ const Messages: React.FC = () => {
             isRead: false,
             content: ["Details about ongoing health scheme."],
             isSent: false,
-            isArchived: false
+            isArchived: false,
+            threadId: "thread_3",
+            isThreadParent: true,
+            threadCount: 1
         }
     ]);
-    
+
+    // Threading State
+    const [threads, setThreads] = useState<MessageThread[]>([]);
+    const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
+    const [showThreadView, setShowThreadView] = useState(true);
+
+    // Threading Helper Functions
+    const generateThreadId = (subject: string, participants: string[]): string => {
+        const cleanSubject = subject.replace(/^(Re:|Fwd:|RE:|FWD:)\s*/i, '').trim();
+        const sortedParticipants = participants.sort().join('_');
+        return `thread_${cleanSubject}_${sortedParticipants}`.replace(/[^a-zA-Z0-9_]/g, '_');
+    };
+
+    const organizeMessagesIntoThreads = (messages: Message[]): MessageThread[] => {
+        const threadMap = new Map<string, MessageThread>();
+
+        messages.forEach(message => {
+            const threadId = message.threadId || message.id;
+
+            if (!threadMap.has(threadId)) {
+                const participants = [message.sender];
+                if (message.replyTo && !participants.includes(message.replyTo)) {
+                    participants.push(message.replyTo);
+                }
+
+                threadMap.set(threadId, {
+                    id: threadId,
+                    subject: message.subject.replace(/^(Re:|Fwd:|RE:|FWD:)\s*/i, '').trim(),
+                    participants,
+                    messages: [],
+                    lastMessageDate: message.date,
+                    unreadCount: 0,
+                    isExpanded: expandedThreads.has(threadId)
+                });
+            }
+
+            const thread = threadMap.get(threadId)!;
+            thread.messages.push(message);
+
+            // Update thread metadata
+            if (new Date(message.date) > new Date(thread.lastMessageDate)) {
+                thread.lastMessageDate = message.date;
+            }
+
+            if (!message.isRead) {
+                thread.unreadCount++;
+            }
+
+            // Add unique participants
+            if (!thread.participants.includes(message.sender)) {
+                thread.participants.push(message.sender);
+            }
+            if (message.replyTo && !thread.participants.includes(message.replyTo)) {
+                thread.participants.push(message.replyTo);
+            }
+        });
+
+        // Sort messages within each thread chronologically
+        threadMap.forEach(thread => {
+            thread.messages.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        });
+
+        return Array.from(threadMap.values()).sort((a, b) =>
+            new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime()
+        );
+    };
+
+    const toggleThreadExpansion = (threadId: string) => {
+        setExpandedThreads(prev => {
+            const newExpanded = new Set(prev);
+            if (newExpanded.has(threadId)) {
+                newExpanded.delete(threadId);
+            } else {
+                newExpanded.add(threadId);
+            }
+            return newExpanded;
+        });
+    };
+
+    const getThreadMessages = (threadId: string): Message[] => {
+        return messages.filter(msg => msg.threadId === threadId)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    };
+
     const [selectedMessage, setSelectedMessage] = useState<Message | null>(messages[0]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [activeView, setActiveView] = useState<"Inbox" | "Sent Messages" | "Archived Messages">("Inbox");
@@ -109,12 +244,12 @@ const Messages: React.FC = () => {
     // Helper function to highlight search terms
     const highlightSearchTerm = (text: string | string[], searchTerm: string) => {
         if (!searchTerm) return Array.isArray(text) ? text.join(' ') : text;
-        
+
         const textToSearch = Array.isArray(text) ? text.join(' ') : text;
         const regex = new RegExp(`(${searchTerm})`, 'gi');
         const parts = textToSearch.split(regex);
-        
-        return parts.map((part, index) => 
+
+        return parts.map((part, index) =>
             regex.test(part) ? (
                 <mark key={index} className="bg-yellow-200">{part}</mark>
             ) : (
@@ -126,11 +261,11 @@ const Messages: React.FC = () => {
     // Helper function to get filtered messages
     const getFilteredMessages = () => {
         let filteredMessages = messages;
-        
+
         if (searchQuery) {
             return searchResults;
         }
-        
+
         if (activeView === "Inbox") {
             filteredMessages = messages.filter(msg => !msg.isSent && !msg.isArchived);
         } else if (activeView === "Sent Messages") {
@@ -138,11 +273,16 @@ const Messages: React.FC = () => {
         } else if (activeView === "Archived Messages") {
             filteredMessages = messages.filter(msg => msg.isArchived);
         }
-        
+
         if (showUnreadOnly) {
             filteredMessages = filteredMessages.filter(msg => !msg.isRead);
         }
-        
+
+        if (showThreadView) {
+            // Return only thread parent messages for thread view
+            return filteredMessages.filter(msg => msg.isThreadParent);
+        }
+
         return filteredMessages;
     };
 
@@ -154,7 +294,7 @@ const Messages: React.FC = () => {
     // Search functionality
     const handleSearch = async (query: string) => {
         setSearchQuery(query);
-        
+
         if (!query.trim()) {
             setIsSearching(false);
             setSearchResults([]);
@@ -166,30 +306,30 @@ const Messages: React.FC = () => {
 
         try {
             await new Promise(resolve => setTimeout(resolve, 300));
-            
+
             const filteredMessages = originalMessages.filter(message => {
                 const searchTerm = query.toLowerCase();
-                
+
                 const senderMatch = message.sender.toLowerCase().includes(searchTerm);
                 const subjectMatch = message.subject.toLowerCase().includes(searchTerm);
-                const contentMatch = message.content.some(content => 
+                const contentMatch = message.content.some(content =>
                     content.toLowerCase().includes(searchTerm)
                 );
-                const attachmentMatch = message.attachments?.some(attachment => 
+                const attachmentMatch = message.attachments?.some(attachment =>
                     attachment.toLowerCase().includes(searchTerm)
                 ) || false;
-                
+
                 return senderMatch || subjectMatch || contentMatch || attachmentMatch;
             });
 
             setSearchResults(filteredMessages);
-            
+
             if (filteredMessages.length === 0) {
                 toast.info(`No messages found for "${query}"`);
             } else {
                 toast.success(`Found ${filteredMessages.length} message(s)`);
             }
-            
+
         } catch (error) {
             toast.error("Search failed. Please try again.");
         } finally {
@@ -236,15 +376,15 @@ const Messages: React.FC = () => {
     // Selection handlers
     const toggleSelect = (id: string, event?: React.MouseEvent) => {
         event?.stopPropagation(); // Prevent message selection when clicking checkbox
-        
+
         setSelectedIds((prev) => {
             const newSelected = prev.includes(id)
                 ? prev.filter((i) => i !== id)
                 : [...prev, id];
-            
+
             const filteredMessages = getFilteredMessages();
             setSelectAll(newSelected.length === filteredMessages.length && filteredMessages.length > 0);
-            
+
             // Auto-enable bulk mode when selecting messages
             if (newSelected.length > 0 && !bulkSelectMode) {
                 setBulkSelectMode(true);
@@ -253,7 +393,7 @@ const Messages: React.FC = () => {
             if (newSelected.length === 0) {
                 setBulkSelectMode(false);
             }
-            
+
             return newSelected;
         });
     };
@@ -274,21 +414,21 @@ const Messages: React.FC = () => {
 
     const handleBulkArchive = async () => {
         if (selectedIds.length === 0) return;
-        
+
         setIsLoading(true);
         try {
             console.log('Bulk archiving messages:', selectedIds);
-            
-            setMessages(prev => prev.map(msg => 
-                selectedIds.includes(msg.id) 
+
+            setMessages(prev => prev.map(msg =>
+                selectedIds.includes(msg.id)
                     ? { ...msg, isArchived: !msg.isArchived }
                     : msg
             ));
-            
+
             setSelectedIds([]);
             setSelectAll(false);
             setBulkSelectMode(false);
-            
+
             toast.success(`Successfully archived ${selectedIds.length} message(s)`);
         } catch (error) {
             console.error('Error bulk archiving messages:', error);
@@ -300,20 +440,20 @@ const Messages: React.FC = () => {
 
     const handleBulkDelete = async () => {
         if (selectedIds.length === 0) return;
-        
+
         const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedIds.length} message(s)? This action cannot be undone.`);
         if (!confirmDelete) return;
-        
+
         setIsLoading(true);
         try {
             console.log('Bulk deleting messages:', selectedIds);
-            
+
             setMessages(prev => prev.filter(msg => !selectedIds.includes(msg.id)));
-            
+
             setSelectedIds([]);
             setSelectAll(false);
             setBulkSelectMode(false);
-            
+
             toast.success(`Successfully deleted ${selectedIds.length} message(s)`);
         } catch (error) {
             console.error('Error bulk deleting messages:', error);
@@ -325,21 +465,21 @@ const Messages: React.FC = () => {
 
     const handleBulkMarkAsRead = async () => {
         if (selectedIds.length === 0) return;
-        
+
         setIsLoading(true);
         try {
             console.log('Bulk marking as read:', selectedIds);
-            
-            setMessages(prev => prev.map(msg => 
-                selectedIds.includes(msg.id) 
+
+            setMessages(prev => prev.map(msg =>
+                selectedIds.includes(msg.id)
                     ? { ...msg, isRead: true }
                     : msg
             ));
-            
+
             setSelectedIds([]);
             setSelectAll(false);
             setBulkSelectMode(false);
-            
+
             toast.success(`Successfully marked ${selectedIds.length} message(s) as read`);
         } catch (error) {
             console.error('Error marking messages as read:', error);
@@ -351,21 +491,21 @@ const Messages: React.FC = () => {
 
     const handleBulkMarkAsUnread = async () => {
         if (selectedIds.length === 0) return;
-        
+
         setIsLoading(true);
         try {
             console.log('Bulk marking as unread:', selectedIds);
-            
-            setMessages(prev => prev.map(msg => 
-                selectedIds.includes(msg.id) 
+
+            setMessages(prev => prev.map(msg =>
+                selectedIds.includes(msg.id)
                     ? { ...msg, isRead: false }
                     : msg
             ));
-            
+
             setSelectedIds([]);
             setSelectAll(false);
             setBulkSelectMode(false);
-            
+
             toast.success(`Successfully marked ${selectedIds.length} message(s) as unread`);
         } catch (error) {
             console.error('Error marking messages as unread:', error);
@@ -388,19 +528,90 @@ const Messages: React.FC = () => {
         setIsForwardVisible(false);
         setIsComposing(true);
     };
+    // Add reply context state
+    const [replyContext, setReplyContext] = useState<{
+        threadId: string;
+        parentMessageId: string;
+        originalSubject: string;
+    } | null>(null);
 
-    const handleReply = () => {
-        if (!selectedMessage) return;
+    // Enhanced send message handler to maintain threading
+    const handleSendMessage = async () => {
+        try {
+            setIsLoading(true);
+
+            // Create new message with threading info
+            const newMessage: Message = {
+                id: `msg_${Date.now()}`,
+                sender: "You",
+                subject: composeMessage.subject,
+                date: new Date().toLocaleDateString(),
+                content: [composeMessage.content],
+                attachments: composeMessage.attachments?.map(f => f.name),
+                isRead: true,
+                isSent: true,
+                isArchived: false,
+                threadId: replyContext?.threadId,
+                parentMessageId: replyContext?.parentMessageId,
+                replyTo: selectedMessage?.sender
+            };
+
+            // Add to messages
+            setMessages(prev => [...prev, newMessage]);
+
+            // Update thread count for parent message
+            if (replyContext?.threadId) {
+                setMessages(prev => prev.map(msg => {
+                    if (msg.threadId === replyContext.threadId && msg.isThreadParent) {
+                        return { ...msg, threadCount: (msg.threadCount || 1) + 1 };
+                    }
+                    return msg;
+                }));
+            }
+
+            toast.success("Message sent successfully");
+            setIsComposeVisible(false);
+            setIsReplyVisible(false);
+            setIsForwardVisible(false);
+            setIsComposing(false);
+            setReplyContext(null);
+        } catch (error) {
+            toast.error("Failed to send message");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Update threads when messages change
+    useEffect(() => {
+        const organizedThreads = organizeMessagesIntoThreads(getFilteredMessages());
+        setThreads(organizedThreads);
+    }, [messages, activeView, showUnreadOnly, expandedThreads]);
+
+
+    const handleReply = (message?: Message) => {
+        const msgToReply = message || selectedMessage;
+        if (!msgToReply) return;
+
         setIsReplyVisible(true);
         setIsComposeVisible(false);
         setIsForwardVisible(false);
         setComposeMessage({
-            to: selectedMessage.sender,
-            subject: `Re: ${selectedMessage.subject}`,
+            to: msgToReply.sender,
+            subject: msgToReply.subject.startsWith('Re:') ? msgToReply.subject : `Re: ${msgToReply.subject}`,
             content: "",
             attachments: []
         });
+
+        // Store thread context for the reply
+        setReplyContext({
+            threadId: msgToReply.threadId || msgToReply.id,
+            parentMessageId: msgToReply.id,
+            originalSubject: msgToReply.subject.replace(/^(Re:|Fwd:|RE:|FWD:)\s*/i, '').trim()
+        });
     };
+
+
 
     const handleForward = () => {
         if (!selectedMessage) return;
@@ -415,22 +626,6 @@ const Messages: React.FC = () => {
         });
     };
 
-    const handleSendMessage = async () => {
-        try {
-            setIsLoading(true);
-            // TODO: Implement actual API call
-            toast.success("Message sent successfully");
-            setIsComposeVisible(false);
-            setIsReplyVisible(false);
-            setIsForwardVisible(false);
-            setIsComposing(false);
-        } catch (error) {
-            toast.error("Failed to send message");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     const handleArchiveMessages = async () => {
         try {
             setIsLoading(true);
@@ -439,7 +634,7 @@ const Messages: React.FC = () => {
             if (messagesToArchive.length === 0) return;
 
             toast.success("Messages archived successfully");
-            setMessages(prev => prev.map(msg => 
+            setMessages(prev => prev.map(msg =>
                 messagesToArchive.includes(msg.id) ? { ...msg, isArchived: true } : msg
             ));
             setSelectedIds([]);
@@ -511,7 +706,7 @@ const Messages: React.FC = () => {
                                     )}
                                 </div>
                             </div>
-                            
+
                             {/* Search Results Info */}
                             {isSearching && (
                                 <div className="mt-2 text-xs text-blue-100">
@@ -524,7 +719,7 @@ const Messages: React.FC = () => {
                                     )}
                                 </div>
                             )}
-                            
+
                             {/* Gmail-style Header */}
                             <div className="px-0 py-2 flex items-center justify-between bg-blue-800 text-white relative">
                                 {/* Left side - Title or Selection Info */}
@@ -532,13 +727,12 @@ const Messages: React.FC = () => {
                                     {bulkSelectMode && selectedIds.length > 0 ? (
                                         <>
                                             {/* Select All Checkbox */}
-                                            <div 
+                                            <div
                                                 className="flex items-center cursor-pointer"
                                                 onClick={handleSelectAll}
                                             >
-                                                <div className={`w-4 h-4 border-2 border-white rounded flex items-center justify-center ${
-                                                    selectAll ? 'bg-white' : 'bg-transparent'
-                                                }`}>
+                                                <div className={`w-4 h-4 border-2 border-white rounded flex items-center justify-center ${selectAll ? 'bg-white' : 'bg-transparent'
+                                                    }`}>
                                                     {selectAll && (
                                                         <Check className="w-3 h-3 text-blue-800" />
                                                     )}
@@ -549,7 +743,7 @@ const Messages: React.FC = () => {
                                                 {selectedIds.length} selected
                                             </span>
                                             {/* Exit bulk mode */}
-                                            <button 
+                                            <button
                                                 onClick={exitBulkMode}
                                                 className="ml-2 p-1 hover:bg-blue-700 rounded"
                                             >
@@ -701,9 +895,8 @@ const Messages: React.FC = () => {
                                 getFilteredMessages().map((message) => (
                                     <div
                                         key={message.id}
-                                        className={`px-3 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
-                                            selectedMessage?.id === message.id ? "bg-blue-50" : ""
-                                        } ${selectedIds.includes(message.id) ? "bg-blue-25" : ""}`}
+                                        className={`px-3 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${selectedMessage?.id === message.id ? "bg-blue-50" : ""
+                                            } ${selectedIds.includes(message.id) ? "bg-blue-25" : ""}`}
                                         onClick={() => {
                                             if (!bulkSelectMode) {
                                                 setSelectedMessage(message);
@@ -717,33 +910,30 @@ const Messages: React.FC = () => {
                                         <div className="flex items-center justify-between mb-1">
                                             <div className="flex items-center space-x-2">
                                                 {/* Checkbox for bulk selection */}
-                                                <div 
+                                                <div
                                                     className="flex items-center cursor-pointer"
                                                     onClick={(e) => toggleSelect(message.id, e)}
                                                 >
-                                                    <div className={`w-4 h-4 border-2 border-gray-400 rounded flex items-center justify-center ${
-                                                        selectedIds.includes(message.id) ? 'bg-blue-600 border-blue-600' : 'bg-white'
-                                                    }`}>
+                                                    <div className={`w-4 h-4 border-2 border-gray-400 rounded flex items-center justify-center ${selectedIds.includes(message.id) ? 'bg-blue-600 border-blue-600' : 'bg-white'
+                                                        }`}>
                                                         {selectedIds.includes(message.id) && (
                                                             <Check className="w-3 h-3 text-white" />
                                                         )}
                                                     </div>
                                                 </div>
-                                                
+
                                                 {!message.isRead && (
                                                     <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                                                 )}
-                                                <span className={`text-sm ${
-                                                    !message.isRead ? "font-semibold" : "font-medium"
-                                                } text-gray-900 truncate`}>
+                                                <span className={`text-sm ${!message.isRead ? "font-semibold" : "font-medium"
+                                                    } text-gray-900 truncate`}>
                                                     {highlightSearchTerm(message.sender, searchQuery)}
                                                 </span>
                                             </div>
                                             <span className="text-xs text-gray-500">{message.date}</span>
                                         </div>
-                                        <p className={`text-sm ${
-                                            !message.isRead ? "font-medium" : ""
-                                        } text-gray-700 truncate mb-1 ml-6`}>
+                                        <p className={`text-sm ${!message.isRead ? "font-medium" : ""
+                                            } text-gray-700 truncate mb-1 ml-6`}>
                                             {highlightSearchTerm(message.subject, searchQuery)}
                                         </p>
                                         <p className="text-xs text-gray-500 truncate ml-6">
@@ -778,12 +968,12 @@ const Messages: React.FC = () => {
                             {isComposeVisible
                                 ? "Compose Message"
                                 : isReplyVisible
-                                ? "Reply"
-                                : isForwardVisible
-                                ? "Forward"
-                                : selectedMessage
-                                ? selectedMessage.subject
-                                : "Select a Message"}
+                                    ? "Reply"
+                                    : isForwardVisible
+                                        ? "Forward"
+                                        : selectedMessage
+                                            ? selectedMessage.subject
+                                            : "Select a Message"}
                         </h1>
 
                         <div className="flex items-center space-x-2">
@@ -817,7 +1007,7 @@ const Messages: React.FC = () => {
                                         name="file"
                                         stroke
                                         width="20px"
-                                        onClick={handleReply}
+                                        onClick={(e) => handleReply()}
                                     />
                                     <Icon
                                         className="px-2"
@@ -1002,7 +1192,7 @@ const Messages: React.FC = () => {
                                 )}
 
                                 <div className="flex space-x-4">
-                                    <Button colorVariant="primary" onClick={handleReply}>
+                                    <Button colorVariant="primary" onClick={() => handleReply()}>
                                         Reply
                                     </Button>
                                     <Button colorVariant="default" onClick={handleForward}>

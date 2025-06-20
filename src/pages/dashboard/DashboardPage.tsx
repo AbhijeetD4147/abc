@@ -16,13 +16,12 @@ const menuItems = [
     badgeContent="18"
     badgePosition="top"
     colorVariant="light"
-    disabled
-    height="60px"
+    height="40px"
     isCursorPointer
     isbadge
     name="envelope"
     stroke
-    width="60px"
+    width="40px"
   />, label: "Messages"
   },
   {
@@ -31,13 +30,12 @@ const menuItems = [
     badgeContent="18"
     badgePosition="top"
     colorVariant="light"
-    disabled
-    height="60px"
+    height="40px"
     isCursorPointer
     isbadge
     name="calendar"
     stroke
-    width="60px"
+    width="40px"
   />, label: "Appointments"
   },
   {
@@ -46,13 +44,12 @@ const menuItems = [
     badgeContent="18"
     badgePosition="top"
     colorVariant="light"
-    disabled
-    height="60px"
+    height="40px"
     isCursorPointer
     isbadge
     name="file_data"
     stroke
-    width="60px"
+    width="40px"
   />, label: "Policies & Consent Forms"
   },
   {
@@ -61,13 +58,12 @@ const menuItems = [
     badgeContent="18"
     badgePosition="top"
     colorVariant="light"
-    disabled
-    height="60px"
+    height="40px"
     isCursorPointer
     isbadge
     name="forms"
     stroke
-    width="60px"
+    width="40px"
   />, label: "Health Summary"
   },
   {
@@ -76,13 +72,12 @@ const menuItems = [
     badgeContent="18"
     badgePosition="top"
     colorVariant="light"
-    disabled
-    height="60px"
+    height="40px"
     isCursorPointer
     isbadge
     name="eye"
     stroke
-    width="60px"
+    width="40px"
   />, label: "Eyewear & Rx"
   },
   {
@@ -91,13 +86,12 @@ const menuItems = [
     badgeContent="18"
     badgePosition="top"
     colorVariant="light"
-    disabled
-    height="60px"
+    height="40px"
     isCursorPointer
     isbadge
     name="dollar"
     stroke
-    width="60px"
+    width="40px"
   />, label: "Bills & Payments"
   },
 
@@ -216,13 +210,13 @@ const DashboardPage: FC = () => {
       <div className="flex flex-1 flex-col lg:flex-row">
         {/* Sidebar */}
         <div className="w-full lg:w-[50%] bg-blue-500 text-white flex flex-col justify-center items-center gap-4 px-4 sm:px-8 lg:px-16 py-8 lg:py-0">
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-1">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-20 gap-x-6">
             {menuItems.map((item, idx) => (
               <div key={idx} className="flex flex-col items-center text-center">
-                <div className="border-2 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center hover:bg-blue-600 cursor-pointer">
+                <div className="border-2 rounded-full p-4 sm:p-5 lg:p-7 flex items-center justify-center hover:bg-blue-600 cursor-pointer">
                   {item.icon}
                 </div>
-                <p className="text-base sm:text-lg lg:text-xl mt-2 lg:mt-3">{item.label}</p>
+                <p className="text-base sm:text-lg lg:text-lg mt-2 lg:mt-3">{item.label}</p>
               </div>
             ))}
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@ketan_nimase/ui"
 
@@ -16,12 +16,12 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
     const initials = `${patientName.firstName[0] ?? ""}${patientName.lastName[0] ?? ""}`.toUpperCase();
 
     const menuItems = [
-        "Messages",
-        "Appointments",
-        "Policies & Consents forms",
-        "Health Summary",
-        "Eyewear & Rx",
-        "Bills & Payments",
+        { label: "Messages", href: "/messages" },
+        { label: "Appointments", href: "/appointment" },
+        { label: "Policies & Consents forms", href: "/" },
+        { label: "Health Summary", href: "/" },
+        { label: "Eyewear & Rx", href: "/" },
+        { label: "Bills & Payments", href: "/" }
     ];
 
     const fabItems = [
@@ -52,10 +52,10 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
                         width="27px"
                     />
                 </div>
-                {menuItems.map((label) => (
+                {menuItems.map(({ label, href }) => (
                     <button
                         key={label}
-                        onClick={() => navigate(label.toLowerCase().replace(/\s+/g, "-"))}
+                        onClick={() => navigate(href)}
                         className="text-md text-white bg-blue-500 transition m-0 py-3 px-4 hover:bg-blue-600"
                     >
                         {label}
@@ -98,13 +98,11 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
                                 <li
                                     key={label}
                                     className="border-b last:border-b-0 border-gray-200 cursor-pointer"
+                                    onClick={() => navigate(href)}
                                 >
-                                    <a
-                                        href={href}
-                                        className="block px-4 py-2 font-normal no-underline text-black hover:text-blue-500 hover:bg-gray-100 transition-all duration-200"
-                                    >
+                                    <span className="block px-4 py-2 font-normal no-underline text-black hover:text-blue-500 hover:bg-gray-100 transition-all duration-200">
                                         {label}
-                                    </a>
+                                    </span>
                                 </li>
                             ))}
                         </ul>
