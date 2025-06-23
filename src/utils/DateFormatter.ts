@@ -1,4 +1,13 @@
 export class DateFormatter {
+  static formatDate(start: Date): string {
+  if (!start || isNaN(start.getTime())) return '';
+  return start.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }); // Output: MM/DD/YYYY
+}
+
   static formatEditUpdate(prevText: string, currText: string): { text: string; selectionIndex: number } {
     let selectionIndex: number;
 

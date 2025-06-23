@@ -30,6 +30,14 @@ import RecordMatchFound from "./pages/authentication/RecordMatchFound";
 import RecordMatchNotFound from "./pages/authentication/RecordMatchNotFound";
 import HomeService from "./services/home/HomeService";
 import { Loader } from "@ketan_nimase/ui";
+import AppointmentPage from "./pages/appointment/AppointmentPage";
+import RequestAppointment from "./pages/appointment/RequestAppointment";
+import SelectTime from "./pages/appointment/SelectTime";
+import VisitDetailsReason from "./pages/appointment/VisitDetailsReason";
+import Insurance from "./pages/appointment/Insurance";
+import RequestConfirmed from "./pages/appointment/RequestConfirmed";
+import HealthSummary from "./pages/health_summary/HealthSummary";
+import PoliciesForm from "./pages/PoliciesAndConsentsForm/PoliciesForm";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -157,6 +165,20 @@ function App() {
         <Route path="/patient-terms-conditions" element={<PatientTermsAndConditions optedPatient={true} />} />
         <Route path="/record-match-found" element={<RecordMatchFound email={""} patientNumber={0} />} />
         <Route path="/record-match-not-found" element={<RecordMatchNotFound />} />
+        <Route path="/policies-form" element={<PoliciesForm />} />
+
+        {/* Appointment Pages */}
+        <Route path="/appointment" element={<AppointmentPage />} />
+        <Route path="/request-appointment" element={<RequestAppointment />} />
+        <Route path="/select-time" element={<SelectTime />} />
+        <Route path="/visit-details" element={<VisitDetailsReason />} />
+        <Route path="/request-confirm" element={<RequestConfirmed />} />
+        <Route path="/health-summary" element={<HealthSummary patientName={{
+          firstName: "",
+          lastName: ""
+        }} />} />
+
+        {/* <Route path="/insurance" element={<Insurance />} /> */}
         {/*<Route path="/authterms" element={<AuthTermsAndConditionScreen />} />
         <Route path="/invalidLinkScreen" element={<InvalidLinkScreen />} /> */}
         <Route path="*" element={<Navigate to={initialRoute} />} />

@@ -29,4 +29,5 @@ export class GlobalParams {
   static isHealthSummaryForView: boolean = true;
 
   static DEVICE_ID: string = "";
+  static Version : string = "1.0";
 }

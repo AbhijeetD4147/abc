@@ -18,8 +18,8 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
     const menuItems = [
         { label: "Messages", href: "/messages" },
         { label: "Appointments", href: "/appointment" },
-        { label: "Policies & Consents forms", href: "/" },
-        { label: "Health Summary", href: "/" },
+        { label: "Policies & Consents forms", href: "/policies-form" },
+        { label: "Health Summary", href: "/health-summary" },
         { label: "Eyewear & Rx", href: "/" },
         { label: "Bills & Payments", href: "/" }
     ];

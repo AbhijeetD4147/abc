@@ -7,7 +7,7 @@ import HomeService from '../../services/home/HomeService';
 import { GlobalParams } from '../../utils/GlobalParameters';
 import checkMark from '../../assets/check-mark.png';
 import MaximEyes from '../../assets/maximeyeslogo.png';
-import { Loader } from '@ketan_nimase/ui';
+import { Loader, Icon, RdsFeatureList, Header, Button } from '@ketan_nimase/ui';
 
 interface ThemeData {
   primaryTextColor: string;
@@ -193,27 +193,37 @@ const PtHomePage: React.FC = () => {
         <div className="flex justify-center items-center mb-4">
           <img src={homePageData?.logoSrc || ''} alt={homePageData?.logoAlt || 'Logo'} className="w-26 h-29 mt-0" />
         </div>
-        <h1 className="text-3xl md:text-4xl font-regular text-center mb-2" style={{ color: theme.primaryTextColor }}>
-          {homePageData.companyName}
-        </h1>
-        <h2 className="text-lg md:text-xl font-medium text-center mb-4" style={{ color: theme.primaryTextColor }}>
-          {homePageData.portalTitle}
-        </h2>
+        <Header
+          className="ext-3xl md:text-4xl font-regular justify-center text-center mb-2"
+          colorVariant="dark"
+          headerText={homePageData.companyName}
+          size="h1"
+        />
+        <Header
+          className="text-lg md:text-xl font-medium text-center mb-4"
+          colorVariant="dark"
+          headerText={homePageData.portalTitle}
+          size="h1"
+        />
 
         <p className="text-start max-w-full md:max-w-4xl mb-6 md:ml-10 text-sm md:text-md" style={{ color: theme.quaternaryTextColor }}>
           {homePageData.description}
         </p>
+        <RdsFeatureList
+          columns={1}
+          iconName="tick_circle"
+          itemList={homePageData.features} heading={''} />
 
-        <ul className="text-sm space-y-2 mb-5 md:ml-11 px-4 md:px-0" style={{ color: theme.primaryTextColor }}>
+        {/* <ul className="text-sm space-y-2 mb-5 md:ml-11 px-4 md:px-0" style={{ color: theme.primaryTextColor }}>
           {homePageData.features.map((item, i) => (
             <li key={i} className="flex items-center space-x-3" style={{ color: theme.quaternaryTextColor }}>
               <span>
-                <img src={checkMark} alt="Check" style={{ width: '20px', height: '20px' }} />
+                <Icon name="tick_circle" height="16px" width="16px" colorVariant="dark" stroke />
               </span>
               <span>{item}</span>
             </li>
           ))}
-        </ul>
+        </ul> */}
 
         <p className="text-sm md:text-md mt-auto text-center" style={{ color: theme.quaternaryTextColor }}>
           {homePageData.tagline}
@@ -233,24 +243,24 @@ const PtHomePage: React.FC = () => {
         style={{ color: theme.secondaryTextColor, backgroundColor: theme.BGColor }}
       >
         <div className="flex flex-col md:flex-row gap-4 w-full max-w-md">
-          <button
+          <Button
             className="text-lg w-full md:w-4/6 px-4 py-2 border rounded focus:outline-none"
-            style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
+            // style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
             onClick={() => handleNavigation('/signup')}
-            onMouseEnter={(e) => handleButtonHover(e, true)}
-            onMouseLeave={(e) => handleButtonHover(e, false)}
+            // onMouseEnter={(e) => handleButtonHover(e, true)}
+            // onMouseLeave={(e) => handleButtonHover(e, false)}
           >
             Create New Account
-          </button>
-          <button
+          </Button>
+          <Button
             className="text-lg w-full md:w-2/6 px-4 py-2 border rounded focus:outline-none"
-            style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
+            // style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
             onClick={() => handleNavigation('/login')}
-            onMouseEnter={(e) => handleButtonHover(e, true)}
-            onMouseLeave={(e) => handleButtonHover(e, false)}
+            // onMouseEnter={(e) => handleButtonHover(e, true)}
+            // onMouseLeave={(e) => handleButtonHover(e, false)}
           >
             Sign In
-          </button>
+          </Button>
         </div>
 
         {/* Contact section */}

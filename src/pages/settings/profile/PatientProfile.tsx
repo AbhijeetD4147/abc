@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Navbar } from "../../../components/ui/Navbar";
 import { FaCamera, FaFolderOpen, FaTrash, FaUserPlus } from "react-icons/fa";
 import WarningPopup from "../../../components/ui/WarningPopup";
-import { Icon } from "@ketan_nimase/ui"
+import { Header, Icon } from "@ketan_nimase/ui"
 
 const PatientProfile: React.FC = () => {
     const [editing, setEditing] = useState(false);
@@ -63,19 +63,28 @@ const PatientProfile: React.FC = () => {
 
             {/* Header */}
             <div className=" flex justify-content-center text-center py-2 border border-bottom m-0">
-                <h2 className="mb-0 text-2xl">Profile</h2>
+                <Header
+                    className="text-lg md:text-xl font-medium text-center"
+                    colorVariant="dark"
+                    headerText="Profile"
+                    size="h2"
+                />
                 {/* Info Icon */}
                 <div className="relative group ml-2 inline-block">
-                    {/* Info Icon */}
-                    <div className="m-0 w-6 h-6 flex items-center justify-center border-2 border-blue-500 text-blue-500 rounded-full text-sm font-bold cursor-pointer">
-                        i
-                    </div>
-
-                    {/* Tooltip */}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-[240px] bg-white border border-gray-300 text-gray-800 text-sm rounded px-3 py-2 
-              opacity-0 group-hover:opacity-100 transition-opacity duration-300 
-              pointer-events-none shadow-lg z-10">
-                        Enter a mobile phone number that is readily available to you to receive a security code for 2-factor verification. Important messages regarding your account will be sent on this number.
+                    <div className="border-2 border-blue-500 rounded-full mt-1 ml-4 p-1 sm:p-1 lg:p-1 flex items-center justify-center hover:bg-blue-100 cursor-pointer">
+                        <Icon
+                            colorVariant="primary"
+                            height="12px"
+                            width="12px"
+                            isCursorPointer
+                            isbadge
+                            name="info"
+                            stroke
+                            fill
+                            tooltip
+                            tooltipTitle="Adding the ID/Driver's License will assist the practice in getting the bills and claims resolve faster."
+                            tooltipPlacement="bottom"
+                        />
                     </div>
                 </div>
             </div>
@@ -271,7 +280,7 @@ const PatientProfile: React.FC = () => {
                                 Change your email address for login
                             </small>
                         </div>
-                        <hr className="mt-0 mr-40 mb-0"/>
+                        <hr className="mt-0 mr-40 mb-0" />
 
                         {/* Change Password */}
                         <div className="hover:bg-gray-100 p-2 mr-40">
@@ -280,7 +289,7 @@ const PatientProfile: React.FC = () => {
                             </a>
                             <small className="text-lg text-muted">Last changed on: 07/21/2021</small>
                         </div>
-                        <hr className="mt-0 mr-40 mb-0"/>
+                        <hr className="mt-0 mr-40 mb-0" />
 
                         {/* Make Account Inactive */}
                         <div className="hover:bg-gray-100 pt-3 pl-2 mr-40 pb-3">

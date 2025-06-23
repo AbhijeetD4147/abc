@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Button, Signature } from "@ketan_nimase/ui";
+import { Button, Header, Signature } from "@ketan_nimase/ui";
 import { Navbar } from "../../../components/ui/Navbar";
 import { useNavigate } from "react-router-dom";
+import { GlobalParams } from "../../../utils/GlobalParameters";
 
 const dummyText = `Are you sure you want to Opt-Out and make your account Inactive? \n By submitting this Opt-Out Form, you understand and agree to the following:\n \n 1. I UNDERSTAND that I will no longer have online access to my health record or providers.\n2. I UNDERSTAND that First Insight Vision does not effectuate my opting-out.\n3. I UNDERSTAND that federal and state laws allow health care providers to disclose much of my health information without my written permission when other hospitals, physicians, and health care providers need to treat me. My outside providers may need to retrieve my medical information electronically. Most medical records shared for continuation of care or transfer of care do not require my written authorization. By law, some information requires my written authorization, but certain medical records can be shared.\n4. I UNDERSTAND that in the future, if I want to change my opt-out decision, I need to send a written request of revocation.`;
 
@@ -17,7 +18,12 @@ const OptOut: React.FC = () => {
         <div className="min-h-screen w-screen flex flex-col items-center justify-center">
             <Navbar patientName={{ firstName: "Jeffery", lastName: "Stevenson" }} />
             <div className="flex w-screen justify-center text-center py-2 border-b m-0">
-                <h2 className="mb-0 p-2 text-3xl">Opt-Out</h2>
+                <Header
+                    className="text-lg md:text-xl font-medium text-center"
+                    colorVariant="dark"
+                    headerText="Opt-Out"
+                    size="h2"
+                />
             </div>
             <div className="max-w-4xl px-4 mt-6 text-left text-sm leading-6">
                 {textLines.map((line, index) => (
@@ -68,7 +74,7 @@ const OptOut: React.FC = () => {
                         Cancel
                     </Button>
                 </div>
-                <p className="absolute bottom-2 left-2 text-xs text-gray-500">Version: 1.0</p>
+                <p className="absolute bottom-2 left-2 text-xs text-gray-500">Version: {GlobalParams.Version}</p>
             </div>
         </div>
     );

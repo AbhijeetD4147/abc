@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Input, Button, Icon } from "@ketan_nimase/ui";
+import { Input, Button, Icon, Header } from "@ketan_nimase/ui";
 import logo from "../../../assets/user_lock_logo.png";
 import { Navbar } from "../../../components/ui/Navbar";
 
@@ -30,18 +30,22 @@ const UpdatePassword: React.FC = () => {
             <Navbar patientName={{ firstName: "Jeffery", lastName: "Stevenson" }} />
 
             <div className="flex w-screen justify-center text-center py-2 border-b m-0">
-                <h2 className="mb-0 p-2 text-3xl">Update Password</h2>
+                <Header
+                    className="text-lg md:text-xl font-medium text-center"
+                    colorVariant="dark"
+                    headerText="Update Password"
+                    size="h2"
+                />
             </div>
 
-            <img src={logo} alt="User Logo" className="w-24 h-24 mb-4 mt-4" />
+            <img src={logo} alt="User Logo" className="w-26 h-24 mb-4 mt-4" />
 
             <p className="text-2xl mb-2 font-medium">Choose a new password to reset account</p>
 
             <div className="w-full max-w-4xl border-t pt-8">
-                <div className="flex flex-col md:flex-row justify-between gap-8">
+                <div className="flex flex-col md:flex-row justify-between gap-4">
                     {/* Left: Inputs */}
                     <div className="flex-1">
-                        <label className="block text-lg">New Password</label>
                         <Input
                             placeholder="Password"
                             value={password}
@@ -50,7 +54,8 @@ const UpdatePassword: React.FC = () => {
                             onBlur={() => setTouched(true)}
                             error={showError ? "error" : undefined}
                             validationMsg={showError ? "Password is required" : ""}
-                            name=""
+                            name="New Password"
+                            label={true}
                         />
                         {/* <Icon
                             colorVariant="primary"
@@ -62,15 +67,14 @@ const UpdatePassword: React.FC = () => {
                             tooltipTitle="User Icon"
                             width="20px"
                         /> */}
-
-                        <label className="block text-lg mt-4">Confirm Password</label>
                         <Input
                             className="p-0 bg-blue"
                             placeholder="Confirm Password"
                             inputType="password"
                             value={confirmPassword}
                             onChange={(e: any) => setConfirmPassword(e.target.value)}
-                            name=""
+                            name="Confirm Password"
+                            label={true}
                         />
                     </div>
 

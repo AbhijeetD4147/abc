@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Input, Button, Icon } from "@ketan_nimase/ui"; // Adjust import as needed
+import { Input, Button, Icon, Header } from "@ketan_nimase/ui"; // Adjust import as needed
 import logo from "../../../assets/user_lock_logo.png";
 import { Navbar } from "../../../components/ui/Navbar";
 
@@ -27,9 +27,14 @@ const UpdateUsername: React.FC<{ currentUsername?: string }> = ({ currentUsernam
                 patientName={{ firstName: "Jeffery", lastName: "Stevenson" }}
             />
             <div className=" flex w-screen justify-content-center text-center py-2 border-b border-bottom m-0">
-                <h2 className="mb-0 p-2 text-3xl">Update Username</h2>
+                <Header
+                    className="text-lg md:text-xl font-medium text-center"
+                    colorVariant="dark"
+                    headerText="Update Username"
+                    size="h2"
+                />
             </div>
-            <img src={logo} alt="User Logo" className="w-16 h-24 w-24 mb-4 mt-4" />
+            <img src={logo} alt="User Logo" className="w-16 h-24 w-28 mb-4 mt-4" />
 
             <p className="text-2xl mb-5 mt-2 font-medium">Your Username</p>
             <p className="text-xl mb-4 b-4">
@@ -37,10 +42,9 @@ const UpdateUsername: React.FC<{ currentUsername?: string }> = ({ currentUsernam
             </p>
 
             <div className="w-full max-w-4xl border-t pt-8">
-                <div className="flex flex-col md:flex-row justify-between gap-8">
+                <div className="flex flex-col md:flex-row justify-between gap-5">
                     {/* Left: Label + Input */}
                     <div className="flex-1">
-                        <label className="block text-lg mb-2">Do you want to update your Username?</label>
                         <Input
                             placeholder="Username"
                             value={username}
@@ -48,7 +52,8 @@ const UpdateUsername: React.FC<{ currentUsername?: string }> = ({ currentUsernam
                             onBlur={() => setTouched(true)}
                             error={showError ? "error" : undefined}
                             validationMsg={showError ? "Username is required" : ""}
-                            name=""
+                            label={true}
+                            name="Do you want to update your Username?"
                         />
                     </div>
 

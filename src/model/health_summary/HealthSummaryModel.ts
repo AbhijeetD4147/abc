@@ -126,6 +126,7 @@ export class HealthSummaryThreadModel implements HealthSummaryThread {
 }
 
 export interface HealthSummaryThreadAttachment {
+  attachmentBase64: string;
   attachmentFileName?: string;
   attachmentBase64FileContent?: string;
   attachmentType?: string;

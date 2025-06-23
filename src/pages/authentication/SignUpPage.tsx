@@ -8,8 +8,8 @@ import { getTheme } from '../../utils/ThemeSelection';
 import { GlobalParams } from '../../utils/GlobalParameters';
 import { toast } from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { Info } from 'lucide-react';
 import { AuthenticationService } from '../../services/authentication/UserService';
+import { Icon } from '@ketan_nimase/ui';
 
 interface SignUpPageProps {
   title?: string;
@@ -39,17 +39,17 @@ const formSchema = z.object({
     .min(1, 'DOB is required!')
     .refine((val) => {
       if (!val.trim()) return false;
-      
+
       // Try multiple date formats
       const formats = ['MM/DD/YYYY', 'M/D/YYYY', 'MM/D/YYYY', 'M/DD/YYYY'];
-      
+
       for (const format of formats) {
         const parsed = dayjs(val, format, true);
         if (parsed.isValid()) {
           return true;
         }
       }
-      
+
       return false;
     }, {
       message: 'Please enter a valid date in MM/DD/YYYY format'
@@ -78,10 +78,10 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
   const fieldValidation = () => {
     const formData = watch();
     let isValid = true;
-    
+
     console.log('Field validation started with data:', formData);
     console.log('Initial validation state:', isValid);
-  
+
     // First Name validation
     if (!formData.legalFirstName?.trim()) {
       console.log('First name validation failed: empty or undefined');
@@ -91,7 +91,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
       console.log('First name validation passed:', formData.legalFirstName);
       setFieldErrors(prev => ({ ...prev, firstName: false }));
     }
-  
+
     // Last Name validation
     if (!formData.lastName?.trim()) {
       console.log('Last name validation failed: empty or undefined');
@@ -101,7 +101,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
       console.log('Last name validation passed:', formData.lastName);
       setFieldErrors(prev => ({ ...prev, lastName: false }));
     }
-  
+
     // Mobile validation
     if (!formData.mobile?.trim()) {
       console.log('Mobile validation failed: empty or undefined');
@@ -123,7 +123,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
         setMobileNumberErrorText('');
       }
     }
-  
+
     // Email validation
     if (!formData.email?.trim()) {
       console.log('Email validation failed: empty or undefined');
@@ -144,7 +144,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
         setEmailErrorText('');
       }
     }
-  
+
     // DOB validation
     if (!formData.dob?.trim()) {
       console.log('DOB validation failed: empty or undefined');
@@ -161,7 +161,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
         setFieldErrors(prev => ({ ...prev, dob: false }));
       }
     }
-  
+
     console.log('Final validation result:', isValid);
     return isValid;
   };
@@ -218,7 +218,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
       const year = parseInt(dateOfBirth.substring(6, 10));
 
       console.log('Parsed DOB:', { month, date, year });
-      
+
       const checkDate = dayjs(dateOfBirth, 'MM/DD/YYYY', true);
       const today = dayjs();
 
@@ -259,13 +259,13 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
       console.error('DOB validation error:', error);
       setDateFieldValidate(false);
     }
-};
+  };
 
   const onSubmit = (data: FormData) => {
     console.log('Form submission started with data:', data);
     console.log('Current field errors:', fieldErrors);
     console.log('Date field validate status:', dateFieldValidate);
-    
+
     // Use the enhanced field validation
     if (fieldValidation()) {
       console.log('All validations passed, calling validatePatient');
@@ -273,40 +273,40 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
     } else {
       console.log('Validation errors found, API not called');
       // Force form validation to show errors
-      handleSubmit(() => {})();
+      handleSubmit(() => { })();
     }
-};
-  
+  };
+
   const validatePatient = async (formData: FormData) => {
     try {
       console.log('validatePatient called with:', formData);
       setIsSubmitting(true);
-  
+
       const patientValidateData = {
         PracticeName: GlobalParams.PRACTICE_NAME,
         FirstName: formData.legalFirstName.trim(),
         LastName: formData.lastName.trim(),
-        Mobile: props.title === "Sign Up as Patient" 
-          ? formData.mobile.trim() 
+        Mobile: props.title === "Sign Up as Patient"
+          ? formData.mobile.trim()
           : formData.countryCode + formData.mobile.trim(),
         Email: formData.email.trim(),
         DOB: formData.dob,
         AuthSignUpAsPatient: props.title === "Sign Up as Patient" ? "true" : "false"
       };
-      
+
       console.log('Patient validate data:', patientValidateData);
-  
+
       const authService = new AuthenticationService();
       console.log('Calling authService.validatePatient');
       await authService.validatePatient(patientValidateData);
       console.log('API response status:', authService.response_Status_Code_API_7);
       console.log('Patient availability model:', authService.patientAvailabilityResponseModel);
-  
+
       // Handle response based on status code
       if (authService.response_Status_Code_API_7 === 200) {
         const patientAvailabilityModel = authService.patientAvailabilityResponseModel;
         console.log('API call successful, handling navigation');
-  
+
         if (patientAvailabilityModel?.isExist) {
           console.log('Patient exists, navigating to match found page');
           navigate('/record-match-found', {  // Changed from '/patient-record-match-found'
@@ -344,7 +344,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
       <h1 className="text-2xl md:text-4xl font-regular mb-3 text-center" style={{ color: theme.primaryTextColor }}>
         Create New Account
       </h1>
-  
+
       <form
         onSubmit={(e) => {
           console.log('Form onSubmit triggered');
@@ -367,7 +367,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
           />
           {errors.legalFirstName && <p className="text-red-500 text-xs mt-1">{errors.legalFirstName.message}</p>}
         </div>
-  
+
         {/* Last Name */}
         <div className="mb-3">
           <label htmlFor="lastName" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
@@ -383,7 +383,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
           />
           {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
         </div>
-  
+
         {/* Mobile */}
         <div className="mb-3">
           <label htmlFor="mobile" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
@@ -414,18 +414,25 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             />
             {/* Tooltip */}
             <div className="relative group inline-block">
-              <div className="w-6 h-6 flex items-center justify-center border-2 border-blue-500 text-blue-500 rounded-full text-sm font-bold cursor-pointer">
-                i
-              </div>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-[240px] bg-white border border-gray-300 text-gray-800 text-sm rounded px-3 py-2 
-                opacity-0 group-hover:opacity-100 transition-opacity duration-300 
-                pointer-events-none shadow-lg z-10">
-                Enter a mobile phone number that is readily available to receive a security code for 2FA.
+              <div className="border-2 border-blue-500 rounded-full p-1 sm:p-1 lg:p-1 flex items-center justify-center hover:bg-blue-200 cursor-pointer">
+                <Icon
+                  colorVariant="primary"
+                  height="15px"
+                  isCursorPointer
+                  isbadge
+                  name="info"
+                  stroke
+                  fill
+                  tooltip
+                  tooltipTitle='Enter a mobile phone number that is readily available to receive a security code for 2FA.'
+                  tooltipPlacement="bottom"
+                  width="15px"
+                />
               </div>
             </div>
           </div>
         </div>
-  
+
         {/* Email */}
         <div className="mb-3">
           <label htmlFor="email" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
@@ -441,19 +448,26 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
               style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
             />
             <div className="relative group inline-block">
-              <div className="w-6 h-6 flex items-center justify-center border-2 border-blue-500 text-blue-500 rounded-full text-sm font-bold cursor-pointer hover:bg-blue-50 transition-colors">
-                i
-              </div>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-[240px] bg-white border border-gray-300 text-gray-800 text-sm rounded px-3 py-2 shadow-lg z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-index-100">
-                Use an email address you check regularly to receive important account messages.
-                {/* Arrow pointing up */}
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-gray-300"></div>
+              <div className="border-2 border-blue-500 rounded-full p-1 sm:p-1 lg:p-1 flex items-center justify-center hover:bg-blue-200 cursor-pointer">
+                <Icon
+                  colorVariant="primary"
+                  height="15px"
+                  isCursorPointer
+                  isbadge
+                  name="info"
+                  stroke
+                  fill
+                  tooltip
+                  tooltipTitle='Use an email address you check regularly to receive important account messages.'
+                  tooltipPlacement="bottom"
+                  width="15px"
+                />
               </div>
             </div>
           </div>
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
         </div>
-  
+
         {/* DOB */}
         <div className="mb-3">
           <label htmlFor="dob" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
@@ -496,17 +510,17 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
           />
           {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob.message}</p>}
         </div>
-  
+
         {/* Info Text */}
         <p className="text-xs mb-2 text-gray-600" style={{ color: theme.textfieldLabelColor }}>
           We will send you a security code via your email or text.
         </p>
-  
+
         {/* Submit Button */}
         <div className="mt-7 mb-7 border-t border-gray-400 pt-6 w-full">
           <div className="flex justify-center">
             <button
-              type="button" 
+              type="button"
               className="bg-blue-500 hover:bg-blue-700 text-white text-base md:text-xl font-medium py-2 px-10 md:px-14 rounded focus:outline-none focus:shadow-outline"
               onClick={() => {
                 console.log('Directly calling validatePatient');
@@ -520,7 +534,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
         </div>
       </form>
     </div>
-  );  
+  );
 };
 
 export default SignUpPage;
