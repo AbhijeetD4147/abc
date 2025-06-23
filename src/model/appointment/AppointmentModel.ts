@@ -1,7 +1,7 @@
 // Interfaces
 export interface LatestAppointment {
     appointmentDateTime?: string;
-    appointmenttHeader?: string;
+    appointmentHeader?: string; // Changed from appointmenttHeader
     appointmentReason?: string;
     isTelehealth?: boolean;
     isMarkArrivedButtonEnable?: boolean;
@@ -409,32 +409,49 @@ export class VisitSummaryAttachmentModel {
 
 
 // Model Classes
-export class LatestAppointmentModel {
-    static fromJson(json: any): LatestAppointment {
-        return {
-            appointmentDateTime: json.apptDateTime,
-            appointmenttHeader: json.apptHeader,
-            appointmentReason: json.apptReason,
-            isTelehealth: json.isTelehealth ?? false,
-            isMarkArrivedButtonEnable: json.isMarkArrivedButtonEnable,
-            isApptMarkedAsArrived: json.isApptMarkedAsArrived,
-            unconfirmedApptCount: json.unconfirmedApptCount,
-            messageUnreadCount: json.messageUnreadCount,
-            healthSummaryUnreadCount: json.healthSummaryUnreadCount,
-            appointmentId: json.appointmentId,
-            locationId: json.locationId,
-            locationName: json.locationName,
-            practicePersonName: json.practicePersonName,
-            intakeLastUpdatedDate: json.intakeLastUpdatedDate,
-            isIntakeFormSubmit: json.isIntakeFormSubmit,
-            isInsurancePageShow: json.isInsurancePageShow
-        };
+export class LatestAppointmentModel implements LatestAppointment {
+    appointmentDateTime?: string;
+    appointmentHeader?: string;
+    appointmentReason?: string;
+    isTelehealth?: boolean;
+    isMarkArrivedButtonEnable?: boolean;
+    isApptMarkedAsArrived?: boolean;
+    unconfirmedApptCount?: string;
+    messageUnreadCount?: string;
+    healthSummaryUnreadCount?: string;
+    appointmentId?: number;
+    locationId?: number;
+    locationName?: string;
+    practicePersonName?: string;
+    intakeLastUpdatedDate?: string;
+    isIntakeFormSubmit?: boolean;
+    isInsurancePageShow?: boolean;
+
+    static fromJson(json: any): LatestAppointmentModel {
+        const model = new LatestAppointmentModel();
+        model.appointmentDateTime = json.apptDateTime;
+        model.appointmentHeader = json.apptHeader;
+        model.appointmentReason = json.apptReason;
+        model.isTelehealth = json.isTelehealth ?? false;
+        model.isMarkArrivedButtonEnable = json.isMarkArrivedButtonEnable;
+        model.isApptMarkedAsArrived = json.isApptMarkedAsArrived;
+        model.unconfirmedApptCount = json.unconfirmedApptCount;
+        model.messageUnreadCount = json.messageUnreadCount;
+        model.healthSummaryUnreadCount = json.healthSummaryUnreadCount;
+        model.appointmentId = json.appointmentId;
+        model.locationId = json.locationId;
+        model.locationName = json.locationName;
+        model.practicePersonName = json.practicePersonName;
+        model.intakeLastUpdatedDate = json.intakeLastUpdatedDate;
+        model.isIntakeFormSubmit = json.isIntakeFormSubmit;
+        model.isInsurancePageShow = json.isInsurancePageShow;
+        return model;
     }
 
-    static toJson(appointment: LatestAppointment): Record<string, any> {
+    static toJson(appointment: LatestAppointmentModel): Record<string, any> {
         return {
             apptDateTime: appointment.appointmentDateTime,
-            apptHeader: appointment.appointmenttHeader,
+            apptHeader: appointment.appointmentHeader,
             apptReason: appointment.appointmentReason,
             isTelehealth: appointment.isTelehealth,
             isMarkArrivedButtonEnable: appointment.isMarkArrivedButtonEnable,

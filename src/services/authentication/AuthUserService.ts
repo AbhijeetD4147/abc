@@ -28,9 +28,10 @@ export class AuthenticationAuthUserService {
 
     // Add your methods here...
 
-    static parsePracticePerson(responseBody: string): SwitchUserDetailModel[] {
-        const parsed = JSON.parse(responseBody);
-        return parsed.map((json: any) => SwitchUserDetailModel.fromJson(json));
+    static parsePracticePerson(responseBody: any): SwitchUserDetailModel[] {
+        // Check if responseBody is already an object or array
+        const parsed = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
+        return Array.isArray(parsed) ? parsed.map((json: any) => SwitchUserDetailModel.fromJson(json)) : [];
     }
 
     async validateAuthPatient(customerData: { [key: string]: any }): Promise<void> {
