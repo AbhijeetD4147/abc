@@ -28,7 +28,7 @@ interface LocationState {
 
 const OTPVerification: React.FC = () => {
     const [otp, setOtp] = useState(['', '', '', '']);
-    const [resendTimer, setResendTimer] = useState(300);
+    const [resendTimer, setResendTimer] = useState(90); // Changed from 300 to 90
     const [loading, setLoading] = useState(false);
     const [isResendDisabled, setIsResendDisabled] = useState(true);
     const navigate = useNavigate();

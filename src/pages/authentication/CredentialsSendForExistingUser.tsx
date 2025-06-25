@@ -4,6 +4,7 @@ import { GlobalParams } from '../../utils/GlobalParameters';
 import Footer from "../../components/ui/Footer";
 import { Button, Icon } from "@ketan_nimase/ui";
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import { AuthenticationService } from '../../services/authentication/UserService';
 import { ResetLinkSendRequestModel } from '../../model/patient_portal/ResetLinkSendRequestModel';
 
@@ -19,7 +20,8 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
     const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
     const [isTimerActive, setIsTimerActive] = useState(true);
     const [isResending, setIsResending] = useState(false);
-
+    const navigate = useNavigate();
+    
     // Timer effect
     useEffect(() => {
         if (!isTimerActive || timeLeft <= 0) {
@@ -195,7 +197,7 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
                     <div className="mt-8 text-left">
                         <Button
                             colorVariant="default"
-                            onClick={() => window.history.back()}
+                            onClick={() => navigate('/login')}
                             className="px-8 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
                         >
                             Back to Login

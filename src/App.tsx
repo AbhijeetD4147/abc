@@ -105,8 +105,7 @@ function App() {
         setInitialRoute(route);
 
         // Add this code to fetch the logo during initialization
-        // const homeService = new HomeService();
-        // await homeService.getHomeData('Home');
+       
       } catch (error) {
         console.error("App init error", error);
       }

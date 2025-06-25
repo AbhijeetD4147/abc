@@ -169,56 +169,9 @@ const ForgotPassword: React.FC<PageProps> = () => {
 
     // Handle cancel
     const handleCancel = () => {
-        // TODO: Navigate back to login page
-        window.history.back();
+        navigate('/login');
     };
 
-
-    // // Add this method to verify GUID when component loads
-    // useEffect(() => {
-    //     const verifyGuid = async () => {
-    //         if (props.Guid && props.Guid.trim() !== "") {
-    //             setIsLoading(true);
-    //             try {
-    //                 const authService = new AuthenticationService();
-    //                 const forgotUsernameGuidRequestModel = {
-    //                     guid: props.Guid
-    //                 };
-
-    //                 await authService.verifyGuidForResetPassword(forgotUsernameGuidRequestModel);
-
-    //                 if (authService.response_Status_Code_API_10 === 200) {
-    //                     const response = authService.forgotPasswordGUIDVerificationResponseModel;
-
-    //                     if (response?.status === "Valid") {
-    //                         // Set state to show reset password form
-    //                         setCurrentFlow("flowFour"); // Assuming you have a state variable for flow control
-    //                     } else if (response?.status === "Expired") {
-    //                         // Set state to show link expired message
-    //                         setCurrentFlow("flowThree");
-    //                         setLocationPhone(response?.locationPhone || "");
-    //                     } else {
-    //                         // Handle invalid GUID
-    //                         toast.error("Invalid reset link. Please request a new one.");
-    //                         setCurrentFlow("flowOne");
-    //                     }
-    //                 } else {
-    //                     // Handle API error
-    //                     toast.error("Failed to verify reset link. Please try again.");
-    //                     setCurrentFlow("flowOne");
-    //                 }
-    //             } catch (error) {
-    //                 console.error("Error verifying GUID:", error);
-    //                 toast.error("Failed to verify reset link. Please try again.");
-    //                 setCurrentFlow("flowOne");
-    //             } finally {
-    //                 setIsLoading(false);
-    //             }
-    //         }
-    //     };
-
-    //     verifyGuid();
-    // }, [props.Guid]);
 
     // Add this method to handle password update
     const updatePassword = async (password: string, confirmPassword: string) => {
@@ -261,21 +214,6 @@ const ForgotPassword: React.FC<PageProps> = () => {
     const [currentFlow, setCurrentFlow] = useState("flowOne"); // flowOne, flowTwo, flowThree, flowFour
     const [locationPhone, setLocationPhone] = useState("");
 
-    // Render different UI based on current flow
-    // const renderContent = () => {
-    //     switch (currentFlow) {
-    //         case "flowOne":
-    //             return renderFlowOne(); // Username and captcha input
-    //         case "flowTwo":
-    //             return renderFlowTwo(); // Email sent confirmation
-    //         case "flowThree":
-    //             return renderFlowThree(); // Link expired message
-    //         case "flowFour":
-    //             return renderFlowFour(); // Reset password form
-    //         default:
-    //             return renderFlowOne();
-    //     }
-    // };
 
 
     return (

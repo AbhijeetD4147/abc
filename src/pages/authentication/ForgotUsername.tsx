@@ -187,8 +187,7 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
 
     // Handle cancel
     const handleCancel = () => {
-        // TODO: Navigate back to login page
-        window.history.back();
+        navigate('/login');
     };
 
     return (
@@ -197,8 +196,8 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
             <div className="w-full md:w-1/2 flex flex-col justify-center items-center bg-white p-6 md:p-10 relative">
                 <img
                     src={
-                        logoUrl || GlobalParams.LOGO
-                            ? `data:image/jpeg;base64,${logoUrl || GlobalParams.LOGO}`
+                        GlobalParams.LOGO
+                            ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
                             : ''
                     }
                     alt="Company Logo"

@@ -6,13 +6,15 @@ import Footer from "../../components/ui/Footer";
 import { Icon } from "@ketan_nimase/ui";
 import { LoginModel } from "../../model/authentication/LoginModel";
 import { AuthenticationService } from "../../services/authentication/UserService";
-import { useNavigate } from "react-router-dom";
 import { ApiPath } from "../../utils/constants";
-
+import { useNavigate, Link } from 'react-router-dom';
 interface SignInProps {
   logoUrl: string;
   companyName: string;
 }
+
+// Add this import at the top of the file
+
 
 const theme = await getTheme();
 
@@ -53,6 +55,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
         // Handle different login scenarios
         if (loginResponse?.isAccountLocked) {
           setLoginFailed(true);
+          console.log(`Your account has been locked. Please try again after ${loginResponse.timeRemaining} minutes.`);
           setErrorMessage(`Your account has been locked. Please try again after ${loginResponse.timeRemaining} minutes.`);
         } else if (loginResponse?.loginStatus === 0) {
           setLoginFailed(true);
@@ -71,8 +74,14 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
           // Handle different login scenarios
           if (loginResponse.isOtpRequired) {
-            // Navigate to OTP verification page
-            navigate("/otp-verification");
+            // Navigate to OTP verification page with required state
+            navigate("/otp-verification", {
+              state: {
+                userType: "Patient",
+                userId: loginResponse.userId,
+                ptCustomerId: loginResponse.ptCustomerID
+              }
+            });
           } else if (!loginResponse.iS_DOB_VERIFIED) {
             // Navigate to DOB verification page
             navigate("/dob-verification");
@@ -169,13 +178,13 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
             )}
           </div>
 
-          <a
-            href="/forgot-username"
+           <Link
+            to="/forgot-username"
             className="text-base underline mb-4"
             style={{ color: theme.secondaryTextColor }}
           >
             Forgot Username?
-          </a>
+          </Link>
 
           {/* Password Field */}
           <div className="mb-2">
@@ -187,8 +196,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
                 type="password"
                 placeholder="Password"
                 {...register("password", { required: "Password is required" })}
-                className={`w-full pl-10 pr-4 py-2 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${errors.password ? "bg-red-100 border-red-500" : ""
-                  }`}
+                className={`w-full pl-10 pr-4 py-2 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${errors.password ? "bg-red-100 border-red-500" : ""}`}
                 style={{
                   backgroundColor: theme.textfieldFilledColor,
                   borderColor: errors.password
@@ -203,10 +211,17 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
               </div>
             )}
           </div>
-
-          <a href="/forgot-password" className="text-base underline mb-6" style={{ color: theme.secondaryTextColor }}>
+        
+         
+          
+         
+          <Link 
+            to="/forgot-password" 
+            className="text-base underline mb-6" 
+            style={{ color: theme.secondaryTextColor }}
+          >
             Forgot Password?
-          </a>
+          </Link>
 
           {/* Submit Button */}
           <button

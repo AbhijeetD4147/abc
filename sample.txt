@@ -1,168 +1,127 @@
-import 'package:first_insight/model/patient_portal/PatientAvailabilityResponseModel.dart';
-import 'package:first_insight/model/patient_portal/PatientInformation.dart';
-import 'package:first_insight/screens/authentication/patient_record_match_found_screen.dart';
-import 'package:first_insight/screens/authentication/record_not_match_found_screen.dart';
-import 'package:first_insight/screens/authentication/sign_up_completed_screen.dart';
-import 'package:first_insight/services/authentication/user_service.dart';
-import 'package:first_insight/utils/theme_selection_service.dart';
-import 'package:first_insight/utils/global_params.dart';
-import 'package:first_insight/utils/validators.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:camera/camera.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:first_insight/model/settings/profile_model.dart';
+import 'package:first_insight/screens/settings/optOut/opt_out_screen.dart';
+import 'package:first_insight/screens/settings/profile/camera_screen.dart';
 import 'package:first_insight/utils/base_textstyle.dart';
-import 'package:first_insight/utils/base_widget.dart';
-import 'package:first_insight/utils/responsive.dart';
-import 'package:flutter/material.dart';
+import 'package:first_insight/utils/theme_selection_service.dart';
+import 'package:first_insight/utils/popup_menu.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
-import 'package:intl/intl.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:sizer/sizer.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:toastification/toastification.dart';
+import '../../../utils/idle_wrapper.dart';
+import 'update_password_screen.dart';
+import 'update_username_screen.dart';
+import 'package:first_insight/services/settings/profile_service.dart';
+import 'package:first_insight/utils/constants.dart';
+import 'package:first_insight/utils/global_params.dart';
+import 'package:first_insight/utils/appBar.dart';
+import 'package:first_insight/utils/base_widget.dart';
+import 'package:first_insight/utils/manager.dart';
+import 'package:first_insight/utils/responsive.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:sizer/sizer.dart';
 
-import '../../utils/idle_wrapper.dart';
-
-// ignore: must_be_immutable
-class SignupScreen extends StatefulWidget {
-  var Title,
-      FirstName,
-      LastName,
-      MobileNumber,
-      EmailId,
-      userType,
-      authUserName,
-      authUserId;
-
-  SignupScreen(
-      {super.key,
-      this.Title,
-      this.FirstName,
-      this.LastName,
-      this.MobileNumber,
-      this.EmailId,
-      this.userType,
-      this.authUserName,
-      this.authUserId});
+class Profile extends StatefulWidget {
+  const Profile({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  State<Profile> createState() => _ProfileState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
-  final form = GlobalKey<FormState>();
-  DateFormat dateFormat = DateFormat("MM/dd/yyyy");
-
-  var firstName = TextEditingController();
+class _ProfileState extends State<Profile> with TickerProviderStateMixin {
+  bool profilePhoto = true;
+  bool idPhoto = false;
+  bool isFileFormatPopupVisible = false;
+  ProfileModel? profileModel;
+  ProfileService profileService = ProfileService();
+  String? profilePhotoBase64;
+  String? idPhotoBase64;
+  String lastPasswordChangeDate = "";
+  TextEditingController firstNameTextEditingController =
+      TextEditingController(text: "");
+  TextEditingController lastNameTextEditingController =
+      TextEditingController(text: "");
   bool _validateFirstName = false;
-
-  var lastName = TextEditingController(text: "");
   bool _validateLastName = false;
+  bool isNameEditingEnable = true;
+  bool loading = false;
+  List<CameraDescription> _cameras = [];
+  bool isProfilePhotoDeleting = false;
+  bool isIdPhotoDeleting = false;
+  bool isProfilePhotoUploading = false;
+  bool isIdPhotoUploading = false;
+  late CameraController controller;
+  String contentType = "";
 
-  final countryCode = TextEditingController(text: '+1');
-  bool _validateCountryCode = false;
+  String tempFirstName = "";
+  String tempLastName = "";
+  final ScrollController _scrollController = ScrollController();
+  List<String> AllowedExtensions = ["jpeg", "png", "jpg", "JPG", "JPEG", "PNG"];
 
-  var mobileNumber = TextEditingController(text: "");
-  bool _validateMobileNumber = false;
-  String? mobileNumberErrorText;
-
-  var email = TextEditingController(text: "");
-  bool _validateEmail = false;
-  String? emailErrorText;
-
-  final dob = TextEditingController();
-  bool _validateDob = false;
-  bool _validateManualDob = false;
-  var maskFormatterDob = new MaskTextInputFormatter(mask: '##/##/####');
-
-  double height = 0.0;
-  double width = 0.0;
-
-  PatientInformation? patientInformation;
-  PatientAvailabilityResponseModel? patientAvailabilityResponseModel;
-  bool isButtonClicked = false;
-
-  var maskFormatter = new MaskTextInputFormatter(mask: '###-###-####');
-  bool dateFieldValidate = false;
+  final FocusNode focusNode = FocusNode();
 
   @override
-  void initState() {
-    if (widget.Title == "Sign Up as Patient") {
-      firstName = TextEditingController(text: widget.FirstName.toString());
-      lastName = TextEditingController(text: widget.LastName.toString());
-      mobileNumber =
-          TextEditingController(text: widget.MobileNumber.toString());
-      email = TextEditingController(text: widget.EmailId.toString());
-    }
+  initState() {
+    getCameraList();
+    getPatientDetail();
     super.initState();
   }
 
-  Future<void> patientValidate() async {
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  getCameraList() async {
+    try {
+      WidgetsFlutterBinding.ensureInitialized();
+      _cameras = await availableCameras();
+    } catch (e) {}
+  }
+
+  Future<void> getPatientDetail() async {
     setState(() {
-      isButtonClicked = true;
+      loading = true;
     });
 
-    patientInformation = new PatientInformation(
-      firstName.text.trim(),
-      lastName.text.trim(),
-      countryCode.text.trim(),
-      mobileNumber.text.trim(),
-      email.text.trim(),
-      dob.text.trim(),
-    );
-
-    Map<String, String> patientValidateData = {};
-
-    if (widget.Title == "Sign Up as Patient") {
-      patientValidateData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'FirstName': patientInformation!.firstName,
-        'LastName': patientInformation!.lastName,
-        'Mobile': patientInformation!.mobileNumber,
-        'Email': patientInformation!.email,
-        'DOB': patientInformation!.dob,
-        'AuthSignUpAsPatient':
-            widget.Title == "Sign Up as Patient" ? "true" : "false"
-      };
-    } else {
-      patientValidateData = {
-        'PracticeName': GlobalParams.PRACTICE_NAME,
-        'FirstName': patientInformation!.firstName,
-        'LastName': patientInformation!.lastName,
-        'Mobile': countryCode.text + patientInformation!.mobileNumber,
-        'Email': patientInformation!.email,
-        'DOB': patientInformation!.dob,
-        'AuthSignUpAsPatient': "false"
-      };
-    }
-
-    AuthenticationService authenticationService = new AuthenticationService();
-
-    await authenticationService.validatePatient(patientValidateData);
-    if (authenticationService.response_Status_Code_API_7 == 200) {
+    await profileService.getProfileDetail();
+    if (profileService.response_Status_Code_API_1 == 200) {
       setState(() {
-        patientAvailabilityResponseModel =
-            authenticationService.patientAvailabilityResponseModel;
-        if (patientAvailabilityResponseModel!.isExist!) {
-          isButtonClicked = false;
-          Get.off(
-            PatientRecordMatchFoundScreen(
-              email: patientInformation!.email,
-              patientNumber: patientAvailabilityResponseModel!.patientNumber!,
-            ),
-          );
+        profileModel = profileService.profileResponseModel;
+        firstNameTextEditingController.text = profileModel!.firstName!;
+        lastNameTextEditingController.text = profileModel!.lastName!;
+        lastPasswordChangeDate = profileModel!.lastChangePasswordDate!;
+        idPhotoBase64 = profileModel!.userIdPhotoBase64;
+        profilePhotoBase64 = profileModel!.userProfilePhotoBase64;
+        if (profilePhotoBase64!.isNotEmpty) {
+          GlobalParams.USER_PROFILE_PHOTO_BASE64 =
+              Base64Decoder().convert(profilePhotoBase64!);
         } else {
-          if (patientAvailabilityResponseModel!.accountType! ==
-              "AuthSignUpAsPatient") {
-            Get.offAll(SignUpCompleted());
-          } else {
-            isButtonClicked = false;
-            Get.to(RecordNotMatchScreen());
-          }
+          GlobalParams.USER_PROFILE_PHOTO_BASE64 = null;
         }
+        GlobalParams.USER_ID_PHOTO_BASE64 = profileModel!.userIdPhotoBase64!;
+        GlobalParams.USER_INITIAL = profileModel!.userInitial!;
+        tempFirstName = profileModel!.firstName!;
+        tempLastName = profileModel!.lastName!;
+
+        loading = false;
       });
     } else {
-      if (authenticationService.response_Status_Code_API_7 != 205) {
+      if (profileService.response_Status_Code_API_1 != 205) {
         setState(() {
-          isButtonClicked = false;
+          loading = false;
         });
         showToast(
           context,
@@ -174,574 +133,1179 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  Future<void> updatePatientDetail() async {
+    if (profileModel!.userProfilePhotoBase64!.isNotEmpty) {
+      GlobalParams.USER_PROFILE_PHOTO_BASE64 =
+          Base64Decoder().convert(profileModel!.userProfilePhotoBase64!);
+    } else {
+      GlobalParams.USER_PROFILE_PHOTO_BASE64 = null;
+    }
+    GlobalParams.USER_ID_PHOTO_BASE64 = profileModel!.userIdPhotoBase64!;
+    profileModel!.isProfilePhotoDeleting = isProfilePhotoDeleting;
+    profileModel!.isIdPhotoDeleting = isIdPhotoDeleting;
+    profileModel!.isProfilePhotoUploading = isProfilePhotoUploading;
+    profileModel!.isIdPhotoUploading = isIdPhotoUploading;
+    profileModel!.contentType = contentType;
+
+    if (tempFirstName != firstNameTextEditingController.text || //MBT 47776
+        tempLastName != lastNameTextEditingController.text) {
+      profileModel!.isNameChanged = true;
+      profileModel!.firstName = firstNameTextEditingController.text;
+      profileModel!.lastName = lastNameTextEditingController.text;
+    } else {
+      profileModel!.isNameChanged = false;
+    }
+
+    await profileService.saveProfileDetail(profileModel!);
+    if (profileService.response_Status_Code_API_2 == 200 &&
+        profileService.profileResponse.toLowerCase() == 'true') {
+      setState(() {
+        GlobalParams.USER_ID_PIC = GlobalParams.USER_ID_PHOTO_BASE64;
+        isIdPhotoDeleting = false;
+        isProfilePhotoDeleting = false;
+        isProfilePhotoUploading = false;
+        isIdPhotoUploading = false;
+      });
+    } else {
+      if (profileService.response_Status_Code_API_2 != 205) {
+        showToast(
+          context,
+          message:
+              'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
+          type: ToastificationType.error,
+        );
+      }
+    }
+  }
+
+  void _checkForSpecialCharacters(String value) {
+    if (RegExp(r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?~`]')
+        .hasMatch(value)) {
+      // Display a toast message
+      showToast(
+        context,
+        message: 'Special characters are not allowed!',
+        type: ToastificationType.warning,
+      );
+    }
+  }
+
   Widget build(BuildContext context) {
-    height = MediaQuery.of(context).size.height;
-    width = MediaQuery.of(context).size.width;
     return IdleWrapper(
-      child: SafeArea(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            ApiPath.isSettingIconPopupVisible = false;
+            ApiPath.isSettingIconPopupOpen.value = true;
+          });
+        },
         child: Scaffold(
-          body: IgnorePointer(
-            ignoring: isButtonClicked,
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    SizedBox(
-                      height: Responsive.isTablet(context) ? 8.h : 0.h,
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.Title,
-                          style: Responsive.isTablet(context)
-                              ? CommonTextStyle.of(context)
-                                  .H6_SUR(ThemeSelection.primaryTextColor)
-                              : CommonTextStyle.of(context)
-                                  .H1_SUR(ThemeSelection.primaryTextColor),
-                        ),
-                        SizedBox(
-                          height: 20.0,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "First",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          alignment: Alignment.center,
-                          child: customTextFormField(
-                            context,
-                            key: ValueKey('First Name'),
-                            errorText: 'First Name is required',
-                            hintText: 'Legal First Name',
-                            readOnly: false,
-                            validate: _validateFirstName,
-                            textEditingController: firstName,
-                            inlineError: true,
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(255),
-                            ],
-                            onChanged: (val) {
-                              setState(() {
-                                if (firstName.text.trim().isEmpty) {
-                                  _validateFirstName = true;
-                                } else {
-                                  _validateFirstName = false;
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(
-                          height: height * 0.005,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "Last",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          alignment: Alignment.center,
-                          child: customTextFormField(
-                            context,
-                            key: ValueKey('Last Name'),
-                            errorText: 'Last Name is required',
-                            hintText: 'Last Name',
-                            readOnly: false,
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(255),
-                            ],
-                            validate: _validateLastName,
-                            textEditingController: lastName,
-                            inlineError: true,
-                            onChanged: (val) {
-                              setState(() {
-                                if (lastName.text.trim().isEmpty) {
-                                  _validateLastName = true;
-                                } else {
-                                  _validateLastName = false;
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(
-                          height: height * 0.005,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "Mobile",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          alignment: Alignment.center,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: Responsive.isMobile(context)
-                                    ? width / 6
-                                    : MediaQuery.of(context).size.width * 0.05,
-                                alignment: Alignment.center,
-                                child: customTextFormField(
-                                  key: ValueKey("Mobile Pin"),
-                                  context,
-                                  hintText: '01',
-                                  readOnly: true,
-                                  validate: _validateCountryCode,
-                                  textEditingController: countryCode,
-                                  inlineError: true,
-                                  errorText: '',
-                                ),
-                              ),
-                              SizedBox(
-                                width: 10.0,
-                              ),
-                              Flexible(
-                                child: customTextFormField(
-                                  context,
-                                  key: ValueKey('Mobile Number'),
-                                  errorText: mobileNumberErrorText,
-                                  hintText: '(000) 000-0000',
-                                  readOnly: false,
-                                  inputFormatters: [maskFormatter],
-                                  keyBoardType: TextInputType.numberWithOptions(
-                                    signed: true,
-                                  ),
-                                  validate: _validateMobileNumber,
-                                  textEditingController: mobileNumber,
-                                  inlineError: true,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      if (mobileNumber.text.trim().isNotEmpty) {
-                                        if (mobileNumber.text.mobileValidate &&
-                                            mobileNumber.text.toString() !=
-                                                '000-000-0000') {
-                                          _validateMobileNumber = false;
-                                        } else {
-                                          mobileNumberErrorText =
-                                              'Please enter valid mobile number';
-                                          _validateMobileNumber = true;
-                                        }
-                                      } else {
-                                        _validateMobileNumber = true;
-                                        mobileNumberErrorText =
-                                            "Mobile is required";
-                                      }
-                                    });
-                                  },
-                                ),
-                              ),
-                              SizedBox(
-                                width: 15.0,
-                              ),
-                              Container(
-                                key: ValueKey("HoverText"),
-                                child: customHoverTooltip(
-                                  context,
-                                  toolTipMessage:
-                                      'Enter a mobile phone number that is readily\navailable to you to receive a security code for\n2–factor verification. Important messages\nregarding your account will be sent on this\nnumber.',
-                                  hoverColor:
-                                      ThemeSelection.iconHoverSecondaryColor,
-                                  iconData: Symbols.info,
-                                  iconColor:
-                                      ThemeSelection.iconDefaultSecondaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: height * 0.005,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "Email",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          alignment: Alignment.center,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Flexible(
-                                child: customTextFormField(
-                                  context,
-                                  key: ValueKey('Email Id'),
-                                  errorText: emailErrorText,
-                                  hintText: "Email",
-                                  textEditingController: email,
-                                  readOnly: false,
-                                  validate: _validateEmail,
-                                  inlineError: true,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      if (email.text.trim().isNotEmpty) {
-                                        if (email.text.trim().emailValidate) {
-                                          _validateEmail = false;
-                                          emailErrorText = '';
-                                        } else {
-                                          _validateEmail = true;
-                                          emailErrorText =
-                                              'Please enter valid Email';
-                                        }
-                                      } else {
-                                        _validateEmail = true;
-                                        emailErrorText = 'Email is required';
-                                      }
-                                    });
-                                  },
-                                ),
-                              ),
-                              SizedBox(
-                                width: 15.0,
-                              ),
-                              Container(
-                                key: ValueKey("HoverText 2"),
-                                child: customHoverTooltip(
-                                  context,
-                                  toolTipMessage:
-                                      'Enter an email address that you use frequently\nfor communication and check often for\nmessages. Important communication regarding\nyour account will be sent on this email address.',
-                                  hoverColor:
-                                      ThemeSelection.iconHoverSecondaryColor,
-                                  iconData: Symbols.info,
-                                  iconColor:
-                                      ThemeSelection.iconDefaultSecondaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: height * 0.005,
-                        ),
-                        SizedBox(
-                          height: height * 0.04,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: Text(
-                            "DOB",
-                            style: CommonTextStyle.of(context)
-                                .H20_SUR(ThemeSelection.textfieldLabelColor),
-                          ),
-                        ),
-                        Container(
-                          alignment: Alignment.center,
-                          width: Responsive.isMobile(context)
-                              ? width
-                              : width * 0.29,
-                          child: customTextFormField(
-                            context,
-                            key: ValueKey('DOB'),
-                            errorText: _validateDob
-                                ? "DOB is required"
-                                : "Invalid DOB",
-                            keyBoardType: TextInputType.phone,
-                            inputFormatters: [maskFormatterDob],
-                            validate: _validateDob || _validateManualDob,
-                            hintText: "MM/DD/YYYY",
-                            textEditingController: dob,
-                            inlineError: true,
-                            suffixIcon: GestureDetector(
-                              onTap: () => _selectDate(context),
-                              child: Padding(
-                                key: ValueKey("Calendar"),
-                                padding: Responsive.isMobile(context)
-                                    ? EdgeInsets.symmetric(
-                                            horizontal: 11, vertical: 2)
-                                        .copyWith(top: 8)
-                                    : Responsive.isTablet(context)
-                                        ? EdgeInsets.fromLTRB(9, 6, 7, 8)
-                                        : EdgeInsets.fromLTRB(10, 4, 6.65, 10),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: 1,
-                                  ),
-                                  child: Icon(
-                                    Symbols.calendar_month,
-                                    size: Responsive.isMobile(context)
-                                        ? 22.0
-                                        : Responsive.isTablet(context)
-                                            ? height * 0.02
-                                            : height * 0.03,
-                                    color: ThemeSelection
-                                        .iconDefaultQuaternaryColor,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            onChanged: (val) {
-                              if (dob.text.trim().isNotEmpty) {
-                                setState(() {
-                                  _validateDob = false;
-                                });
-                                if (dob.text.trim().length == 10) {
-                                  validateManualDob(val);
-                                } else {
-                                  setState(() {
-                                    _validateManualDob = true;
-                                  });
-                                }
-                              } else {
-                                setState(() {
-                                  _validateDob = true;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        SizedBox(
-                          height: Responsive.isTablet(context) ? 2.h : 0.h,
-                        ),
-                        Text(
-                          "We will send you a security code via your email or text.",
-                          style: CommonTextStyle.of(context)
-                              .H22_SUR(ThemeSelection.primaryTextColor),
-                        ),
-                        SizedBox(
-                          height: Responsive.isMobile(context) ? 8.h : 20.h,
-                        ),
-                        Divider(
-                          thickness: Responsive.isk4Desktop(context) ? 5 : 1,
-                        ),
-                        SizedBox(
-                          height: 2.h, //reduce for mobile
-                        ),
-                        Center(
-                          key: ValueKey('Proceed'),
-                          child: isButtonClicked
-                              ? CircularProgressIndicator()
-                              : primaryButton(
-                                  context,
-                                  () {
-                                    fieldValidation();
-                                  },
-                                  'Proceed',
-                                  ThemeSelection.secondaryTextColor,
-                                ),
-                        )
-                      ],
-                    ),
-                  ],
+          body: Stack(
+            children: [
+              Scaffold(
+                appBar: !Responsive.isMobile(context)
+                    ? CommonAppBar(
+                        context,
+                        TabController(length: 6, vsync: this, initialIndex: 0),
+                        setState,
+                        null,
+                        "")
+                    : PreferredSize(
+                        preferredSize: Size(0, 0),
+                        child: SizedBox(),
+                      ),
+                body: loading
+                    ? Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : Responsive(
+                        mobile: mobileView(),
+                        tablet: webView(),
+                        desktop: webView(),
+                        k4Desktop: webView(),
+                      ),
+              ),
+              Visibility(
+                visible: ApiPath.isSettingIconPopupVisible,
+                child: Positioned(
+                  right: 0.5.w,
+                  top: Responsive.is1600900(context) ? 1.85.h : 2.20.h,
+                  child: MenuOptions(context, setState, true),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  void fieldValidation() {
-    if (firstName.text.trim().isNotEmpty &&
-        lastName.text.trim().isNotEmpty &&
-        countryCode.text.trim().isNotEmpty &&
-        mobileNumber.text.trim().isNotEmpty &&
-        email.text.trim().isNotEmpty &&
-        dob.text.trim().isNotEmpty &&
-        mobileNumber.text.mobileValidate &&
-        mobileNumber.text != '000-000-0000' &&
-        email.text.emailValidate &&
-        dateFieldValidate) {
-      patientValidate();
-    } else {
-      setState(() {
-        if (firstName.text.trim().isNotEmpty) {
-          _validateFirstName = false;
-        } else {
-          _validateFirstName = true;
-        }
-        if (lastName.text.trim().isNotEmpty) {
-          _validateLastName = false;
-        } else {
-          _validateLastName = true;
-        }
-        if (mobileNumber.text.trim().isNotEmpty) {
-          if (mobileNumber.text.mobileValidate &&
-              mobileNumber.text.trim() != '000-000-0000') {
-            _validateMobileNumber = false;
-          } else {
-            mobileNumberErrorText = 'Please enter valid mobile number';
-            _validateMobileNumber = true;
-          }
-        } else {
-          _validateMobileNumber = true;
-          mobileNumberErrorText = "Mobile is required";
-        }
-        if (email.text.trim().isNotEmpty) {
-          if (email.text.trim().emailValidate) {
-            _validateEmail = false;
-          } else {
-            _validateEmail = true;
-            emailErrorText = 'Please enter valid Email';
-          }
-        } else {
-          _validateEmail = true;
-          emailErrorText = 'Email is required';
-        }
-        if (dob.text.trim().isNotEmpty) {
-          _validateDob = false;
-          if (dob.text.trim().length == 10) {
-            validateManualDob(dob.text.trim());
-          } else {
-            _validateManualDob = true;
-          }
-        } else {
-          _validateDob = true;
-        }
-      });
-    }
+  Widget mobileView() {
+    return Scrollbar(
+      trackVisibility: true,
+      thumbVisibility: true,
+      controller: _scrollController,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        child: Column(
+          children: [
+            AppBarMobile(),
+            Container(
+              height: 65.h,
+              child: Scrollbar(child: ProfileSection()),
+            ),
+            Container(
+              height: 29.h,
+              child: OptionsSection(),
+            )
+          ],
+        ),
+      ),
+    );
   }
 
-  void validateManualDob(String dateOfBirth) {
-    // MM/DD/YYYY
-    // 02/26/2023
-    int month = int.parse(dateOfBirth.substring(0, 2));
-    int date = int.parse(dateOfBirth.substring(3, 5));
-    int year = int.parse(dateOfBirth.substring(6, 10));
-
-    DateTime checkDate = DateFormat("MM/dd/yyyy").parse(dateOfBirth);
-    DateTime today = DateTime.now();
-
-    bool isNotLeapYear =
-        ((year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0));
-
-    setState(() {
-      if (month < 1 || month > 12) {
-        _validateManualDob = true;
-      } else if (date < 1 || date > 31) {
-        _validateManualDob = true;
-      } else if (year < 1900) {
-        _validateManualDob = true;
-      } else if (date > 29 && month == 2) {
-        _validateManualDob = true;
-      } else if (date == 31 &&
-          (month == 2 ||
-              month == 4 ||
-              month == 6 ||
-              month == 9 ||
-              month == 11)) {
-        _validateManualDob = true;
-      } else if (checkDate.compareTo(today) > 0) {
-        _validateManualDob = true;
-      } else if (!isNotLeapYear && month == 2 && date == 29) {
-        _validateManualDob = true;
-      } else {
-        _validateManualDob = false;
-      }
-      if (_validateManualDob) {
-        dateFieldValidate = false;
-      } else {
-        dateFieldValidate = true;
-      }
-    });
+  Widget webView() {
+    return Column(
+      children: [
+        WebHeader(),
+        Container(
+          height: 0.5,
+          color: ThemeSelection.greyBorderColor,
+        ),
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: ProfileSection(),
+              ),
+              Container(
+                width: 0.5,
+                color: ThemeSelection.greyBorderColor,
+              ),
+              Expanded(
+                flex: 1,
+                child: OptionsSection(),
+              )
+            ],
+          ),
+        )
+      ],
+    );
   }
 
-  Future _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-        context: context,
-        initialDate: DateTime.now(),
-        firstDate: DateTime(1900),
-        lastDate: DateTime.now(),
-        initialEntryMode: DatePickerEntryMode.calendarOnly,
-        cancelText: "CLOSE",
-        confirmText: "SAVE",
-        builder: (context, child) {
-          return Column(
+  Widget WebHeader() {
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 5),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: ColorScheme.light(
-                    primary: ThemeSelection.BGColor, // header background color
-                    onPrimary: Colors.white, // header text color
-                    onSurface: Colors.black, // body text color
-                  ),
-                  textButtonTheme: TextButtonThemeData(
-                    style: ButtonStyle(
-                      foregroundColor: WidgetStateProperty.resolveWith<Color>(
-                          (Set<WidgetState> states) {
-                        if (states.contains(WidgetState.hovered))
-                          return ThemeSelection
-                              .primaryPressedBackgroundButtonColor;
-                        if (states.contains(WidgetState.focused))
-                          return ThemeSelection.whiteButtonHover;
-                        return ThemeSelection.BGColor;
-                      }),
-                    ),
-                  ),
+              Text(
+                "Profile",
+                style: TextStyle(
+                  fontFamily: 'SegoeUi',
+                  color: ThemeSelection.primaryTextColor,
+                  fontSize: 6.sp,
                 ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: Responsive.isMobile(context)
-                        ? 100.w
-                        : Responsive.isTablet(context)
-                            ? 45.w
-                            : 23.w,
-                    minHeight: Responsive.isMobile(context)
-                        ? 70.h
-                        : Responsive.isTablet(context)
-                            ? 70.h
-                            : 60.h,
-                  ),
-                  child: child,
+              ),
+              SizedBox(
+                width: 1.75.w,
+              ),
+              Transform.scale(
+                scale: Responsive.isk4Desktop(context) ? 1.35 : 1,
+                child: customHoverTooltip(
+                  context,
+                  toolTipMessage:
+                      "Adding the ID/Driver's License will assist the practice in getting the bills and claims resolved faster.",
+                  hoverColor: ThemeSelection.iconHoverSecondaryColor,
+                  iconData: Symbols.info,
+                  iconColor: ThemeSelection.iconDefaultSecondaryColor,
                 ),
               ),
             ],
-          );
-        });
-    if (pickedDate != null) {
-      setState(() {
-        dob.text = dateFormat.format(pickedDate);
-        _validateDob = false;
-        _validateManualDob = false;
-        dateFieldValidate = true;
-      });
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget AppBarMobile() {
+    return AppBar(
+      backgroundColor: ThemeSelection.BGColor,
+      automaticallyImplyLeading: false,
+      leading: customIconButton(
+        context,
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        hoverColor: ThemeSelection.iconHoverPrimaryColor,
+        splashColor: ThemeSelection.iconPressedPrimaryColor,
+        iconData: Symbols.arrow_back,
+        iconColor: ThemeSelection.iconDefaultTertiaryColor,
+      ),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white,
+                width: 1,
+              ),
+            ),
+            child: GlobalParams.USER_PROFILE_PHOTO_BASE64 == null
+                ? Center(
+                    child: Text(
+                      GlobalParams.USER_INITIAL,
+                      style: CommonTextStyle.of(context).H24_SUR(
+                        ThemeSelection.secondaryTextColor,
+                      ),
+                    ),
+                  )
+                : CircleAvatar(
+                    backgroundImage: MemoryImage(
+                      GlobalParams.USER_PROFILE_PHOTO_BASE64!,
+                      scale: Responsive.isMobile(context)
+                          ? 2
+                          : Responsive.isTablet(context)
+                              ? 2
+                              : 1,
+                    ),
+                  ),
+          ),
+          SizedBox(
+            width: 15.0,
+          ),
+          Text(
+            "Profile",
+            style: CommonTextStyle.of(context)
+                .H8_SUR(ThemeSelection.secondaryTextColor),
+          ),
+          SizedBox(
+            width: 15.0,
+          ),
+        ],
+      ),
+      actions: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 5.w),
+          child: customTooltip(
+            context,
+            message:
+                "Adding the ID/Driver's License will assist the practice in getting the bills and claims resolved faster.",
+            child: Icon(
+              Symbols.info,
+              color: ThemeSelection.iconDefaultTertiaryColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<String> getBase64Image(XFile? image) async {
+    List<int> imageBytes = await File(image!.path).readAsBytesSync();
+    String imgBase64 = base64Encode(imageBytes);
+    return imgBase64;
+  }
+
+  Future<String> getBase64ImageFromCrop(CroppedFile? image) async {
+    List<int> imageBytes = await File(image!.path).readAsBytesSync();
+    String imgBase64 = base64Encode(imageBytes);
+    return imgBase64;
+  }
+
+  Future<CroppedFile?> _cropImage(File imageFile) async {
+    return await ImageCropper().cropImage(
+      sourcePath: imageFile.path,
+      uiSettings: [
+        AndroidUiSettings(
+            toolbarTitle: 'Crop Image',
+            toolbarColor: Colors.deepOrange,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false),
+        IOSUiSettings(
+          minimumAspectRatio: 1.0,
+        ),
+      ],
+    );
+  }
+
+  checkFileSize(PlatformFile file) {
+    final size = file.size / 1024;
+    if (profilePhoto) {
+      if (size <= 2048) {
+        return true;
+      }
+    } else {
+      if (size <= 2048) {
+        return true;
+      }
     }
+    return false;
+  }
+
+  checkFileFormat(PlatformFile file) {
+    final extension = file.extension;
+
+    if (AllowedExtensions.contains(extension)) {
+      if (extension == "jpg" ||
+          extension == "JPG" ||
+          extension == "jpeg" ||
+          extension == "JPEG") {
+        contentType = "jpg";
+      } else {
+        contentType = "png";
+      }
+      return true;
+    }
+    return false;
+  }
+
+  convertFileToBase64(PlatformFile file) {
+    setState(() async {
+      final pickedFile = file.bytes;
+      if (pickedFile != null) {
+        var file64 = base64Encode(pickedFile);
+        if (profilePhoto) {
+          profilePhotoBase64 = file64;
+          profileModel!.userProfilePhotoBase64 = profilePhotoBase64;
+          isProfilePhotoUploading = true;
+        } else {
+          idPhotoBase64 = file64;
+          profileModel!.userIdPhotoBase64 = idPhotoBase64;
+          isIdPhotoUploading = true;
+          isIdPhotoDeleting = false;
+        }
+      }
+    });
+    updatePatientDetail();
+  }
+
+  void loadSelectedFiles(PlatformFile file) {
+    if (checkFileSize(file) && checkFileFormat(file)) {
+      convertFileToBase64(file);
+    } else {
+      if (!checkFileFormat(file)) {
+        showCustomDialog(
+          context,
+          title:
+              "Invalid Image Format! Select an alternative image source file such as a PNG, JPEG or JPG",
+          firstButtonText: "Ok",
+          secondButtonText: "",
+          iconData: Symbols.warning,
+          firstButtonFunction: () {
+            Get.back();
+          },
+        );
+      } else {
+        showToast(
+          context,
+          message: profilePhoto
+              ? 'The attachment size exceeds the allowable limit. Maximum size of attachment allowed is 2 MB.'
+              : 'The attachment size exceeds the allowable limit. Maximum size of attachment allowed is 2 MB.',
+          type: ToastificationType.warning,
+        );
+      }
+    }
+  }
+
+  Widget ProfileSection() {
+    return Container(
+      color: ThemeSelection.BGColor,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            height: 0.25.h,
+          ),
+          SizedBox(
+            width: Responsive.isMobile(context) ? 59.w : 15.w,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: ApiPath.isIDDriverLicenceEnabled == "Y"
+                        ? () {
+                            setState(() {
+                              idPhoto = !idPhoto;
+                              profilePhoto = !profilePhoto;
+                            });
+                          }
+                        : null,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color: profilePhoto
+                                ? Colors.white
+                                : Colors.transparent,
+                          ),
+                          right: BorderSide(
+                            color: profilePhoto
+                                ? Colors.white
+                                : Colors.transparent,
+                          ),
+                          top: BorderSide(
+                            color: profilePhoto
+                                ? Colors.white
+                                : Colors.transparent,
+                          ),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(3.0),
+                        child: Center(
+                          child: Text(
+                            "Photo",
+                            style: TextStyle(
+                              fontFamily: 'SegoeUi-Bold',
+                              color: ThemeSelection.secondaryTextColor,
+                              fontSize:
+                                  Responsive.isMobile(context) ? 12.sp : 3.sp,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: ApiPath.isIDDriverLicenceEnabled == "Y"
+                      ? GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              idPhoto = !idPhoto;
+                              profilePhoto = !profilePhoto;
+                            });
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                left: BorderSide(
+                                  color: idPhoto
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                ),
+                                right: BorderSide(
+                                  color: idPhoto
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                ),
+                                top: BorderSide(
+                                  color: idPhoto
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                ),
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(3.0),
+                              child: Center(
+                                child: Text(
+                                  "ID/Driver's License",
+                                  style: TextStyle(
+                                    fontFamily: 'SegoeUi-Bold',
+                                    color: ThemeSelection.secondaryTextColor,
+                                    fontSize: Responsive.isMobile(context)
+                                        ? 12.sp
+                                        : 3.sp,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : SizedBox(),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: Responsive.isMobile(context) ? 59.w : 15.w,
+            height: Responsive.isMobile(context) ? 59.w : 15.w,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.white,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(5),
+                bottomRight: Radius.circular(5),
+                topLeft: idPhoto ? Radius.circular(5) : Radius.zero,
+                topRight: profilePhoto ? Radius.circular(5) : Radius.zero,
+              ),
+            ),
+            child: ClipRRect(
+              child: profilePhoto
+                  ? profilePhotoBase64 != null && profilePhotoBase64 != ""
+                      ? Image.memory(
+                          Base64Decoder().convert(profilePhotoBase64!),
+                          scale: 1,
+                          gaplessPlayback: true,
+                          fit: BoxFit.fill,
+                        )
+                      : Icon(
+                          const IconData(0xE203, fontFamily: 'metro'),
+                          color: ThemeSelection.iconDefaultTertiaryColor,
+                          size: Responsive.isMobile(context)
+                              ? 40.sp
+                              : Responsive.isTablet(context)
+                                  ? 15.sp
+                                  : Responsive.isDesktop(context)
+                                      ? 12.sp
+                                      : 10.sp,
+                        )
+                  : idPhotoBase64 != null && idPhotoBase64 != ""
+                      ? Image.memory(
+                          Base64Decoder().convert(idPhotoBase64!),
+                          scale: 1,
+                          gaplessPlayback: true,
+                          fit: BoxFit.fill,
+                        )
+                      : Icon(
+                          const IconData(0xE203, fontFamily: 'metro'),
+                          color: ThemeSelection.iconDefaultTertiaryColor,
+                          size: Responsive.isMobile(context)
+                              ? 40.sp
+                              : Responsive.isTablet(context)
+                                  ? 15.sp
+                                  : Responsive.isDesktop(context)
+                                      ? 12.sp
+                                      : 10.sp,
+                        ),
+            ),
+          ),
+          SizedBox(
+            height: Responsive.isMobile(context)
+                ? 0.40.h
+                : Responsive.isk4Desktop(context)
+                    ? 1.40.h
+                    : 1.h,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Transform.scale(
+                scale: Responsive.isk4Desktop(context) ? 2 : 1,
+                child: IconButton(
+                  icon: Icon(
+                    Symbols.folder_open,
+                  ),
+                  color: profilePhoto
+                      ? profilePhotoBase64 != null && profilePhotoBase64 != ""
+                          ? ThemeSelection.iconDefaultQuaternaryColor
+                          : ThemeSelection.iconDefaultTertiaryColor
+                      : idPhotoBase64 != null && idPhotoBase64 != ""
+                          ? ThemeSelection.iconDefaultQuaternaryColor
+                          : ThemeSelection.iconDefaultTertiaryColor,
+                  onPressed: profilePhoto
+                      ? profilePhotoBase64 != null && profilePhotoBase64 != ""
+                          ? null
+                          : () async {
+                              if (kIsWeb) {
+                                FilePickerResult? result =
+                                    await FilePicker.platform.pickFiles(
+                                  type: FileType.custom,
+                                  allowedExtensions: [
+                                    'jpeg',
+                                    'png',
+                                  ],
+                                );
+                                if (result != null) {
+                                  loadSelectedFiles(result.files.first);
+                                }
+                              } else {
+                                ManagePermissions.askStoragePermission()
+                                    .then((value) async {
+                                  XFile? img = await ImagePicker()
+                                      .pickImage(source: ImageSource.gallery);
+                                  if (mounted) {
+                                    profilePhotoBase64 =
+                                        await getBase64Image(img!);
+                                    profileModel!.userProfilePhotoBase64 =
+                                        profilePhotoBase64;
+                                    isProfilePhotoUploading = true;
+                                    updatePatientDetail();
+                                  }
+                                });
+                              }
+                            }
+                      : idPhotoBase64 != null && idPhotoBase64 != ""
+                          ? null
+                          : () async {
+                              if (kIsWeb) {
+                                FilePickerResult? result =
+                                    await FilePicker.platform.pickFiles(
+                                  type: FileType.custom,
+                                  allowedExtensions: [
+                                    'jpeg',
+                                    'png',
+                                  ],
+                                );
+                                if (result != null) {
+                                  loadSelectedFiles(result.files.first);
+                                }
+                              } else {
+                                ManagePermissions.askStoragePermission()
+                                    .then((value) async {
+                                  XFile? img = await ImagePicker()
+                                      .pickImage(source: ImageSource.gallery);
+                                  if (mounted) {
+                                    idPhotoBase64 = await getBase64Image(img!);
+                                    profileModel!.userIdPhotoBase64 =
+                                        idPhotoBase64;
+                                    isIdPhotoUploading = true;
+                                    isIdPhotoDeleting = false;
+                                    updatePatientDetail();
+                                  }
+                                });
+                              }
+                            },
+                ),
+              ),
+              SizedBox(
+                width: 1.w,
+              ),
+              IconButton(
+                icon: Icon(
+                  Symbols.photo_camera,
+                ),
+                iconSize: Responsive.isMobile(context)
+                    ? 15.sp
+                    : Responsive.isTablet(context)
+                        ? 12.sp
+                        : Responsive.isDesktop(context)
+                            ? 5.sp
+                            : 4.sp,
+                color: profilePhoto
+                    ? profilePhotoBase64 != null && profilePhotoBase64 != ""
+                        ? ThemeSelection
+                            .pageIconDefaultColor //ThemeSelection.iconDefaultQuaternaryColor
+                        : ThemeSelection.iconDefaultTertiaryColor
+                    : idPhotoBase64 != null && idPhotoBase64 != ""
+                        ? ThemeSelection
+                            .pageIconDefaultColor // ThemeSelection.iconDefaultQuaternaryColor
+                        : ThemeSelection.iconDefaultTertiaryColor,
+                onPressed: profilePhoto
+                    ? profilePhotoBase64 != null && profilePhotoBase64 != ""
+                        ? null
+                        : () async {
+                            if (kIsWeb) {
+                              if (_cameras.isEmpty) {
+                                SchedulerBinding.instance
+                                    .addPostFrameCallback((_) async {});
+                              } else {
+                                Uint8List photoResult =
+                                    await Get.to(CameraScreen());
+                                profilePhotoBase64 = base64Encode(photoResult);
+                                profileModel!.userProfilePhotoBase64 =
+                                    profilePhotoBase64;
+                                isProfilePhotoUploading = true;
+                                updatePatientDetail();
+                              }
+                            } else {
+                              var status = await Permission.camera.status;
+                              if (!status.isGranted) {
+                                status = await Permission.camera.request();
+                              }
+
+                              if (status.isGranted) {
+                                // If permission is granted, pick the image
+                                final pickedImage = await ImagePicker()
+                                    .pickImage(source: ImageSource.camera);
+                                if (pickedImage != null) {
+                                  CroppedFile? croppedImage =
+                                      await _cropImage(File(pickedImage.path));
+                                  if (croppedImage != null) {
+                                    profilePhotoBase64 =
+                                        await getBase64ImageFromCrop(
+                                            croppedImage);
+                                    profileModel!.userProfilePhotoBase64 =
+                                        profilePhotoBase64;
+                                    isProfilePhotoUploading = true;
+                                    updatePatientDetail();
+                                  }
+                                }
+                              } else {
+                                // Handle permission denied state
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: Text(
+                                      'Camera permission is required to capture image'),
+                                ));
+                              }
+                              // ManagePermissions.askCameraPermission()
+                              //     .then((value) async {
+                              //   XFile? image = await ImagePicker()
+                              //       .pickImage(source: ImageSource.camera);
+
+                              //   if (image != null && mounted) {
+                              //     CroppedFile? croppedFile =
+                              //         await ImageCropper().cropImage(
+                              //       sourcePath: image.path,
+                              //       uiSettings: [
+                              //         AndroidUiSettings(
+                              //             toolbarTitle: 'Crop Image',
+                              //             toolbarColor: Colors.deepOrange,
+                              //             toolbarWidgetColor: Colors.white,
+                              //             initAspectRatio:
+                              //                 CropAspectRatioPreset.original,
+                              //             lockAspectRatio: false),
+                              //         IOSUiSettings(
+                              //           minimumAspectRatio: 1.0,
+                              //         ),
+                              //       ],
+                              //     );
+
+                              //     if (croppedFile != null) {
+                              //       print(
+                              //           'Cropped image path: ${croppedFile.path}');
+                              //     }
+
+                              //     profilePhotoBase64 =
+                              //         await getBase64ImageFromCrop(croppedFile);
+                              //     profileModel!.userProfilePhotoBase64 =
+                              //         profilePhotoBase64;
+                              //     isProfilePhotoUploading = true;
+                              //     updatePatientDetail();
+                              //   }
+                              // });
+                            }
+                          }
+                    : idPhotoBase64 != null && idPhotoBase64 != ""
+                        ? null
+                        : () async {
+                            if (kIsWeb) {
+                              if (_cameras.isEmpty) {
+                                SchedulerBinding.instance
+                                    .addPostFrameCallback((_) async {
+                                  // Toast.show("No camera found.");
+                                });
+                              } else {
+                                Uint8List photoResult =
+                                    await Get.to(CameraScreen());
+                                idPhotoBase64 = base64Encode(photoResult);
+                                profileModel!.userIdPhotoBase64 = idPhotoBase64;
+                                isIdPhotoUploading = true;
+                                isIdPhotoDeleting = false;
+                                updatePatientDetail();
+                              }
+                            } else {
+                              ManagePermissions.askCameraPermission()
+                                  .then((value) async {
+                                XFile? image = await ImagePicker()
+                                    .pickImage(source: ImageSource.camera);
+                                if (image != null && mounted) {
+                                  idPhotoBase64 = await getBase64Image(image);
+                                  profileModel!.userIdPhotoBase64 =
+                                      idPhotoBase64;
+                                  isIdPhotoUploading = true;
+                                  isIdPhotoDeleting = false;
+                                  updatePatientDetail();
+                                }
+                              });
+                            }
+                          },
+              ),
+              SizedBox(
+                width: 1.w,
+              ),
+              Transform.scale(
+                scale: Responsive.isk4Desktop(context) ? 1.38 : 1,
+                child: IconButton(
+                  icon: Icon(
+                    // const IconData(0xE102, fontFamily: 'metro'),
+                    Symbols.delete,
+                  ),
+                  iconSize: Responsive.isMobile(context)
+                      ? 15.sp
+                      : Responsive.isTablet(context)
+                          ? 6.sp
+                          : Responsive.isDesktop(context)
+                              ? 5.sp
+                              : 4.sp,
+                  color: profilePhoto
+                      ? profilePhotoBase64 != null && profilePhotoBase64 != ""
+                          ? ThemeSelection.iconDefaultTertiaryColor
+                          : ThemeSelection.pageIconDefaultColor
+                      : idPhotoBase64 != null && idPhotoBase64 != ""
+                          ? ThemeSelection.iconDefaultTertiaryColor
+                          : ThemeSelection.pageIconDefaultColor,
+                  onPressed: profilePhoto
+                      ? profilePhotoBase64 == null || profilePhotoBase64 == ""
+                          ? null
+                          : () {
+                              showCustomDialog(
+                                context,
+                                firstButtonText: "Cancel",
+                                secondButtonText: "Proceed",
+                                title: "Do you want to delete this picture?",
+                                iconData: Symbols.warning,
+                                firstButtonFunction: () {
+                                  Navigator.of(context).pop();
+                                },
+                                secondButtonFunction: () {
+                                  setState(() {
+                                    showToast(
+                                      context,
+                                      message: 'Photo deleted',
+                                      type: ToastificationType.success,
+                                    );
+                                    profilePhotoBase64 = "";
+                                    profileModel!.userProfilePhotoBase64 =
+                                        profilePhotoBase64;
+                                    isProfilePhotoDeleting = true;
+                                  });
+                                  updatePatientDetail();
+                                  Navigator.of(context).pop();
+                                },
+                              );
+                            }
+                      : idPhotoBase64 == null || idPhotoBase64 == ""
+                          ? null
+                          : () {
+                              showCustomDialog(
+                                context,
+                                firstButtonText: "Cancel",
+                                secondButtonText: "Proceed",
+                                title: "Do you want to delete this picture?",
+                                iconData: Symbols.warning,
+                                firstButtonFunction: () {
+                                  Navigator.of(context).pop();
+                                },
+                                secondButtonFunction: () {
+                                  setState(() {
+                                    showToast(
+                                      context,
+                                      // message: profilePhoto
+                                      //     ? 'Photo deleted'
+                                      //     : 'ID deleted',
+                                      message: 'ID deleted',
+                                      type: ToastificationType.success,
+                                    );
+                                    idPhotoBase64 = "";
+                                    profileModel!.userIdPhotoBase64 =
+                                        idPhotoBase64;
+                                    isIdPhotoDeleting = true;
+                                  });
+                                  updatePatientDetail();
+
+                                  Navigator.of(context).pop();
+                                },
+                              );
+                            },
+                ),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: Responsive.isMobile(context) ? 0.40.h : 5.h,
+          ),
+          SizedBox(
+            width: Responsive.isMobile(context) ? 70.w : 30.w,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Name",
+                      style: TextStyle(
+                        fontFamily: 'SegoeUi',
+                        color: ThemeSelection.secondaryTextColor,
+                        fontSize: Responsive.isMobile(context) ? 12.sp : 4.sp,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          isNameEditingEnable = !isNameEditingEnable;
+                        });
+                        if (!isNameEditingEnable) {
+                          FocusScope.of(context).requestFocus(focusNode);
+                          // Setting the selection to the end of the text
+                          firstNameTextEditingController.selection =
+                              TextSelection.fromPosition(
+                            TextPosition(
+                                offset:
+                                    firstNameTextEditingController.text.length),
+                          );
+                          Future.delayed(Duration.zero, () {
+                            firstNameTextEditingController.selection =
+                                TextSelection.fromPosition(
+                              TextPosition(
+                                  offset: firstNameTextEditingController
+                                      .text.length),
+                            );
+                          });
+                        } else {
+                          FocusScope.of(context).unfocus();
+                          if (firstNameTextEditingController.text
+                                  .trim()
+                                  .isNotEmpty &&
+                              lastNameTextEditingController.text
+                                  .trim()
+                                  .isNotEmpty) {
+                            updatePatientDetail();
+                          }
+                        }
+                      },
+                      child: Text(
+                        isNameEditingEnable ? "Edit" : "Save",
+                        style: TextStyle(
+                          fontFamily: 'SegoeUi',
+                          color: ThemeSelection.secondaryTextColor,
+                          fontSize:
+                              Responsive.isMobile(context) ? 10.sp : 2.95.sp,
+                          decoration: TextDecoration.underline,
+                          decorationColor: ThemeSelection.secondaryTextColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 0.5.h,
+                ),
+                Container(
+                  alignment: Alignment.centerLeft,
+                  width: Responsive.isMobile(context) ? 80.w : 30.w,
+                  child: customTextFormField(
+                    context,
+                    errorText: 'First Name is required',
+                    hintText: 'First Name',
+                    readOnly: isNameEditingEnable,
+                    validate: _validateFirstName,
+                    textEditingController: firstNameTextEditingController,
+                    focusNode: focusNode,
+                    inlineError: true,
+                    inlineErrorTextColor: ThemeSelection.secondaryTextColor,
+                    textFieldColor: isNameEditingEnable
+                        ? ThemeSelection.textfieldNonEditingFilledColor
+                        : ThemeSelection.textfieldFilledColor,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(35),
+                      FilteringTextInputFormatter.allow(RegExp(
+                          r'[a-zA-Z0-9!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]')),
+                    ],
+                    onChanged: (val) {
+                      // Check for special characters
+                      _checkForSpecialCharacters(val);
+
+                      // Filter out special characters
+                      String filteredText1 = val.replaceAll(
+                          RegExp(
+                              r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]'),
+                          '');
+
+                      // Update the controller only if text has been modified
+                      if (filteredText1 != val) {
+                        firstNameTextEditingController.text = filteredText1;
+                        firstNameTextEditingController.selection =
+                            TextSelection.fromPosition(
+                                TextPosition(offset: filteredText1.length));
+                      }
+
+                      setState(() {
+                        if (filteredText1.isEmpty) {
+                          _validateFirstName = true;
+                        } else {
+                          _validateFirstName = false;
+                        }
+                      });
+                    },
+                  ),
+                ),
+                SizedBox(
+                  height: _validateFirstName ? 2.5.h : 0.5.h,
+                ),
+                Container(
+                  alignment: Alignment.centerLeft,
+                  width: Responsive.isMobile(context) ? 80.w : 30.w,
+                  child: customTextFormField(
+                    context,
+                    errorText: 'Last Name is required',
+                    hintText: 'Last Name',
+                    readOnly: isNameEditingEnable,
+                    validate: _validateLastName,
+                    hoverColor: isNameEditingEnable
+                        ? ThemeSelection.textfieldNonEditingFilledColor
+                        : ThemeSelection.textfieldFilledColor,
+                    textEditingController: lastNameTextEditingController,
+                    inlineError: true,
+                    textFieldColor: isNameEditingEnable
+                        ? ThemeSelection.textfieldNonEditingFilledColor
+                        : ThemeSelection.textfieldFilledColor,
+                    inlineErrorTextColor: ThemeSelection.secondaryTextColor,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(60),
+                      FilteringTextInputFormatter.allow(RegExp(
+                          r'[a-zA-Z0-9!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?~`]')),
+                    ],
+                    onChanged: (val) {
+                      // Check for special characters
+                      _checkForSpecialCharacters(val);
+
+                      // Filter out special characters
+                      String filteredText2 = val.replaceAll(
+                          RegExp(
+                              r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]'),
+                          '');
+
+                      // Update the controller only if text has been modified
+                      if (filteredText2 != val) {
+                        lastNameTextEditingController.text = filteredText2;
+                        lastNameTextEditingController.selection =
+                            TextSelection.fromPosition(
+                                TextPosition(offset: filteredText2.length));
+                      }
+
+                      setState(() {
+                        if (filteredText2.isEmpty) {
+                          _validateLastName = true;
+                        } else {
+                          _validateLastName = false;
+                        }
+                      });
+                    },
+                  ),
+                )
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget OptionsSection() {
+    return Padding(
+      padding: Responsive.isMobile(context)
+          ? EdgeInsets.zero
+          : EdgeInsets.symmetric(horizontal: 10.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: ThemeSelection.greyBorderColor,
+                  width: 0.1.h,
+                ),
+              ),
+            ),
+            child: ListTile(
+              onTap: () {
+                setState(() {
+                  ApiPath.isSettingIconPopupVisible = false;
+                  ApiPath.isSettingIconPopupOpen.value = true;
+                });
+                Get.to(
+                  UpdateUsernameScreen(
+                    username: profileModel!.userName ?? "",
+                  ),
+                );
+              },
+              hoverColor: ThemeSelection.listTileHoverColor,
+              title: Padding(
+                padding: EdgeInsets.only(
+                    bottom: Responsive.isMobile(context) ? 0.5.h : 1.h),
+                child: Text(
+                  "Change Username",
+                  style: TextStyle(
+                    fontFamily: 'SegoeUi',
+                    color: ThemeSelection.primaryTextColor,
+                    fontSize: Responsive.isMobile(context) ? 15.sp : 6.sp,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: ThemeSelection.greyBorderColor,
+                  width: 0.1.h,
+                ),
+              ),
+            ),
+            child: ListTile(
+              onTap: () {
+                setState(() {
+                  ApiPath.isSettingIconPopupVisible = false;
+                  ApiPath.isSettingIconPopupOpen.value = true;
+                });
+                Get.to(UpdatePasswordScreen(
+                  username: profileModel!.userName ?? "",
+                ));
+              },
+              hoverColor: ThemeSelection.listTileHoverColor,
+              title: Padding(
+                padding: EdgeInsets.only(
+                    bottom: Responsive.isMobile(context) ? 0.5.h : 1.h),
+                child: Text(
+                  "Change Password",
+                  style: TextStyle(
+                    fontFamily: 'SegoeUi',
+                    color: ThemeSelection.primaryTextColor,
+                    fontSize: Responsive.isMobile(context) ? 15.sp : 6.sp,
+                  ),
+                ),
+              ),
+              subtitle: Padding(
+                padding: EdgeInsets.only(
+                    bottom: Responsive.isMobile(context) ? 1.h : 2.h),
+                child: Text(
+                  "Last Change " + lastPasswordChangeDate,
+                  style: TextStyle(
+                    fontFamily: 'SegoeUi',
+                    color: Color.fromRGBO(92, 92, 92, 1),
+                    fontSize: Responsive.isMobile(context) ? 12.sp : 4.sp,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          ListTile(
+            onTap: () {
+              setState(() {
+                ApiPath.isSettingIconPopupVisible = false;
+                ApiPath.isSettingIconPopupOpen.value = true;
+              });
+              Get.to(OptoutScreen());
+            },
+            hoverColor: ThemeSelection.listTileHoverColor,
+            title: Padding(
+              padding: EdgeInsets.only(
+                  bottom: Responsive.isMobile(context) ? 0.5.h : 1.h),
+              child: Text(
+                "Make My Account Inactive",
+                style: TextStyle(
+                  fontFamily: 'SegoeUi',
+                  color: ThemeSelection.primaryTextColor,
+                  fontSize: Responsive.isMobile(context) ? 15.sp : 6.sp,
+                ),
+              ),
+            ),
+            subtitle: Padding(
+                padding: EdgeInsets.only(bottom: 0.5.h),
+                child: SizedBox(
+                  height: 0.5.h,
+                )),
+          ),
+        ],
+      ),
+    );
   }
 }
