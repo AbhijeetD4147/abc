@@ -25,6 +25,9 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
   const [loginAttempts, setLoginAttempts] = useState<number | null>(null);
   const [isAccountLocked, setIsAccountLocked] = useState(false);
   const [validUsername, setValidUsername] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState<number | null>(null);
+  const [isAccountLocked, setIsAccountLocked] = useState(false);
+  const [validUsername, setValidUsername] = useState(false);
   const navigate = useNavigate();
 
   const {
@@ -54,6 +57,20 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
       // Check response status
       if (authService.response_Status_Code_API_25 === 200) {
         const loginResponse = authService.loginResponseModel;
+
+        // Update login attempts and account status
+        if (loginResponse?.loginAttemptsleft !== undefined) {
+          setLoginAttempts(loginResponse.loginAttemptsleft);
+        }
+        
+        if (loginResponse?.isAccountLocked) {
+          setIsAccountLocked(true);
+        }
+        
+        // Check if username is valid (has maximeyesPatientNumber)
+        if (loginResponse?.maximeyesPatientNumber) {
+          setValidUsername(true);
+        }
 
         // Update login attempts and account status
         if (loginResponse?.loginAttemptsleft !== undefined) {
