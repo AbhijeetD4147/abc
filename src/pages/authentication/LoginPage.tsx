@@ -13,18 +13,12 @@ interface SignInProps {
   companyName: string;
 }
 
-// Add this import at the top of the file
-
-
 const theme = await getTheme();
 
 const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
   const [loginFailed, setLoginFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [loginAttempts, setLoginAttempts] = useState<number | null>(null);
-  const [isAccountLocked, setIsAccountLocked] = useState(false);
-  const [validUsername, setValidUsername] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState<number | null>(null);
   const [isAccountLocked, setIsAccountLocked] = useState(false);
   const [validUsername, setValidUsername] = useState(false);
