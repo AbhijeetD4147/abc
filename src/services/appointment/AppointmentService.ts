@@ -117,7 +117,7 @@ export class AppointmentService {
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_1 = 205;
             } else if (response.status === 200) {
-                this.latestAppointmentModel = await LatestAppointmentModel.fromJson(JSON.parse(response.data));
+                this.latestAppointmentModel = await LatestAppointmentModel.fromJson(response.data);
                 this.response_Status_Code_API_1 = response.status;
             } else {
                 this.maximum_Calling_API_1 = this.maximum_Calling_API_1 + 1;

@@ -31,7 +31,7 @@ const DashboardPage: FC = () => {
   const [logo, setLogo] = useState<string>("");
   const [userName, setUserName] = useState<string>(""); // Add this line for user name
   const [userInitials, setUserInitials] = useState<string>("DN"); // Add this line for user initials
-  const [hasUpcomingAppointment, setHasUpcomingAppointment] = useState<boolean>(false);
+  const [hasUpcomingAppointment, setHasUpcomingAppointment] = useState<boolean>();
   const [appointmentData, setAppointmentData] = useState({
     appointmentDateTime: "",
     appointmentHeader: "",
@@ -453,8 +453,7 @@ const DashboardPage: FC = () => {
   }, [appointmentData.appointmentDateTime, appointmentData.isMarkArrivedButtonEnable]);
 
   // Format appointment time for display
-  const formattedTime = appointmentData.appointmentDateTime ?
-    dayjs(appointmentData.appointmentDateTime).format("h:mm A on dddd, MMMM D, YYYY") : "";
+  const formattedTime = appointmentData.appointmentDateTime || "";
 
   // Handle arrival confirmation
   const handleArrivalConfirm = () => {
@@ -474,7 +473,7 @@ const DashboardPage: FC = () => {
   ];
   const navigationPaths = [
     '/messages',
-    '/appointment', 
+    '/appointment',
     '/policies-form',
     '/health-summary',
     '/eyewear-rx',
@@ -554,7 +553,7 @@ const DashboardPage: FC = () => {
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-1">
               {menuItems.map((item, idx) => (
                 <div key={idx} className="flex flex-col items-center text-center">
-                  <div 
+                  <div
                     className="border-2 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center hover:bg-blue-600 cursor-pointer"
                     onClick={() => navigate(navigationPaths[idx])}
                   >
