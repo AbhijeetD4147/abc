@@ -195,13 +195,9 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
             {/* Left Panel */}
             <div className="w-full md:w-1/2 flex flex-col justify-center items-center bg-white p-6 md:p-10 relative">
                 <img
-                    src={
-                        GlobalParams.LOGO
-                            ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
-                            : ''
-                    }
+                    src={GlobalParams.LOGO ? `data:image/jpeg;base64,${GlobalParams.LOGO}` : '#'}
                     alt="Company Logo"
-                    className="w-40 h-auto mb-4"
+                    className="w-60 max-w-full h-auto inline-block align-middle"
                 />
                 <div className="absolute bottom-3 left-3 text-xs text-gray-400">
                     <Footer />

@@ -41,11 +41,53 @@ const ActivityLogs: React.FC = () => {
         };
     
         return (
-            <div className="min-h-screen w-screen flex flex-col items-center bg-white">
-                <Navbar patientName={{ firstName: "Jeffery", lastName: "Stevenson" }} />
-                <div className="w-full border-b text-center py-3">
-                    <h2 className="text-3xl font-semibold">Activity Logs</h2>
-                </div>
+            <>
+                <style>{`
+                    .react-datepicker-popper {
+                        z-index: 9999 !important;
+                    }
+                    .react-datepicker {
+                        background-color: white !important;
+                        border: 1px solid #e5e7eb !important;
+                        border-radius: 8px !important;
+                        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+                    }
+                    .react-datepicker__header {
+                        background-color: #f9fafb !important;
+                        border-bottom: 1px solid #e5e7eb !important;
+                    }
+                    .react-datepicker__current-month {
+                        color: #374151 !important;
+                        font-weight: 600 !important;
+                    }
+                    .react-datepicker__day-name {
+                        color: #6b7280 !important;
+                    }
+                    .react-datepicker__day {
+                        color: #374151 !important;
+                    }
+                    .react-datepicker__day:hover {
+                        background-color: #f3f4f6 !important;
+                    }
+                    .react-datepicker__day--selected {
+                        background-color: #3b82f6 !important;
+                        color: white !important;
+                    }
+                    .react-datepicker__day--in-range {
+                        background-color: #dbeafe !important;
+                        color: #1d4ed8 !important;
+                    }
+                    .react-datepicker__day--range-start,
+                    .react-datepicker__day--range-end {
+                        background-color: #3b82f6 !important;
+                        color: white !important;
+                    }
+                `}</style>
+                <div className="min-h-screen w-screen flex flex-col items-center bg-white">
+                    <Navbar patientName={{ firstName: "Jeffery", lastName: "Stevenson" }} />
+                    <div className="w-full border-b text-center py-3">
+                        <h2 className="text-3xl font-semibold">Activity Logs</h2>
+                    </div>
     
                 <div className="w-full max-w-6xl px-6 mt-6">
                     {/* Filters */}
@@ -59,12 +101,17 @@ const ActivityLogs: React.FC = () => {
                                 endDate={endDate}
                                 selectsRange
                                 dateFormat="MM/dd/yyyy"
-                                className="border rounded px-3 py-2 text-sm w-[250px]"
+                                className="border rounded px-3 py-2 text-sm w-[250px] bg-white"
                                 placeholderText="Select date range"
+                                withPortal
+                                portalId="date-picker-portal"
+                                popperClassName="react-datepicker-popper"
+                                calendarClassName="react-datepicker-calendar"
+                                showPopperArrow={false}
                             />
                         </div>
                         <div>
-                            <label className="block  text-sm text-gray-700 mb-1">Action</label>
+                            <label className="block text-sm text-gray-700 mb-1">Action</label>
                             <select
                                 className="border rounded px-3 py-2 mt-1 text-sm w-[400px]"
                                 value={actionFilter}
@@ -144,7 +191,8 @@ const ActivityLogs: React.FC = () => {
                     </div>
                 </div>
             </div>
-        );
-    };
-    
-    export default ActivityLogs;
+        </>
+    );
+};
+
+export default ActivityLogs;

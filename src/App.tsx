@@ -38,6 +38,8 @@ import Insurance from "./pages/appointment/Insurance";
 import RequestConfirmed from "./pages/appointment/RequestConfirmed";
 import HealthSummary from "./pages/health_summary/HealthSummary";
 import PoliciesForm from "./pages/PoliciesAndConsentsForm/PoliciesForm";
+import AuthPatientList from "./pages/authentication/authorized_individual/AuthPatientList";
+import AddAuthorizedIndividual from "./pages/authentication/authorized_individual/AddAuthorizedIndividual";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -176,6 +178,10 @@ function App() {
           firstName: "",
           lastName: ""
         }} />} />
+
+        {/* Authorized Individual */}
+        <Route path="/authorized-individual" element={<AuthPatientList />} />
+        <Route path="/add-authorized-individual" element={<AddAuthorizedIndividual />} />
 
         {/* <Route path="/insurance" element={<Insurance />} /> */}
         {/*<Route path="/authterms" element={<AuthTermsAndConditionScreen />} />

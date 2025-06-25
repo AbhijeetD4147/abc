@@ -218,132 +218,142 @@ const ForgotPassword: React.FC<PageProps> = () => {
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen w-screen">
-            {/* Left Panel */}
-            <div className="w-full md:w-1/2 flex flex-col justify-center items-center bg-white p-6 md:p-10 relative">
-                <img
-                    src={
-                        GlobalParams.LOGO
-                            ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
-                            : ''
-                    }
-                    alt="Company Logo"
-                    className="w-40 h-auto mb-4"
-                />
-                <div className="absolute bottom-3 left-3 text-xs text-gray-400">
-                    <Footer />
+            <div className="flex flex-col md:flex-row flex-1">
+                {/* Left Panel */}
+                <div className="w-full md:w-1/2 flex flex-col justify-center items-center bg-white p-6 md:p-10 relative min-h-0">
+                    <img
+                        src={
+                            GlobalParams.LOGO
+                                ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
+                                : ''
+                        }
+                        alt="Company Logo"
+                        className="w-60 max-w-full h-auto inline-block align-middle"
+                    />
+                    {/* Footer only visible on medium screens and up - properly contained */}
+                    <div className="hidden md:flex absolute bottom-0 left-0 right-0 justify-center p-3">
+                        <div className="text-xs text-gray-400 text-center max-w-full overflow-hidden">
+                            <Footer />
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Right Panel */}
-            <div
-                className="w-full md:w-1/2 flex flex-col justify-center items-center p-6 md:p-10"
-                style={{ backgroundColor: theme.BGColor, color: theme.secondaryTextColor }}
-            >
-                <div className="w-full max-w-md">
-                    {/* Header Icon */}
-                    <div className="flex justify-center mb-8 relative">
-                        <div className="border-2 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center hover:bg-blue-600 cursor-pointer">
-                            <Icon
-                                colorVariant="light"
-                            
-                                height="60px"
-                                isCursorPointer
-                                isbadge
-                                name="user"
-                                stroke
-                                width="60px"
-                            />
+                {/* Right Panel */}
+                <div
+                    className="w-full md:w-1/2 flex flex-col justify-center items-center p-6 md:p-10"
+                    style={{ backgroundColor: theme.BGColor, color: theme.secondaryTextColor }}
+                >
+                    <div className="w-full max-w-md">
+                        {/* Header Icon */}
+                        <div className="flex justify-center mb-8 relative">
+                            <div className="border-2 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center hover:bg-blue-600 cursor-pointer">
+                                <Icon
+                                    colorVariant="light"
+
+                                    height="60px"
+                                    isCursorPointer
+                                    isbadge
+                                    name="user"
+                                    stroke
+                                    width="60px"
+                                />
+                            </div>
+
                         </div>
 
-                    </div>
+                        {/* Title */}
+                        <h1 className="text-3xl font-light text-center mb-2 text-white">
+                            Recover your account
+                        </h1>
 
-                    {/* Title */}
-                    <h1 className="text-3xl font-light text-center mb-2 text-white">
-                        Recover your account
-                    </h1>
+                        {/* Subtitle */}
+                        <div className="text-center mb-5 text-white text-sm">
+                            <p>We can help you reset your password.</p>
+                            <p>Follow the instruction below.</p>
+                        </div>
 
-                    {/* Subtitle */}
-                    <div className="text-center mb-5 text-white text-sm">
-                        <p>We can help you reset your password.</p>
-                        <p>Follow the instruction below.</p>
-                    </div>
-
-                    {/* Username Input */}
-                    <div className="mb-3">
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Icon name="user" height="20px" width="20px" colorVariant="dark" stroke />
+                        {/* Username Input */}
+                        <div className="mb-3">
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Icon name="user" height="20px" width="20px" colorVariant="dark" stroke />
+                                </div>
+                                <input
+                                    type="text"
+                                    value={username}
+                                    onChange={handleUsernameChange}
+                                    onBlur={handleUsernameBlur}
+                                    placeholder="Username"
+                                    className={`w-full pl-10 pr-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${usernameError ? 'border-red-600 bg-red-100' : 'border-gray-300 bg-white'
+                                        } focus:outline-none focus:border-blue-500`}
+                                />
                             </div>
+                            {usernameError && (
+                                <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
+                                    {usernameError}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Captcha Section */}
+                        <div className="mb-6">
+                            <div className="flex flex-wrap items-center gap-2 mb-4">
+                                <div className="bg-white px-4 py-2 rounded border-2 border-gray-300 font-mono text-lg font-bold text-gray-800 tracking-wider">
+                                    {captchaCode}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={generateCaptcha}
+                                    className="text-white text-base underline hover:no-underline"
+                                    style={{ backgroundColor: theme.BGColor }}
+                                >
+                                    Refresh
+                                </button>
+                            </div>
+
+                            <p className="text-white mb-2">Input symbols</p>
                             <input
                                 type="text"
-                                value={username}
-                                onChange={handleUsernameChange}
-                                onBlur={handleUsernameBlur}
-                                placeholder="Username"
-                                className={`w-full pl-10 pr-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${usernameError ? 'border-red-600 bg-red-100' : 'border-gray-300 bg-white'
+                                value={captchaInput}
+                                onChange={handleCaptchaChange}
+                                placeholder="Enter the symbols shown above"
+                                className={`w-full px-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${captchaError ? 'border-red-600 bg-red-100' : 'border-gray-300 bg-white'
                                     } focus:outline-none focus:border-blue-500`}
                             />
+                            {captchaError && (
+                                <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
+                                    {captchaError}
+                                </div>
+                            )}
                         </div>
-                        {usernameError && (
-                            <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
-                                {usernameError}
-                            </div>
-                        )}
-                    </div>
 
-                    {/* Captcha Section */}
-                    <div className="mb-6">
-                        <div className="flex flex-wrap items-center gap-2 mb-4">
-                            <div className="bg-white px-4 py-2 rounded border-2 border-gray-300 font-mono text-lg font-bold text-gray-800 tracking-wider">
-                                {captchaCode}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={generateCaptcha}
-                                className="text-white text-base underline hover:no-underline"
-                                style={{ backgroundColor: theme.BGColor }}
+                        {/* Action Buttons */}
+                        <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
+                            <Button
+                                colorVariant="default"
+                                onClick={handleCancel}
+                                className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
+                                isDisabled={isLoading}
                             >
-                                Refresh
-                            </button>
+                                Cancel
+                            </Button>
+                            <Button
+                                colorVariant="default"
+                                onClick={handleSubmit}
+                                className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
+                                isDisabled={
+                                    isLoading || !!usernameError || !!captchaError || !username || !captchaInput
+                                }
+                            >
+                                {isLoading ? 'Processing...' : 'Next'}
+                            </Button>
                         </div>
-
-                        <p className="text-white mb-2">Input symbols</p>
-                        <input
-                            type="text"
-                            value={captchaInput}
-                            onChange={handleCaptchaChange}
-                            placeholder="Enter the symbols shown above"
-                            className={`w-full px-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${captchaError ? 'border-red-600 bg-red-100' : 'border-gray-300 bg-white'
-                                } focus:outline-none focus:border-blue-500`}
-                        />
-                        {captchaError && (
-                            <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
-                                {captchaError}
-                            </div>
-                        )}
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
-                        <Button
-                            colorVariant="default"
-                            onClick={handleCancel}
-                            className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
-                            isDisabled={isLoading}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            colorVariant="default"
-                            onClick={handleSubmit}
-                            className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
-                            isDisabled={
-                                isLoading || !!usernameError || !!captchaError || !username || !captchaInput
-                            }
-                        >
-                            {isLoading ? 'Processing...' : 'Next'}
-                        </Button>
-                    </div>
+                </div>
+            </div>
+            <div className="md:hidden w-full py-1 px-3 bg-white border-t border-gray-200">
+                <div className="text-xs text-gray-400 text-center">
+                    <Footer />
                 </div>
             </div>
         </div>

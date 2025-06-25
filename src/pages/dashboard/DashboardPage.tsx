@@ -30,7 +30,7 @@ const DashboardPage: FC = () => {
   const [loadingAppointmentData, setLoadingAppointmentData] = useState<boolean>(false);
   const [logo, setLogo] = useState<string>("");
   const [userName, setUserName] = useState<string>(""); // Add this line for user name
-  const [userInitials, setUserInitials] = useState<string>("JD"); // Add this line for user initials
+  const [userInitials, setUserInitials] = useState<string>("DN"); // Add this line for user initials
   const [hasUpcomingAppointment, setHasUpcomingAppointment] = useState<boolean>(false);
   const [appointmentData, setAppointmentData] = useState({
     appointmentDateTime: "",
@@ -468,13 +468,13 @@ const DashboardPage: FC = () => {
     { label: "Update Insurance", href: "/update-insurance" },
     { label: "Communication Preferences", href: "/communication-preferences" },
     { label: "Authorized Individuals", href: "/authorized-individuals" },
-    { label: "Activity Log", href: "/activity-log" },
+    { label: "Activity Log", href: "/activity-logs" },
     { label: "Opt-Out", href: "/opt-out" },
     { label: "Logout", href: "/logout" },
   ];
   const navigationPaths = [
     '/messages',
-    '/appointments', 
+    '/appointment', 
     '/policies-form',
     '/health-summary',
     '/eyewear-rx',
@@ -484,14 +484,14 @@ const DashboardPage: FC = () => {
   return (
     <div className="flex flex-col h-screen w-screen font-[Segoe UI]">
       {/* Navbar */}
-      <div className="w-full bg-white px-4 sm:px-6 lg:px-10 py-0 border-b">
+      <div className="w-full bg-white px-4 sm:px-6 lg:px-10 py-2 border-b">
         <div className="flex justify-between items-center">
           {/* Logo + Company Name */}
           <div className="flex items-center gap-2 sm:gap-4">
             <img
               src={GlobalParams.LOGO ? `data:image/jpeg;base64,${GlobalParams.LOGO}` : '#'}
               alt={'Logo'}
-              className="w-24 h-24 sm:w-24 sm:h-24 m-0 object-contain"
+              className="w-12 h-12 sm:w-14 sm:h-14 m-0 object-contain"
             />
             <div className="text-lg sm:text-xl lg:text-2xl text-black font-normal hidden sm:block">
               {GlobalParams.COMPANY_NAME}
