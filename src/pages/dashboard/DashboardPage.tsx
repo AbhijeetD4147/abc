@@ -469,7 +469,7 @@ const DashboardPage: FC = () => {
     { label: "Authorized Individuals", href: "/authorized-individuals" },
     { label: "Activity Log", href: "/activity-logs" },
     { label: "Opt-Out", href: "/opt-out" },
-    { label: "Logout", href: "/logout" },
+    { label: "Logout", href: "/login?reason=logout" },
   ];
   const navigationPaths = [
     '/messages',
@@ -531,13 +531,11 @@ const DashboardPage: FC = () => {
                       >
                         {label}
                       </a>
-
                     </li>
                   ))}
                 </ul>
               )}
             </div>
-
           </div>
         </div>
       </div>

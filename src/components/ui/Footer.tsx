@@ -27,7 +27,7 @@ const css = {
 
 const Footer: React.FC = () => {
     return (
-        <footer style={css.footer}>
+        <footer className="justify-between" style={css.footer}>
             <div style={css.footerLeft}>
                 <img src={logo} alt="Maximeyes Logo" style={css.footerLogo} />
                 <span style={css.footerVersion}>v1.0.0</span>

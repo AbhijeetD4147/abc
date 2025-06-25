@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { AuthenticationService } from '../../services/authentication/UserService';
 import { ResetPasswordLinkRequestModel } from '../../model/patient_portal/ResetPasswordLinkRequestModel';
+import MaximEyes from '../../assets/maximeyeslogo.png';
 import { ForgotPasswordGUIDVerificationResponseModel } from '../../model/patient_portal/ForgotPasswordGUIDVerificationResponseModel';
 import { ForgotUpdatePasswordResponseModel } from '../../model/patient_portal/ForgotUpdatePasswordResponseModel';
 
@@ -220,20 +221,33 @@ const ForgotPassword: React.FC<PageProps> = () => {
         <div className="flex flex-col md:flex-row min-h-screen w-screen">
             <div className="flex flex-col md:flex-row flex-1">
                 {/* Left Panel */}
-                <div className="w-full md:w-1/2 flex flex-col justify-center items-center bg-white p-6 md:p-10 relative min-h-0">
-                    <img
-                        src={
-                            GlobalParams.LOGO
-                                ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
-                                : ''
-                        }
-                        alt="Company Logo"
-                        className="w-60 max-w-full h-auto inline-block align-middle"
-                    />
-                    {/* Footer only visible on medium screens and up - properly contained */}
-                    <div className="hidden md:flex absolute bottom-0 left-0 right-0 justify-center p-3">
-                        <div className="text-xs text-gray-400 text-center max-w-full overflow-hidden">
-                            <Footer />
+                <div className="w-full md:w-1/2 flex flex-col bg-white p-2 md:p-10 relative flex-1">
+                    {/* Centered Logo */}
+                    <div className="flex-1 flex justify-center items-center">
+                        <img
+                            src={
+                                GlobalParams.LOGO
+                                    ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
+                                    : ''
+                            }
+                            alt="Company Logo"
+                            className="w-60 max-w-full h-auto inline-block align-middle"
+                        />
+                    </div>
+
+                    {/* Footer at Bottom */}
+                    <div className="flex-shrink-0 m-0">
+                        <div className="hidden md:flex flex-col md:flex-row justify-between items-center gap-2">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="h-16 w-auto" />
+                            <div className="text-xs text-center md:text-right">
+                                &copy; 2025, First Insight Corporation. All rights reserved.
+                            </div>
+                        </div>
+                        <div className="flex md:hidden flex-row items-center justify-between gap-3 px-2 py-2 bg-white rounded-lg">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="h-8 w-auto" />
+                            <div className="text-xs text-center text-gray-600">
+                                &copy; 2025, First Insight Corporation. All rights reserved.
+                            </div>
                         </div>
                     </div>
                 </div>
