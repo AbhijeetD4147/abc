@@ -162,6 +162,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
         <Route path="/credentials-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="username" />} />
         <Route path="/password-reset-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="password" />} />
+        <Route path="/recover-credentials" element={<CredentialsSendForExistingUser recoveryType="userinfo" logoUrl={""} companyName={""} />} />
         <Route path="/otp-verification" element={<VerificationOtp />} />
         <Route path="/patient-terms-conditions" element={<PatientTermsAndConditions optedPatient={true} />} />
         <Route path="/record-match-found" element={<RecordMatchFound email={""} patientNumber={0} />} />
