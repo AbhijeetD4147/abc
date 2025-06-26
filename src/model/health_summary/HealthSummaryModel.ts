@@ -134,9 +134,13 @@ export interface HealthSummaryThreadAttachment {
 }
 
 export class HealthSummaryThreadAttachmentModel implements HealthSummaryThreadAttachment {
+  attachmentId?: number;
+  attachmentName?: string;
+  attachmentSize?: number;
+  attachmentType?: string;
+  attachmentBase64: string; // Add this missing property
   attachmentFileName?: string;
   attachmentBase64FileContent?: string;
-  attachmentType?: string;
   attachmentFileSize?: number;
 
   constructor(data?: HealthSummaryThreadAttachment) {

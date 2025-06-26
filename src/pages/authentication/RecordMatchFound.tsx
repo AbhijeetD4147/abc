@@ -1,22 +1,32 @@
 import React, { useState } from 'react';
 import { getTheme } from "../../utils/ThemeSelection";
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import checkMark from '../../assets/check-mark.png';
 import { AuthenticationService } from '../../services/authentication/UserService';
-import { AddAuthorizedIndividualRequestModel } from '../../model/authentication/AddAuthorizedIndividualRequestModel';
 import { GlobalParams } from '../../utils/GlobalParameters';
 
 interface RecordMatchFoundProps {
+    email?: string;
+    patientNumber?: number;
+}
+
+interface LocationState {
     email: string;
     patientNumber: number;
 }
 
 const theme = await getTheme();
 
-const RecordMatchFound: React.FC<RecordMatchFoundProps> = ({ email, patientNumber }) => {
+const RecordMatchFound: React.FC<RecordMatchFoundProps> = (props) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isSending, setIsSending] = useState(false);
+    
+    // Get email and patientNumber from location state if available, otherwise use props
+    const state = location.state as LocationState;
+    const email = state?.email || props.email || "";
+    const patientNumber = state?.patientNumber || props.patientNumber || 0;
 
     const sendCredentials = async () => {
         setIsSending(true);
@@ -24,35 +34,21 @@ const RecordMatchFound: React.FC<RecordMatchFoundProps> = ({ email, patientNumbe
             // Create an instance of AuthenticationService
             const authService = new AuthenticationService();
             
-            // Create request data model
-            const requestData = new AddAuthorizedIndividualRequestModel({
-                email: email,
-                ptCustomerId: patientNumber,
-                // Add other required fields based on your API requirements
-                firstName: localStorage.getItem('firstName') || '',
-                lastName: localStorage.getItem('lastName') || '',
-                mobile: localStorage.getItem('mobile') || '',
-                locationId: Number(localStorage.getItem('locationId') || '0'),
-                userId: Number(GlobalParams.USER_ID || '0'),
-                // You may need to adjust these fields based on your specific requirements
-            });
-            
-            // Call the API
-            await authService.addAuthPatient(requestData.toJson(), 'ExistingPatient');
+            // Call the sendCredentials API
+            await authService.sendCredentials(email, patientNumber);
             
             // Check response status
-            if (authService.response_Status_Code_API_14 === 200) {
+            if (authService.response_Status_Code_API_3 === 200) {
                 // If successful, navigate to credentials-sent page
-                if (authService.insertAuthorizedIndividualModel?.insertStatus) {
+                if (String(authService.isSent).toLowerCase() === "true") {
                     navigate('/credentials-sent', {
                         state: { 
                             email, 
-                            patientNumber,
-                            locationPhone: authService.insertAuthorizedIndividualModel.locationPhone 
+                            patientNumber
                         }
                     });
                 }
-            } else if (authService.response_Status_Code_API_14 !== 205) {
+            } else if (authService.response_Status_Code_API_3 !== 205) {
                 // If error (not session invalid)
                 toast.error('An unexpected error has occurred. Please try again later. If the problem persists, call our office.');
             }
