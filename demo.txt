@@ -1,156 +1,243 @@
-// ignore_for_file: must_be_immutable
+  return (
+    <div className="flex flex-col h-screen w-screen font-[Segoe UI]">
+      {/* Navbar */}
+      <div className="w-full bg-blue-500 px-4 py-3">
+        <div className="flex justify-between items-center">
+          {/* User Info */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white text-blue-500 flex items-center justify-center rounded-full text-lg font-bold">
+              {userInitials}
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-white text-lg font-medium">{userName || "Jeffery Stevenson"}</span>
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
 
-import 'dart:convert';
+          {/* Settings Icon */}
+          <div className="relative">
+            <div
+              onClick={() => setIsOpen(!isOpen)}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-blue-600 cursor-pointer transition-colors duration-200"
+            >
+              {isOpen ? (
+                <X size={24} stroke="white" strokeWidth={1.5} />
+              ) : (
+                <Settings size={24} stroke="white" strokeWidth={1.5} />
+              )}
+            </div>
 
-import 'package:first_insight/utils/theme_selection_service.dart';
-import 'package:first_insight/utils/appBar.dart';
-import 'package:first_insight/utils/base_widget.dart';
-import 'package:first_insight/utils/constants.dart';
-import 'package:first_insight/utils/responsive.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import 'package:sizer/sizer.dart';
-import 'package:universal_html/html.dart' as html;
-import 'package:webviewx/webviewx.dart';
+            {isOpen && (
+              <ul className="absolute right-0 mt-2 min-w-max max-w-xs bg-white border border-gray-200 rounded shadow-md z-50">
+                {fabItems.map(({ label, href }) => (
+                  <li key={label} className="border-b last:border-b-0 border-gray-200 cursor-pointer">
+                    <a
+                      href={href}
+                      className="block px-4 py-2 font-normal no-underline hover:text-blue-500 hover:bg-gray-100 text-black transition-all duration-200"
+                    >
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
 
-class PoliciesFormScreen extends StatefulWidget {
-  final String? formName;
-  final String? formURL;
-  final String? formStatus;
-  final String? formBase64;
+      {/* Main Content */}
+      {loading ? (
+        <div className="flex justify-center items-center h-screen w-screen">
+          <Loader loaderType="spin" />
+        </div>
+      ) : (
+        <div className="flex flex-col h-full">
+          {/* Menu Items Section - Blue Background */}
+          <div className="bg-blue-500 text-white px-6 py-8">
+            <div className="grid grid-cols-3 gap-6">
+              {menuItems.map((item, idx) => (
+                <div key={idx} className="flex flex-col items-center text-center">
+                  <div
+                    className="w-16 h-16 border-2 border-white rounded-full flex items-center justify-center hover:bg-blue-600 cursor-pointer transition-colors mb-2"
+                    onClick={() => navigate(navigationPaths[idx])}
+                  >
+                    {React.cloneElement(item.icon, {
+                      height: "32px",
+                      width: "32px",
+                      colorVariant: "light",
+                      ...((() => {
+                        const count = idx === 0 ? appointmentData.messageUnreadCount :
+                          idx === 1 ? appointmentData.appointmentUnreadCount :
+                            idx === 3 ? appointmentData.healthSummaryUnreadCount : "0";
+                        return count && count !== "0" && parseInt(count) > 0 ? {
+                          isbadge: true,
+                          badgeContent: count,
+                          badgeColor: "warning",
+                          badgePosition: "top"
+                        } : {};
+                      })()
+                    )})}
+                  </div>
+                  <p className="text-sm text-center leading-tight">{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-  const PoliciesFormScreen({
-    super.key,
-    this.formName,
-    this.formURL,
-    this.formStatus,
-    this.formBase64,
-  });
+          {/* Appointment Section - White Background */}
+          <div className="flex-1 bg-white flex flex-col">
+            {hasUpcomingAppointment ? (
+              <div className="flex-1 p-6">
+                {/* Appointment content here */}
+                {showConfirmPopup && (
+                  <WarningPopup
+                    message={`Are you sure you want to mark yourself as arrived for your ${formattedTime} appointment with ${appointmentData.practicePersonName}?`}
+                    onConfirm={handleArrivalConfirm}
+                    onCancel={() => setShowConfirmPopup(false)}
+                  />
+                )}
 
-  @override
-  State<PoliciesFormScreen> createState() => _PoliciesFormScreenState();
-}
+                {/* Upcoming Appointment */}
+                <div className="mt-4 sm:mt-6 lg:mt-10">
+                  {!hasArrived ? (
+                    <>
+                      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-normal mb-4 pt-8 sm:pt-12 lg:pt-20">{appointmentData.appointmentHeader || "You have an upcoming appointment"}</h2>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-normal text-gray-600">
+                        {formattedTime}
+                        <br />
+                        Reason: {appointmentData.appointmentReason || "Annual Checkup"}
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 lg:gap-12 mt-6 sm:mt-8 lg:mt-10">
+                        <div className="flex flex-col items-center cursor-pointer group" onClick={cancelAppointment}>
+                          <div className="w-18 h-18 flex items-center justify-center rounded-full p-3 group-hover:bg-blue-200 transition-colors">
+                            <Icon
+                              badgeColor="success"
+                              colorVariant="dark"
+                              height="50px"
+                              isCursorPointer
+                              name="calendar"
+                              stroke
+                              width="50px"
+                            />
+                          </div>
+                          <span className="text-[25px] mt-2 text-blue-400">Cancel</span>
+                        </div>
+                        <div className="flex flex-col items-center cursor-pointer group" onClick={getRescheduleAppointmentPermission}>
+                          <div className="w-18 h-18 flex items-center justify-center rounded-full p-3 group-hover:bg-blue-200 transition-colors">
+                            <Icon
+                              backgroundShape="circle"
+                              backgroundShapeColor="#f5f5f5"
+                              badgeColor="success"
+                              colorVariant="dark"
+                              height="50px"
+                              isCursorPointer
+                              name="refresh_sync"
+                              stroke
+                              width="50px"
+                            />
+                          </div>
+                          <span className="text-[25px] mt-2 text-blue-500">Reschedule</span>
+                        </div>
+                        <div
+                          className={`flex flex-col items-center group ${disabled ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
+                          onClick={() => !disabled && setShowConfirmPopup(true)}
+                        >
+                          <div className="w-18 h-18 flex items-center justify-center rounded-full p-3 group-hover:bg-blue-200 transition-colors">
+                            <Icon
+                              backgroundShape="circle"
+                              backgroundShapeColor="#f5f5f5"
+                              badgeColor="success"
+                              colorVariant="dark"
+                              height="50px"
+                              isCursorPointer
+                              name="location"
+                              stroke
+                              width="50px"
+                              className={` ${disabled ? 'text-gray-400' : 'text-blue-500'}`} />
+                          </div>
+                          <span className={`text-[25px] mt-2 ${disabled ? 'text-gray-400' : 'text-blue-500'}`}>
+                            Mark As Arrived
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-start justify-center pt-20 gap-6 mt-10">
+                      {/* Icon + Label */}
+                      <div className="flex flex-col items-center text-center min-w-[100px] mr-6">
+                        <Icon
+                          backgroundShape="circle"
+                          backgroundShapeColor="#f5f5f5"
+                          badgeColor="success"
+                          colorVariant="success"
+                          height="70px"
+                          isCursorPointer
+                          name="location"
+                          stroke
+                          width="70px"
+                        />
+                        <span className="text-[25px] text-green-500 mt-4">Arrived</span>
+                      </div>
 
-class _PoliciesFormScreenState extends State<PoliciesFormScreen>
-    with TickerProviderStateMixin {
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          ApiPath.isSettingIconPopupVisible = false;
-          ApiPath.isSettingIconPopupOpen.value = false;
-        });
-      },
-      child: Scaffold(
-        appBar: !Responsive.isMobile(context)
-            ? CommonAppBar(
-                context,
-                TabController(length: 6, vsync: this, initialIndex: 2),
-                setState,
-                2,
-                "")
-            : PreferredSize(
-                preferredSize: Size(0, 0),
-                child: SizedBox(),
-              ),
-        body: Responsive(
-          mobile: commonView(),
-          tablet: commonView(),
-          desktop: commonView(),
-          k4Desktop: commonView(),
-        ),
-      ),
-    );
-  }
+                      {/* Text Paragraph */}
+                      <p className="text-xl text-gray-600 text-left max-w-sm leading-snug ">
+                        You have arrived for your {dayjs(appointmentData.appointmentDateTime).format("h:mm A")} appointment with {appointmentData.practicePersonName}. Someone will assist you shortly.
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-  downloadFile(String base64File, String fileName) {
-    final blob = html.Blob([base64Decode(base64File)]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.document.createElement('a') as html.AnchorElement
-      ..href = url
-      ..style.display = 'none'
-      ..download = fileName;
-    html.document.body!.children.add(anchor);
-
-    anchor.click();
-
-    html.document.body!.children.remove(anchor);
-    html.Url.revokeObjectUrl(url);
-  }
-
-  Widget commonView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          color: Responsive.isMobile(context)
-              ? ThemeSelection.BGColor
-              : Colors.transparent,
-          padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 1.h),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              customIconButton(
-                context,
-                onPressed: () {
-                  Get.back();
-                },
-                splashColor: ThemeSelection.iconPressedSecondaryColor,
-                hoverColor: ThemeSelection.iconHoverSecondaryColor,
-                iconData: Symbols.arrow_back_ios_new,
-                iconColor: Responsive.isMobile(context)
-                    ? ThemeSelection.iconDefaultTertiaryColor
-                    : ThemeSelection.iconDefaultSecondaryColor,
-              ),
-              Text(
-                widget.formName!,
-                style: TextStyle(
-                    fontFamily: 'SegoeUi',
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold,
-                    color: Responsive.isMobile(context)
-                        ? ThemeSelection.secondaryTextColor
-                        : ThemeSelection.primaryTextColor),
-              ),
-              Visibility(
-                visible: widget.formStatus == 'Accepted',
-                child: customIconButtonWithTooltip(
-                  context,
-                  toolTipMessage: 'Download PDF',
-                  splashColor: ThemeSelection.iconPressedSecondaryColor,
-                  hoverColor: ThemeSelection.iconHoverSecondaryColor,
-                  iconColor: Responsive.isMobile(context)
-                      ? ThemeSelection.iconDefaultTertiaryColor
-                      : ThemeSelection.iconDefaultSecondaryColor,
-                  iconData: Symbols.download,
-                  onPressed: () {
-                    downloadFile(widget.formBase64!, widget.formName!);
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        Divider(
-          height: 1,
-          color: ThemeSelection.greyBorderColor,
-        ),
-        WebViewX(
-          height: 90.h,
-          initialContent: '<center>Something Went Wrong!</center>',
-          initialSourceType: SourceType.HTML,
-          onPageStarted: (src) {},
-          onWebViewCreated: (webViewController) async {
-            webViewController.loadContent(
-              widget.formURL!,
-              SourceType.URL,
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
+                {/* Speed Up Section */}
+                <div className="mt-1 border-t pt-6">
+                  {!intakeData.isIntakeFormSubmit ? (
+                    // When intake is NOT filled
+                    <>
+                      <h3 className="text-3xl font-normal mb-2">Speed up your arrival</h3>
+                      <p className="text-xl text-gray-600 mb-20">
+                        Save time at the doctor's office by filling{" "}
+                        <a href="/intake-form" className="text-blue-500 underline">
+                          Intake Form
+                        </a>
+                      </p>
+                    </>
+                  ) : (
+                    // When intake IS filled
+                    <>
+                      <h3 className="text-3xl font-normal mb-2">Intake Form</h3>
+                      <p className="text-xl text-gray-600">
+                        Filled on{" "}
+                        <span className="font-medium text-black">
+                          {intakeData.intakeLastUpdatedDate ? new Date(intakeData.intakeLastUpdatedDate).toLocaleDateString() : ""}
+                        </span>
+                      </p>
+                      <p className="text-xl text-gray-600 mb-20">
+                        <a href="/intake-form" className="text-blue-500 underline">
+                          View/Update Again
+                        </a>
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : (
+              // No Upcoming Appointment UI
+              <div className="flex flex-col justify-center min-h-screen pl-24 -mt-10">
+                <div className="flex flex-col items-center">
+                  <CalendarX2Icon className="w-24 h-24 text-gray-400 mb-6 stroke-1" />
+                  <p className="text-2xl text-gray-500 mb-6">No upcoming appointment</p>
+                  <button
+                    className="bg-blue-500 text-white text-lg px-20 py-2 rounded w-full max-w-sm hover:bg-blue-600 transition"
+                    onClick={() => navigate("/request-appointment")}
+                  >
+                    Request New Appointment
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );

@@ -14,7 +14,7 @@ export class GlobalParams {
   static USER_ID_PHOTO_BASE64: string = "userIdPhotoBase64";
   static USER_INITIAL: string = "";
   static USER_ID_PIC: string = "";
-  static LOGO: string = "logo";
+  static LOGO: string = "";
   static SESSION_GUID: string = "";
   static LOCATION_PHONE: string = "";
   static COMPANY_NAME: string = "";

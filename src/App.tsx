@@ -38,6 +38,8 @@ import Insurance from "./pages/appointment/Insurance";
 import RequestConfirmed from "./pages/appointment/RequestConfirmed";
 import HealthSummary from "./pages/health_summary/HealthSummary";
 import PoliciesForm from "./pages/PoliciesAndConsentsForm/PoliciesForm";
+import AuthPatientList from "./pages/authentication/authorized_individual/AuthPatientList";
+import AddAuthorizedIndividual from "./pages/authentication/authorized_individual/AddAuthorizedIndividual";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -160,6 +162,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
         <Route path="/credentials-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="username" />} />
         <Route path="/password-reset-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="password" />} />
+        <Route path="/recover-credentials" element={<CredentialsSendForExistingUser recoveryType="userinfo" logoUrl={""} companyName={""} />} />
         <Route path="/otp-verification" element={<VerificationOtp />} />
         <Route path="/patient-terms-conditions" element={<PatientTermsAndConditions optedPatient={true} />} />
         <Route path="/record-match-found" element={<RecordMatchFound email={""} patientNumber={0} />} />
@@ -176,6 +179,10 @@ function App() {
           firstName: "",
           lastName: ""
         }} />} />
+
+        {/* Authorized Individual */}
+        <Route path="/authorized-individual" element={<AuthPatientList />} />
+        <Route path="/add-authorized-individual" element={<AddAuthorizedIndividual />} />
 
         {/* <Route path="/insurance" element={<Insurance />} /> */}
         {/*<Route path="/authterms" element={<AuthTermsAndConditionScreen />} />

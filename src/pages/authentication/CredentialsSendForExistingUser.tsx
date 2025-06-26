@@ -11,17 +11,17 @@ import { ResetLinkSendRequestModel } from '../../model/patient_portal/ResetLinkS
 interface PageProps {
     logoUrl: string;
     companyName: string;
-    recoveryType?: 'username' | 'password';
+    recoveryType?: 'username' | 'password' | 'userinfo';
 }
 
 const theme = await getTheme();
 
-const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'username' }) => {
+const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType }) => {
     const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
     const [isTimerActive, setIsTimerActive] = useState(true);
     const [isResending, setIsResending] = useState(false);
     const navigate = useNavigate();
-    
+
     // Timer effect
     useEffect(() => {
         if (!isTimerActive || timeLeft <= 0) {
@@ -52,7 +52,6 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
     };
 
     // Handle resend email
-    // Handle resend email
     const handleResendEmail = async () => {
         setIsResending(true);
 
@@ -62,16 +61,28 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
                 userEmail: localStorage.getItem('recovery_email') || '',
                 urlName: GlobalParams.PRACTICE_NAME
             });
-    
+
             // Initialize AuthenticationService
             const authService = new AuthenticationService();
-            
+
             // Call appropriate API based on recovery type
             if (recoveryType === 'username') {
                 await authService.resetLinkForForgotUserName(resetLinkSendRequestModel);
-                
+
                 if (authService.response_Status_Code_API_5 === 200) {
                     toast.success('Username recovery email has been resent successfully');
+                    // Reset timer
+                    setTimeLeft(300);
+                    setIsTimerActive(true);
+                } else {
+                    toast.error('Failed to resend email. Please try again.');
+                }
+            } else if (recoveryType === 'userinfo') {
+                // For credentials recovery - you may need to add this method to AuthenticationService
+                // await authService.resetLinkForForgotCredentials(resetLinkSendRequestModel);
+
+                if (authService.response_Status_Code_API_7 === 200) {
+                    toast.success('Credentials recovery email has been resent successfully');
                     // Reset timer
                     setTimeLeft(300);
                     setIsTimerActive(true);
@@ -81,7 +92,7 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
             } else {
                 // For password recovery
                 await authService.resetLinkForForgotPassword(resetLinkSendRequestModel);
-                
+
                 if (authService.response_Status_Code_API_6 === 200) {
                     toast.success('Password recovery email has been resent successfully');
                     // Reset timer
@@ -100,13 +111,23 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
 
     // Dynamic content based on recovery type
     const getTitle = () => {
-        return recoveryType === 'username' ? 'Recover your Username' : 'Recover your account';
+        if (recoveryType === 'username') {
+            return 'Recover your Username';
+        } else if (recoveryType === 'userinfo') {
+            return 'Your Credentials';
+        } else {
+            return 'Recover your account';
+        }
     };
 
     const getSuccessMessage = () => {
-        return recoveryType === 'username'
-            ? 'We have sent a verification email with your username.'
-            : 'We have sent a verification email with password reset instructions.';
+        if (recoveryType === 'username') {
+            return 'We have sent a verification email with your username.';
+        } else if (recoveryType === 'userinfo') {
+            return 'We have sent a verification email.';
+        } else {
+            return 'We have sent a verification email with password reset instructions.';
+        }
     };
 
     return (
@@ -135,10 +156,10 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType = 'u
                 <div className="w-full max-w-md">
                     {/* Lock Icon - Centered */}
                     <div className="flex justify-center mb-8">
-                    <div className="border-3 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+                        <div className="border-3 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center">
                             <Icon
                                 colorVariant="light"
-                                
+
                                 height="60px"
                                 isbadge
                                 name="lock"

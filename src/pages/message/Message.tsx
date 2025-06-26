@@ -1004,7 +1004,7 @@ const Messages: React.FC = () => {
                                         colorVariant="primary"
                                         height="20px"
                                         isCursorPointer
-                                        name="file"
+                                        name="archive"
                                         stroke
                                         width="20px"
                                         onClick={(e) => handleReply()}

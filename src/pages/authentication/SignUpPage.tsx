@@ -9,7 +9,7 @@ import { GlobalParams } from '../../utils/GlobalParameters';
 import { toast } from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { AuthenticationService } from '../../services/authentication/UserService';
-import { Icon } from '@ketan_nimase/ui';
+import { Button, Icon } from '@ketan_nimase/ui';
 
 interface SignUpPageProps {
   title?: string;
@@ -519,9 +519,9 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
         {/* Submit Button */}
         <div className="mt-7 mb-7 border-t border-gray-400 pt-6 w-full">
           <div className="flex justify-center">
-            <button
-              type="button"
-              className="bg-blue-500 hover:bg-blue-700 text-white text-base md:text-xl font-medium py-2 px-10 md:px-14 rounded focus:outline-none focus:shadow-outline"
+            <Button
+              colorVariant="primary"
+              className="text-lg w-1/3 bg-blue-500 md:w-2/6 px-4 py-2 border rounded "
               onClick={() => {
                 console.log('Directly calling validatePatient');
                 const formData = watch();
@@ -529,7 +529,7 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
               }}
             >
               Proceed
-            </button>
+            </Button>
           </div>
         </div>
       </form>

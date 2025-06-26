@@ -5,9 +5,8 @@ import { HomeDataModel } from '../../model/home/HomeModel';
 import { getTheme } from '../../utils/ThemeSelection';
 import HomeService from '../../services/home/HomeService';
 import { GlobalParams } from '../../utils/GlobalParameters';
-import checkMark from '../../assets/check-mark.png';
 import MaximEyes from '../../assets/maximeyeslogo.png';
-import { Loader, Icon, RdsFeatureList, Header, Button } from '@ketan_nimase/ui';
+import { Loader, RdsFeatureList, Header, Button } from '@ketan_nimase/ui';
 
 interface ThemeData {
   primaryTextColor: string;
@@ -187,18 +186,23 @@ const PtHomePage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen w-screen">
-      {/* Left section */}
-      <div className="md:w-3/5 w-full p-4 md:p-8 flex flex-col text-[color:var(--primary-text-color)]">
+    <div className="flex flex-col min-h-screen w-screen md:flex-row">
+      {/* Left section - Full width on mobile, 3/5 on desktop */}
+      <div className="w-full md:w-3/5 p-3 md:p-8 flex flex-col text-[color:var(--primary-text-color)]">
+        {/* Logo - Centered on mobile */}
         <div className="flex justify-center items-center mb-4">
-          <img src={homePageData?.logoSrc || ''} alt={homePageData?.logoAlt || 'Logo'} className="w-26 h-29 mt-0" />
-        </div>
+  <img src={homePageData?.logoSrc || ''} alt={homePageData?.logoAlt || 'Logo'} className="w-22 h-22 md:w-26 md:h-29 mt-0" />
+</div>
+
+        {/* Company Name - Centered on mobile */}
         <Header
-          className="ext-3xl md:text-4xl font-regular justify-center text-center mb-2"
+          className="text-3xl md:text-4xl font-regular justify-center text-center mb-2"
           colorVariant="dark"
           headerText={homePageData.companyName}
           size="h1"
         />
+
+        {/* Portal Title - Centered on mobile */}
         <Header
           className="text-lg md:text-xl font-medium text-center mb-4"
           colorVariant="dark"
@@ -206,30 +210,30 @@ const PtHomePage: React.FC = () => {
           size="h1"
         />
 
-        <p className="text-start max-w-full md:max-w-4xl mb-6 md:ml-10 text-sm md:text-md" style={{ color: theme.quaternaryTextColor }}>
+        {/* Description - Centered on mobile, left-aligned on desktop */}
+        <p className="text-center md:text-start max-w-full md:max-w-4xl mb-6 md:ml-10 text-sm md:text-md px-4 md:px-0"
+          style={{ color: theme.quaternaryTextColor }}>
           {homePageData.description}
         </p>
-        <RdsFeatureList
-          columns={1}
-          iconName="tick_circle"
-          itemList={homePageData.features} heading={''} />
 
-        {/* <ul className="text-sm space-y-2 mb-5 md:ml-11 px-4 md:px-0" style={{ color: theme.primaryTextColor }}>
-          {homePageData.features.map((item, i) => (
-            <li key={i} className="flex items-center space-x-3" style={{ color: theme.quaternaryTextColor }}>
-              <span>
-                <Icon name="tick_circle" height="16px" width="16px" colorVariant="dark" stroke />
-              </span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul> */}
+        {/* Feature List - Centered on mobile */}
+        <div className="flex justify-center md:justify-start">
+          <RdsFeatureList
+            columns={1}
+            iconName="tick_circle"
+            className="!border-0 !text-gray-600"
+            itemList={homePageData.features}
+            heading={''}
+          />
+        </div>
 
-        <p className="text-sm md:text-md mt-auto text-center" style={{ color: theme.quaternaryTextColor }}>
+        {/* Tagline - Centered */}
+        <p className="text-sm md:text-md mt-auto text-center px-4 md:px-0" style={{ color: theme.quaternaryTextColor }}>
           {homePageData.tagline}
         </p>
 
-        <div className="flex flex-col md:flex-row justify-between items-center gap-2 mt-4">
+        {/* Footer - Hidden on mobile, shown on desktop */}
+        <div className="hidden md:flex flex-col md:flex-row justify-between items-center gap-2 mt-4">
           <img src={MaximEyes} alt="Maximeyes Logo" className="h-16 w-auto" />
           <div className="text-xs text-center md:text-right mt-2 md:mt-12">
             &copy; 2025, First Insight Corporation. All rights reserved.
@@ -237,38 +241,42 @@ const PtHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Right section */}
+      {/* Right section - Full width on mobile, 2/5 on desktop */}
       <div
-        className="md:w-2/5 w-full flex flex-col justify-center items-center p-6"
+        className="w-full md:w-2/5 flex flex-col justify-center items-center p-6"
         style={{ color: theme.secondaryTextColor, backgroundColor: theme.BGColor }}
       >
-        <div className="flex flex-col md:flex-row gap-4 w-full max-w-md">
+        {/* Buttons - Side by side on all screens, smaller on mobile */}
+        <div className="flex flex-row gap-2 md:gap-4 w-full max-w-md">
           <Button
-            className="text-lg w-full md:w-4/6 px-4 py-2 border rounded focus:outline-none"
-            // style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
+            className="text-sm md:text-lg w-full px-2 md:px-4 py-2 md:py-3 border rounded focus:outline-none"
             onClick={() => handleNavigation('/signup')}
-            // onMouseEnter={(e) => handleButtonHover(e, true)}
-            // onMouseLeave={(e) => handleButtonHover(e, false)}
           >
             Create New Account
           </Button>
           <Button
-            className="text-lg w-full md:w-2/6 px-4 py-2 border rounded focus:outline-none"
-            // style={{ backgroundColor: theme.BGColor, borderColor: theme.secondaryTextColor }}
+            className="text-sm md:text-lg w-full px-2 md:px-4 py-2 md:py-3 border rounded focus:outline-none"
             onClick={() => handleNavigation('/login')}
-            // onMouseEnter={(e) => handleButtonHover(e, true)}
-            // onMouseLeave={(e) => handleButtonHover(e, false)}
           >
             Sign In
           </Button>
         </div>
 
-        {/* Contact section */}
-        <div className="text-center mt-6 px-2" style={{ color: theme.secondaryTextColor }}>
+        {/* Contact section - Reduced top margin on small screens */}
+        <div className="text-center mt-3 md:mt-6 px-2" style={{ color: theme.secondaryTextColor }}>
           <p className="text-lg font-medium">Questions?</p>
           <p>
             Call our office at <strong>{homePageData.phoneNumber}</strong>
           </p>
+        </div>
+
+
+      </div>
+      {/* Footer - Shown on mobile, hidden on desktop */}
+      <div className="flex md:hidden flex-row items-center justify-between gap-3 mt-0 px-2 py-2 bg-white rounded-lg">
+        <img src={MaximEyes} alt="Maximeyes Logo" className="h-8 w-auto" />
+        <div className="text-xs text-center text-gray-600">
+          &copy; 2025, First Insight Corporation. All rights reserved.
         </div>
       </div>
     </div>
