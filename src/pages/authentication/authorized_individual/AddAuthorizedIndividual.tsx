@@ -192,6 +192,8 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
     });
 
     const mobileController = useController({ name: 'mobile', control });
+    console.log('Component rendered, mobile value:', mobileController.field.value);
+    
     const dobController = useController({ name: 'dob', control });
 
 
@@ -340,15 +342,47 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                             id="mobile"
                             inputType="text"
                             placeholder="(000) 000-0000"
-                            value={mobileController.field.value
-                                ? `(${mobileController.field.value.slice(0, 3)}) ${mobileController.field.value.slice(3, 6)}-${mobileController.field.value.slice(6)}`
-                                : ''}
+                            value={mobileController.field.value}
+                            
                             onChange={(e) => {
-                                const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
-                                mobileController.field.onChange(raw);
+                                console.log('=== onChange triggered ===');
+                                console.log('Raw input value:', e.target.value);
+                                console.log('Current field value:', mobileController.field.value);
+                                
+                                let rawValue = e.target.value.replace(/[^0-9]/g, '');
+                                if (rawValue.length > 10) rawValue = rawValue.slice(0, 10);
+
+                                let formattedValue = '';
+                                if (rawValue.length === 0) {
+                                    formattedValue = '';
+                                } else if (rawValue.length <= 3) {
+                                    formattedValue = `(${rawValue}`;
+                                } else if (rawValue.length <= 6) {
+                                    formattedValue = `(${rawValue.slice(0, 3)}) ${rawValue.slice(3)}`;
+                                } else {
+                                    formattedValue = `(${rawValue.slice(0, 3)}) ${rawValue.slice(3, 6)}-${rawValue.slice(6)}`;
+                                }
+                                
+                                console.log('Formatted value:', formattedValue);
+                                mobileController.field.onChange(formattedValue);
                             }}
-                            className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline" // style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
-                            name={''} />
+                            onKeyDown={(e) => {
+                                console.log('=== onKeyDown triggered ===');
+                                console.log('Key pressed:', e.key);
+                                console.log('Current field value:', mobileController.field.value);
+                                console.log('Target value:', e.currentTarget.value);
+                                
+                                if (e.key === 'Backspace' && mobileController.field.value === '(') {
+                                    console.log('Clearing field because value is "("');
+                                    mobileController.field.onChange('');
+                                    e.preventDefault();
+                                } else if (e.key === 'Backspace') {
+                                    console.log('Backspace pressed but not clearing (value is not "("))');
+                                }
+                            }}
+                            className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
+                            name={''}
+                        />
                     </div>
                 </div>
                 {/* Email */}

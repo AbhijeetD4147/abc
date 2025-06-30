@@ -286,9 +286,9 @@ const AppointmentPage: React.FC<AppointmentPageProps> = ({
                 <div className="w-1/4 border-r border-black bg-gray-200 flex flex-col">
                     <div className="border-b border-gray-200">
                         <div className="flex items-center p-3 justify-between mb-4">
-                            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                            <h1 className="text-4xl font-semibold text-gray-800 flex items-center gap-2">
                                 Past Appointments
-                            </h2>
+                            </h1>
 
                             {/* Calendar Filter */}
                             <div className="relative">
@@ -348,7 +348,7 @@ const AppointmentPage: React.FC<AppointmentPageProps> = ({
                             </div>
                         ) : (
                             <div className="text-center py-8">
-                                <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-30 h-30 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                                 <p className="text-gray-500">

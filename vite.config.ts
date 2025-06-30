@@ -1,13 +1,17 @@
 import { defineConfig } from 'vite'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
+  plugins: [
+    nodePolyfills(),
+  ],
   resolve: {
     alias: {
-      'buffer': 'buffer',
+      // We can remove the manual buffer alias as the plugin handles it.
     },
   },
   optimizeDeps: {
-    include: ['buffer'],
+    // The plugin also handles this, so we can remove it.
   },
   build: {
     target: 'esnext', // Add this line to support top-level await
