@@ -661,7 +661,7 @@ export class AuthenticationService {
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_11 = 205;
             } else if (response.status === 200) {
-                this.captchaCode = response.data;
+                this.captchaCode = response.data.trim();
                 this.response_Status_Code_API_11 = response.status;
             } else {
                 this.maximum_Calling_API_11 = this.maximum_Calling_API_11 + 1;

@@ -56,20 +56,37 @@ function App() {
         let practiceName = "";
         let queryParams = new URLSearchParams(window.location.search);
         let path = window.location.pathname;
+         practiceName = "ptportal278";
+        // if (window.location.hostname !== "localhost") {
+        //   practiceName = path.split("/").pop() || "";
+        // } else {
+        //   practiceName = "ptportal278"; // dev fallback
+        // }
+         // QA Binding Testing on Local
+        // practiceName = "ptportalqa";
+        // var subDomain = "apptbookingqa1";
 
-        if (window.location.hostname !== "localhost") {
-          practiceName = path.split("/").pop() || "";
-        } else {
-          practiceName = "ptportal278"; // dev fallback
-        }
+        // QA2 Binding Testing on Local
+        // practiceName = "ptportalqa2";
+        // var subDomain = "apptbookingqa2";
+
+        // QA Build
+        // String hostPath = Uri.base.host;
+        // String subDomain = hostPath.substring(0, hostPath.indexOf('.'));
+        // GetUrlService getUrlService = new GetUrlService();
+        // await getUrlService.getUrl(subDomain, "1", practiceName);
+        // QA Build
+
+        // Dev Build
+        // practiceName = "ptportalqa";
 
         GlobalParams.PRACTICE_NAME = practiceName;
 
-        if (practiceName) {
+        // if (practiceName) {
           const subDomain = "apptbookingqa1";
           await new GetUrlService().getUrl(subDomain, "1", practiceName);
           await AuthenticationService.generateToken();
-        }
+        // }
 
         let queryType = "";
         let firstQuery = "";

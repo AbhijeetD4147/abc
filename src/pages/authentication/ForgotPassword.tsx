@@ -104,7 +104,7 @@ const ForgotPassword: React.FC<PageProps> = () => {
             return;
         }
 
-        if (captchaInput !== captchaCode) {
+        if (captchaInput !== captchaCode.trim()) {
             setCaptchaError('Captcha does not match');
             return;
         }
@@ -161,7 +161,7 @@ const ForgotPassword: React.FC<PageProps> = () => {
         const value = e.target.value;
         setCaptchaInput(value);
 
-        if (value && value !== captchaCode) {
+        if (value && value !== captchaCode.trim()) {
             setCaptchaError('Captcha does not match');
         } else {
             setCaptchaError('');
