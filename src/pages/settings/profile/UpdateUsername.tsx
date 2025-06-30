@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { Input, Button, Icon, Header } from "@ketan_nimase/ui"; // Adjust import as needed
 import logo from "../../../assets/user_lock_logo.png";
 import { Navbar } from "../../../components/ui/Navbar";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const usernameCriteria = {
     minLength: "At least 8 characters long",
@@ -21,30 +22,29 @@ const UpdateUsername: React.FC<{ currentUsername?: string }> = ({ currentUsernam
     const showError = touched && username.trim() === "";
 
     return (
-
-        <div className="h-screen w-screen flex flex-col items-center justify-center ">
+        <div className="vh-100 vw-100 d-flex flex-column align-items-center justify-content-center">
             <Navbar
                 patientName={{ firstName: "Jeffery", lastName: "Stevenson" }}
             />
-            <div className=" flex w-screen justify-content-center text-center py-2 border-b border-bottom m-0">
+            <div className="d-flex w-100 justify-content-center text-center py-2 border-bottom m-0">
                 <Header
-                    className="text-lg md:text-xl font-medium text-center"
+                    className="fs-5 fs-md-4 fw-medium text-center"
                     colorVariant="dark"
                     headerText="Update Username"
                     size="h2"
                 />
             </div>
-            <img src={logo} alt="User Logo" className="w-16 h-24 w-28 mb-4 mt-4" />
+            <img src={logo} alt="User Logo" className="mb-3 mt-3" style={{ width: '7rem', height: '6rem' }} />
 
-            <p className="text-2xl mb-5 mt-2 font-medium">Your Username</p>
-            <p className="text-xl mb-4 b-4">
+            <p className="h3 mb-4 mt-2 fw-medium">Your Username</p>
+            <p className="h5 mb-4">
                 Your Username is : <strong>{currentUsername || "dynamic username"}</strong>
             </p>
 
-            <div className="w-full max-w-4xl border-t pt-8">
-                <div className="flex flex-col md:flex-row justify-between gap-5">
+            <div className="w-100 border-top pt-4" style={{ maxWidth: '64rem' }}>
+                <div className="d-flex flex-column flex-md-row justify-content-between gap-3">
                     {/* Left: Label + Input */}
-                    <div className="flex-1">
+                    <div className="flex-fill">
                         <Input
                             placeholder="Username"
                             value={username}
@@ -58,9 +58,9 @@ const UpdateUsername: React.FC<{ currentUsername?: string }> = ({ currentUsernam
                     </div>
 
                     {/* Right: Criteria List */}
-                    <div className="flex-1">
-                        <p className="text-lg font-semibold mb-2">Username Criteria</p>
-                        <ul className="space-y-2">
+                    <div className="flex-fill">
+                        <p className="fs-5 fw-semibold mb-2">Username Criteria</p>
+                        <ul className="list-unstyled">
                             <CriteriaItem met={isMinLength} text={usernameCriteria.minLength} />
                             <CriteriaItem met={isNoSpecialChars} text={usernameCriteria.noSpecialChars} />
                             <CriteriaItem met={isAlphaNumeric} text={usernameCriteria.alphaNumeric} />
@@ -69,7 +69,7 @@ const UpdateUsername: React.FC<{ currentUsername?: string }> = ({ currentUsernam
                 </div>
 
                 {/* Button: Centered Below */}
-                <div className="mt-10 flex justify-center">
+                <div className="mt-5 d-flex justify-content-center">
                     <Button
                         colorVariant="primary"
                         onClick={() => setTouched(true)}
@@ -80,19 +80,18 @@ const UpdateUsername: React.FC<{ currentUsername?: string }> = ({ currentUsernam
                 </div>
             </div>
 
-
-            <p className="absolute bottom-2 left-2 text-xs text-gray-500">Version: 1.0</p>
+            <p className="position-absolute bottom-0 start-0 m-2 small text-muted">Version: 1.0</p>
         </div>
     );
 };
 
 const CriteriaItem: React.FC<{ met: boolean; text: string }> = ({ met, text }) => {
     return (
-        <li className={`flex items-center gap-2 ${met ? "text-green-600" : "text-gray-700"}`}>
+        <li className={`d-flex align-items-center gap-2 mb-2 ${met ? "text-success" : "text-dark"}`}>
             {met ? (
                 <Icon name="check" colorVariant="success" width="16" height="16" />
             ) : (
-                <span className="w-2 h-2 mr-2 bg-black rounded-full inline-block"></span>
+                <span className="bg-dark rounded-circle d-inline-block me-2" style={{ width: '0.5rem', height: '0.5rem' }}></span>
             )}
             <span>{text}</span>
         </li>

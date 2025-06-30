@@ -7,7 +7,7 @@ import DatePicker from '../../../components/ui/DatePicker';
 import { getTheme } from '../../../utils/ThemeSelection';
 import { GlobalParams } from '../../../utils/GlobalParameters';
 import dayjs from 'dayjs';
-import { Header, Icon, Input } from '@ketan_nimase/ui';
+import { Button, Header, Icon, Input, TextArea } from '@ketan_nimase/ui';
 import { Navbar } from '../../../components/ui/Navbar';
 
 interface SignUpPageProps {
@@ -264,12 +264,12 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
             />
 
             {/* Header */}
-            <div className=" flex justify-content-center text-center py-2 border border-bottom m-0 w-full">
+            <div className=" flex justify-content-center text-center py-1 border border-bottom m-0 w-full">
                 <Header
-                    className="text-lg md:text-xl font-medium text-center"
+                    className="text-lg md:text-lg font-medium text-center"
                     colorVariant="dark"
                     headerText="Add Authorized Individual"
-                    size="h2"
+                    size="h3"
                 />
                 {/* Info Icon */}
                 <div className="relative group ml-2 inline-block">
@@ -298,7 +298,7 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                 className="bg-white w-full max-w-lg md:p-8 sm:p-6 p-4"
             >
                 {/* First Name */}
-                <div className="mb-3">
+                <div className="mb-0">
                     <Input
                         label
                         inputType="text"
@@ -311,7 +311,7 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                 </div>
 
                 {/* Last Name */}
-                <div className="mb-3">
+                <div className="mb-0">
                     <Input
                         name='Last'
                         label
@@ -326,7 +326,7 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                 </div>
 
                 {/* Mobile */}
-                <div className="mb-3">
+                <div className="mb-0">
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <Input
                             name="mobile"
@@ -351,9 +351,8 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                             name={''} />
                     </div>
                 </div>
-
                 {/* Email */}
-                <div className="mb-3">
+                <div className="mb-4">
                     <Input
                         name='Email'
                         label
@@ -369,8 +368,8 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
 
                 {/* DOB */}
                 <div className="mb-3">
-                    <label htmlFor="dob" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
-                        DOB
+                    <label htmlFor="dob" className="block text-md text-gray-700 font-medium mb-2" style={{ color: theme.textfieldLabelColor }}>
+                        Set Expiration Date for the access
                     </label>
                     <DatePicker
                         restrictDateSelection="before"
@@ -409,29 +408,29 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                     />
                     {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob.message}</p>}
                 </div>
-
-                {/* Info Text */}
-                <p className="text-xs mb-2 text-gray-600" style={{ color: theme.textfieldLabelColor }}>
-                    We will send you a security code via your email or text.
-                </p>
-
-                {/* Submit Button */}
-                <div className="mt-7 mb-7 border-t border-gray-400 pt-6 w-full">
-                    <div className="flex justify-center">
-                        <button
-                            type="button"
-                            className="bg-blue-500 hover:bg-blue-700 text-white text-base md:text-xl font-medium py-2 px-10 md:px-14 rounded focus:outline-none focus:shadow-outline"
-                            onClick={() => {
-                                console.log('Directly calling validatePatient');
-                            }}
-                        >
-                            Proceed
-                        </button>
-                    </div>
+                <div className='m-0'>
+                    <TextArea
+                        label="Reason"
+                        rows={3}
+                        className='text-md font-medium text-gray-700'
+                        showTitle placeholder={''} />
                 </div>
             </form>
+            {/* Submit Button */}
+            <div className="mt-0 mb-2 pt-2 w-full">
+                <div className="flex justify-center items-center p-3 bg-white border-t-2 border-gray-400 mx-10">
+                    <Button
+                        colorVariant="primary"
+                        className="bg-blue-500 hover:bg-blue-700 text-white text-base md:text-xl font-medium py-2 px-10 md:px-20 rounded focus:outline-none focus:shadow-outline"
+                        onClick={() => {
+                            console.log('Directly calling validatePatient');
+                        }}
+                    >
+                        Proceed
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 };
-
 export default AddAuthorizedIndividual;

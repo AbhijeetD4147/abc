@@ -9,7 +9,8 @@ import { GlobalParams } from '../../utils/GlobalParameters';
 import { toast } from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { AuthenticationService } from '../../services/authentication/UserService';
-import { Button, Icon } from '@ketan_nimase/ui';
+import { Button, Header, Icon } from '@ketan_nimase/ui';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface SignUpPageProps {
   title?: string;
@@ -338,23 +339,27 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
     }
   };
 
-
   return (
-    <div className="flex flex-col items-center justify-start md:justify-center mt-2 min-h-screen w-screen px-4 bg-white">
-      <h1 className="text-2xl md:text-4xl font-regular mb-3 text-center" style={{ color: theme.primaryTextColor }}>
-        Create New Account
-      </h1>
+    <div className="container-fluid d-flex flex-column align-items-center justify-content-start justify-content-lg-center" style={{ minHeight: '100vh', minWidth: '100vw', backgroundColor: 'white', paddingTop: '0.5rem' }}>
+
+      <Header
+        className="fs-4 fs-lg-3 fw-medium text-center"
+        colorVariant="dark"
+        headerText="Create New Account"
+        size="h2"
+      />
 
       <form
         onSubmit={(e) => {
           console.log('Form onSubmit triggered');
           handleSubmit(onSubmit)(e);
         }}
-        className="bg-white w-full max-w-lg md:p-8 sm:p-6 p-4"
+        className="bg-white w-100"
+        style={{ maxWidth: '32rem', padding: '1rem' }}
       >
         {/* First Name */}
         <div className="mb-3">
-          <label htmlFor="legalFirstName" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
+          <label htmlFor="legalFirstName" className="form-label fw-semibold" style={{ color: theme.textfieldLabelColor }}>
             First
           </label>
           <input
@@ -362,15 +367,19 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             type="text"
             placeholder="Legal First Name"
             {...register('legalFirstName')}
-            className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
-            style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
+            className="form-control"
+            style={{
+              backgroundColor: theme.textfieldFilledColor,
+              borderColor: theme.textfieldDefaultBorderColor,
+              color: '#6c757d'
+            }}
           />
-          {errors.legalFirstName && <p className="text-red-500 text-xs mt-1">{errors.legalFirstName.message}</p>}
+          {errors.legalFirstName && <div className="text-danger small mt-1">{errors.legalFirstName.message}</div>}
         </div>
 
         {/* Last Name */}
         <div className="mb-3">
-          <label htmlFor="lastName" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
+          <label htmlFor="lastName" className="form-label fw-semibold" style={{ color: theme.textfieldLabelColor }}>
             Last
           </label>
           <input
@@ -378,24 +387,34 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             type="text"
             placeholder="Last Name"
             {...register('lastName')}
-            className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
-            style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
+            className="form-control"
+            style={{
+              backgroundColor: theme.textfieldFilledColor,
+              borderColor: theme.textfieldDefaultBorderColor,
+              color: '#6c757d'
+            }}
           />
-          {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
+          {errors.lastName && <div className="text-danger small mt-1">{errors.lastName.message}</div>}
         </div>
 
         {/* Mobile */}
         <div className="mb-3">
-          <label htmlFor="mobile" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
+          <label htmlFor="mobile" className="form-label fw-semibold" style={{ color: theme.textfieldLabelColor }}>
             Mobile
           </label>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="d-flex align-items-center gap-2">
             <input
               type="text"
               value="+1"
               readOnly
-              className="border rounded sm:w-1/6 w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
-              style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
+              className="form-control"
+              style={{
+                backgroundColor: theme.textfieldFilledColor,
+                borderColor: theme.textfieldDefaultBorderColor,
+                color: '#6c757d',
+                width: '4rem',
+                flexShrink: 0
+              }}
             />
             <input
               id="mobile"
@@ -409,68 +428,88 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
                 const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
                 mobileController.field.onChange(raw);
               }}
-              className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
-              style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
+              className="form-control flex-grow-1"
+              style={{
+                backgroundColor: theme.textfieldFilledColor,
+                borderColor: theme.textfieldDefaultBorderColor,
+                color: '#6c757d'
+              }}
             />
             {/* Tooltip */}
-            <div className="relative group inline-block">
-              <div className="border-2 border-blue-500 rounded-full p-1 sm:p-1 lg:p-1 flex items-center justify-center hover:bg-blue-200 cursor-pointer">
-                <Icon
-                  colorVariant="primary"
-                  height="15px"
-                  isCursorPointer
-                  isbadge
-                  name="info"
-                  stroke
-                  fill
-                  tooltip
-                  tooltipTitle='Enter a mobile phone number that is readily available to receive a security code for 2FA.'
-                  tooltipPlacement="bottom"
-                  width="15px"
-                />
-              </div>
+            <div className="d-flex align-items-center justify-content-center border border-2 border-primary rounded-circle" style={{
+              width: '32px',
+              height: '32px',
+              flexShrink: 0,
+              cursor: 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#cce7ff'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              <Icon
+                colorVariant="primary"
+                height="15px"
+                isCursorPointer
+                isbadge
+                name="info"
+                stroke
+                fill
+                tooltip
+                tooltipTitle='Enter a mobile phone number that is readily available to receive a security code for 2FA.'
+                tooltipPlacement="bottom"
+                width="15px"
+              />
             </div>
           </div>
         </div>
 
         {/* Email */}
         <div className="mb-3">
-          <label htmlFor="email" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
+          <label htmlFor="email" className="form-label fw-semibold" style={{ color: theme.textfieldLabelColor }}>
             Email
           </label>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="d-flex align-items-center gap-2">
             <input
               id="email"
               type="email"
               placeholder="Email"
               {...register('email')}
-              className="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
-              style={{ backgroundColor: theme.textfieldFilledColor, borderColor: theme.textfieldDefaultBorderColor }}
+              className="form-control flex-grow-1"
+              style={{
+                backgroundColor: theme.textfieldFilledColor,
+                borderColor: theme.textfieldDefaultBorderColor,
+                color: '#6c757d'
+              }}
             />
-            <div className="relative group inline-block">
-              <div className="border-2 border-blue-500 rounded-full p-1 sm:p-1 lg:p-1 flex items-center justify-center hover:bg-blue-200 cursor-pointer">
-                <Icon
-                  colorVariant="primary"
-                  height="15px"
-                  isCursorPointer
-                  isbadge
-                  name="info"
-                  stroke
-                  fill
-                  tooltip
-                  tooltipTitle='Use an email address you check regularly to receive important account messages.'
-                  tooltipPlacement="bottom"
-                  width="15px"
-                />
-              </div>
+            <div className="d-flex align-items-center justify-content-center border border-2 border-primary rounded-circle" style={{
+              width: '32px',
+              height: '32px',
+              flexShrink: 0,
+              cursor: 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#cce7ff'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              <Icon
+                colorVariant="primary"
+                height="15px"
+                isCursorPointer
+                isbadge
+                name="info"
+                stroke
+                fill
+                tooltip
+                tooltipTitle='Use an email address you check regularly to receive important account messages.'
+                tooltipPlacement="bottom"
+                width="15px"
+              />
             </div>
           </div>
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+          {errors.email && <div className="text-danger small mt-1">{errors.email.message}</div>}
         </div>
 
         {/* DOB */}
         <div className="mb-3">
-          <label htmlFor="dob" className="block text-sm font-semibold mb-2" style={{ color: theme.textfieldLabelColor }}>
+          <label htmlFor="dob" className="form-label fw-semibold" style={{ color: theme.textfieldLabelColor }}>
             DOB
           </label>
           <DatePicker
@@ -508,25 +547,21 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
             enhancedInput={true}
             error={!!errors.dob || fieldErrors.dob}
           />
-          {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob.message}</p>}
+          {errors.dob && <div className="text-danger small mt-1">{errors.dob.message}</div>}
         </div>
 
         {/* Info Text */}
-        <p className="text-xs mb-2 text-gray-600" style={{ color: theme.textfieldLabelColor }}>
+        <p className="small mb-2" style={{ color: theme.textfieldLabelColor }}>
           We will send you a security code via your email or text.
         </p>
 
         {/* Submit Button */}
-        <div className="mt-7 mb-7 border-t border-gray-400 pt-6 w-full">
-          <div className="flex justify-center">
+        <div className="mt-2 mb-4 border-top pt-4 w-100" style={{ borderColor: '#6c757d' }}>
+          <div className="d-flex justify-content-center">
             <Button
               colorVariant="primary"
-              className="text-lg w-1/3 bg-blue-500 md:w-2/6 px-4 py-2 border rounded "
-              onClick={() => {
-                console.log('Directly calling validatePatient');
-                const formData = watch();
-                validatePatient(formData);
-              }}
+              className="fs-5 px-4 py-2 border rounded"
+              type="submit"
             >
               Proceed
             </Button>

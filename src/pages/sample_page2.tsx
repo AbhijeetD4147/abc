@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Button,
     Input,
     Card,
+    DropdownList,
 } from '@ketan_nimase/ui';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +26,33 @@ const SamplePage2: React.FC = () => {
         // Implement your sign up logic here
         console.log('Sign up:', data);
         setError(null);
+    };
+
+    //dropdown list
+
+    const [selectedValue, setSelectedValue] = useState('');
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+    const [multiSelectedItems, setMultiSelectedItems] = useState([]);
+
+    const listItems = [
+        { label: "Apple", val: "apple" },
+        { label: "Banana", val: "banana" },
+        { label: "Orange", val: "orange" }
+    ];
+
+    const handleSingleSelection = (event: React.MouseEvent<HTMLLIElement>, val: string) => {
+        setSelectedValue(val);
+        console.log('Selected:', val);
+    };
+
+    const handleIndexChange = (index: number) => {
+        setSelectedIndex(index);
+        console.log('Selected item:', listItems[index]);
+    };
+
+    const handleMultiSelection = (items: any[]) => {
+        setMultiSelectedItems(items);
+        console.log('Multi-selected items:', items);
     };
 
     return (
@@ -139,6 +167,29 @@ const SamplePage2: React.FC = () => {
                 {error && (
                     <div className="text-red-500">{error}</div>
                 )}
+            </div>
+            <div>
+                {/* Single Selection */}
+                <DropdownList
+                    listItems={listItems}
+                    onClick={handleSingleSelection}
+                    selectedIndex={handleIndexChange}
+                    placeholder="Choose a fruit"
+                />
+
+                {/* Multi Selection */}
+                <DropdownList
+                    listItems={listItems}
+                    multiSelect={true}
+                    selectedItems={handleMultiSelection}
+                    placeholder="Choose multiple fruits"
+                />
+
+                <div>
+                    <p>Selected Value: {selectedValue}</p>
+                    <p>Selected Index: {selectedIndex}</p>
+                    <p>Multi-selected: {JSON.stringify(multiSelectedItems)}</p>
+                </div>
             </div>
         </div>
     );

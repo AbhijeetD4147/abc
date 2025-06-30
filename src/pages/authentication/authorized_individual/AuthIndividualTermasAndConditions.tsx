@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getTheme } from "../../utils/ThemeSelection";
-import { GlobalParams } from '../../utils/GlobalParameters';
-import { Button, Icon, Loader, Signature } from "@ketan_nimase/ui";
+import { getTheme } from "../../../utils/ThemeSelection";
+import { GlobalParams } from '../../../utils/GlobalParameters';
+import { Button, Checkbox, Icon, Loader, Signature } from "@ketan_nimase/ui";
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,7 +11,7 @@ interface PatientTermsAndConditionsProps {
 
 const theme = await getTheme();
 
-const PatientTermsAndConditions: React.FC<PatientTermsAndConditionsProps> = ({ optedPatient }) => {
+const AuthIndividualTermsAndConditions: React.FC<PatientTermsAndConditionsProps> = ({ optedPatient }) => {
     const navigate = useNavigate();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -56,25 +56,20 @@ const PatientTermsAndConditions: React.FC<PatientTermsAndConditionsProps> = ({ o
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Filler content - will be replaced with backend data
-            setTermsData(`PATIENT PORTAL TERMS OF SERVICE AND PRIVACY AGREEMENT
-
-Effective Date: [Date will be provided by backend]
-
-Welcome to our Patient Portal. By accessing and using this portal, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
-
-1. ACCEPTANCE OF TERMS
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-
-2. PRIVACY AND CONFIDENTIALITY
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.
-
-3. USER RESPONSIBILITIES AND OBLIGATIONS
-At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi.
-
-
-By signing below, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and Privacy Agreement. You also confirm that you are authorized to accept these terms on behalf of the patient if you are acting as a legal guardian or authorized representative.
-
-[Additional terms and conditions will be loaded from backend API]`);
+            setTermsData(`
+                        This applies to the software and information services we offer through our cloud-based patient portal, 
+                        web-enabled emails and text services sent as part of, in connection with, or relating to such software 
+                        and information services. Maintaining your trust is important to us, and we strongly encourage you to read 
+                        this Policy in full. You permit to obtain and store your medical information online. 
+                        If you decline you cannot view your medical information and cannot interact with your providers through email
+                         messages, appointment requests, and renewal requests.
+                        You consent to receive communications from us electronically. We will communicate with you by e-mail, 
+                        sms or by posting information on this site. You agree that all agreements, notices, 
+                        disclosures and other communications that we provide you electronically satisfy any legal requirements 
+                        that such communications be in writing.
+                        Information You Submit or We Collect on Your Behalf: We collect information from you when you- when you 
+                        request an appointment, or you send your doctors a secure message through our patient portal, 
+                        or complete a form, Upload a document, image, or other data file on our Services.`);
 
             setPatientName('Sample Patient Name'); // Will be replaced with actual patient name from API
             setLoading(false);
@@ -183,82 +178,74 @@ By signing below, you acknowledge that you have read, understood, and agree to b
 
     if (loading) {
         return (
-            <div className="d-flex justify-content-center align-items-center vh-100 vw-100">
+            <div className="flex justify-center items-center h-screen w-screen">
                 <Loader loaderType="spin" />
             </div>
         );
     }
 
     return (
-        <div className="min-vh-100 bg-white vw-100">
+        <div className="min-h-screen bg-white w-screen">
             {/* Header */}
-            <div className="bg-primary text-white p-3">
-                <h1 className="h4 fw-medium text-center mb-0">Terms of Service</h1>
+            <div className="bg-blue-600 text-white p-4">
+                <h1 className="text-xl font-medium text-center">Terms of Service</h1>
             </div>
 
-            <div className="d-flex flex-column min-vh-100">
+            <div className="flex flex-col min-h-screen">
                 {/* Terms Content */}
-                <div className="flex-fill overflow-auto p-3">
-                    <div className="container" style={{ maxWidth: '800px' }}>
-                        <pre className="text-wrap small lh-base" style={{ color: theme.primaryTextColor }}>
+                <div className="flex-1 overflow-y-auto p-4">
+                    <div className="max-w-4xl mx-auto">
+                        <p className=" text-sm leading-relaxed" style={{ color: theme.primaryTextColor }}>
                             {termsData}
-                        </pre>
+                        </p>
                     </div>
                 </div>
 
                 {/* Footer Section */}
-                <div className="p-3 border-top" style={{ borderColor: theme.greyBorderColor }}>
-                    <div className="container" style={{ maxWidth: '400px' }}>
-                        <div className="d-flex flex-column gap-3">
-                            {/* I Accept Checkbox */}
-                            <div className="d-flex align-items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="acceptTerms"
-                                    checked={isTermsChecked}
-                                    onChange={(e) => setIsTermsChecked(e.target.checked)}
-                                    className="form-check-input"
-                                    style={{
-                                        width: '16px',
-                                        height: '16px'
-                                    }}
-                                />
-                                <label htmlFor="acceptTerms" className="fs-5 mb-0" style={{ color: theme.primaryTextColor }}>
-                                    I Accept
-                                </label>
-                            </div>
+                <div className="p-4 border-t" style={{ borderColor: theme.greyBorderColor }}>
+                    <div className="max-w-md mx-auto space-y-4">
+                        {/* I Accept Checkbox */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                checked={isTermsChecked}
+                                labelText="I Accept"
+                                showText
+                                onChange={(e) => setIsTermsChecked(e.target.checked)}
+                                classes='text-lg'
+                            />
+                        </div>
 
-                            {/* Patient Name and Date */}
-                            <div className="fs-5" style={{ color: theme.primaryTextColor }}>
-                                {patientName} | {currentDate}
-                            </div>
+                        {/* Patient Name and Date */}
+                        <div className="text-lg" style={{ color: theme.primaryTextColor }}>
+                            {patientName} | {currentDate}
+                        </div>
 
-                            {/* Signature Section */}
+                        {/* Signature Section */}
+                        <div>
                             <Signature
                                 height={200}
                                 onEnd={() => { }}
                                 penColor="#000000"
                                 strokeWidth={2}
                                 title="Signature"
-                                width={350}
+                                width={370}
+                                backgroundColor="white"
                             />
+                        </div>
 
-                            {/* Proceed Button */}
-                            <div className="d-flex justify-content-center pt-3">
-                                {isButtonClicked ? (
-                                    <div className="spinner-border text-primary" role="status">
-                                        <span className="visually-hidden">Loading...</span>
-                                    </div>
-                                ) : (
-                                    <Button
-                                        colorVariant="primary"
-                                        onClick={handleProceed}
-                                        className="px-4 py-2 bg-primary text-white rounded"
-                                    >
-                                        Proceed
-                                    </Button>
-                                )}
-                            </div>
+                        {/* Proceed Button */}
+                        <div className="flex justify-center pt-4">
+                            {isButtonClicked ? (
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            ) : (
+                                <Button
+                                    colorVariant="primary"
+                                    onClick={handleProceed}
+                                    className="px-8 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                    Proceed
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -267,4 +254,4 @@ By signing below, you acknowledge that you have read, understood, and agree to b
     );
 };
 
-export default PatientTermsAndConditions;
+export default AuthIndividualTermsAndConditions;

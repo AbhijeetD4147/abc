@@ -192,158 +192,196 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
     };
 
     return (
-        <div className="flex flex-col md:flex-row min-h-screen w-screen">
-            {/* Left Panel */}
-            <div className="w-full md:w-1/2 flex flex-col bg-white p-2 md:p-10 relative flex-1">
-        {/* Centered Logo */}
-        <div className="flex-1 flex justify-center items-center">
-          <img
-            src={
-              GlobalParams.LOGO
-                ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
-                : ''
-            }
-            alt="Company Logo"
-            className="w-60 max-w-full h-auto inline-block align-middle"
-          />
-        </div>
-        
-        {/* Footer at Bottom */}
-        <div className="flex-shrink-0 m-0">
-          <div className="hidden md:flex flex-col md:flex-row justify-between items-center gap-2">
-            <img src={MaximEyes} alt="Maximeyes Logo" className="h-16 w-auto" />
-            <div className="text-xs text-center md:text-right">
-              &copy; 2025, First Insight Corporation. All rights reserved.
-            </div>
-          </div>
-          <div className="flex md:hidden flex-row items-center justify-between gap-3 px-2 py-2 bg-white rounded-lg">
-            <img src={MaximEyes} alt="Maximeyes Logo" className="h-8 w-auto" />
-            <div className="text-xs text-center text-gray-600">
-              &copy; 2025, First Insight Corporation. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </div>
+        <div className="container-fluid d-flex flex-column min-vh-100 min-vw-100 p-0">
+            <div className="row flex-grow-1 g-0">
+                {/* Left Panel */}
+                <div className="col-12 col-md-6 d-flex flex-column bg-white p-2 p-md-5">
+                    {/* Centered Logo */}
+                    <div className="flex-grow-1 d-flex justify-content-center align-items-center">
+                        <img
+                            src={
+                                GlobalParams.LOGO
+                                    ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
+                                    : ''
+                            }
+                            alt="Company Logo"
+                            className="img-fluid"
+                            style={{ maxWidth: '240px', height: 'auto' }}
+                        />
+                    </div>
 
-            {/* Right Panel */}
-            <div
-                className="w-full md:w-1/2 flex flex-col justify-center items-center p-6 md:p-10"
-                style={{
-                    backgroundColor: theme.BGColor,
-                    color: theme.secondaryTextColor,
-                }}
-            >
-                <div className="w-full max-w-md">
-                    {/* Header Icon */}
-                    <div className="flex justify-center mb-8 relative">
-                        <div className="border-2 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center hover:bg-blue-600 cursor-pointer">
-                            <Icon
-                                colorVariant="light"
-                                disabled
-                                height="60px"
-                                isCursorPointer
-                                isbadge
-                                name="user"
-                                stroke
-                                width="60px"
-                            />
+                    {/* Footer at Bottom */}
+                    <div className="flex-shrink-0">
+                        <div className="d-none d-md-flex justify-content-between align-items-center gap-2">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '64px', width: 'auto' }} />
+                            <div className="text-end" style={{ fontSize: '0.75rem' }}>
+                                &copy; 2025, First Insight Corporation. All rights reserved.
+                            </div>
+                        </div>
+                        <div className="d-flex d-md-none align-items-center justify-content-between gap-3 px-2 py-2 bg-white rounded">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '32px', width: 'auto' }} />
+                            <div className="text-center text-muted" style={{ fontSize: '0.75rem' }}>
+                                &copy; 2025, First Insight Corporation. All rights reserved.
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Title & Subtitle */}
-                    <h1 className="text-3xl font-light text-center mb-2 text-white">
-                        Recover your Username
-                    </h1>
-                    <div className="text-center mb-5 text-white text-sm">
-                        <p>We can help you reset your Username.</p>
-                        <p>Follow the instruction below.</p>
-                    </div>
-
-                    {/* Email Input */}
-                    <div className="mb-3">
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 pb-2 flex items-center pointer-events-none">
+                {/* Right Panel */}
+                <div
+                    className="col-12 col-md-6 d-flex flex-column justify-content-center align-items-center p-3 p-md-5"
+                    style={{
+                        backgroundColor: theme.BGColor,
+                        color: theme.secondaryTextColor,
+                    }}
+                >
+                    <div className="w-100" style={{ maxWidth: '400px' }}>
+                        {/* Header Icon */}
+                        <div className="d-flex justify-content-center mb-4 position-relative">
+                            <div
+                                className="border border-2 rounded-circle p-3 p-sm-4 p-lg-5 d-flex align-items-center justify-content-center"
+                                style={{
+                                    cursor: 'pointer',
+                                    transition: 'background-color 0.3s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#0d6efd';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                            >
                                 <Icon
+                                    colorVariant="light"
+                                    disabled
+                                    height="60px"
+                                    isCursorPointer
+                                    isbadge
                                     name="user"
-                                    height="20px"
-                                    width="20px"
-                                    colorVariant="dark"
                                     stroke
+                                    width="60px"
                                 />
                             </div>
+                        </div>
+
+                        {/* Title & Subtitle */}
+                        <h1 className="h2 fw-light text-center mb-2 text-white">
+                            Recover your Username
+                        </h1>
+                        <div className="text-center mb-4 text-white" style={{ fontSize: '0.875rem' }}>
+                            <p className="mb-1">We can help you reset your Username.</p>
+                            <p className="mb-0">Follow the instruction below.</p>
+                        </div>
+
+                        {/* Email Input */}
+                        <div className="mb-3">
+                            <div className="position-relative">
+                                <div className="position-absolute top-50 start-0 translate-middle-y ps-3">
+                                    <Icon
+                                        name="user"
+                                        height="20px"
+                                        width="20px"
+                                        colorVariant="dark"
+                                        stroke
+                                    />
+                                </div>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={handleEmailChange}
+                                    onBlur={handleEmailBlur}
+                                    placeholder="Your Email Address"
+                                    className={`form-control ps-5 py-2 ${emailError ? 'border-danger bg-danger bg-opacity-10' : 'border-secondary'
+                                        }`}
+                                    style={{
+                                        borderWidth: '2px',
+                                        borderRadius: '0.5rem'
+                                    }}
+                                />
+                            </div>
+                            {emailError && (
+                                <div className="bg-danger text-white px-3 py-2 mt-1 fw-medium" style={{
+                                    fontSize: '0.875rem',
+                                    borderRadius: '0 0 0.5rem 0.5rem'
+                                }}>
+                                    {emailError}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Captcha Section */}
+                        <div className="mb-4">
+                            <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                <div className="bg-white px-3 py-2 border border-2 border-secondary rounded fw-bold text-dark" style={{
+                                    fontFamily: 'monospace',
+                                    fontSize: '1.125rem',
+                                    letterSpacing: '0.1em'
+                                }}>
+                                    {captchaCode}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={getCaptchaFromAPI}
+                                    className="btn btn-link text-white text-decoration-underline p-0"
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        fontSize: '1.25rem'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.classList.remove('text-decoration-underline');
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.classList.add('text-decoration-underline');
+                                    }}
+                                >
+                                    Refresh
+                                </button>
+                            </div>
+
+                            <p className="text-white mb-2">Input symbols</p>
                             <input
-                                type="email"
-                                value={email}
-                                onChange={handleEmailChange}
-                                onBlur={handleEmailBlur}
-                                placeholder="Your Email Address"
-                                className={`w-full pl-10 pr-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${emailError
-                                    ? 'border-red-600 bg-red-100'
-                                    : 'border-gray-300 bg-white'
-                                    } focus:outline-none focus:border-blue-500`}
+                                type="text"
+                                value={captchaInput}
+                                onChange={handleCaptchaChange}
+                                placeholder="Enter the symbols shown above"
+                                className={`form-control py-2 ${captchaError ? 'border-danger bg-danger ' : 'border-secondary'
+                                    }`}
+                                style={{
+                                    borderWidth: '2px',
+                                    borderRadius: '0.5rem'
+                                }}
                             />
+                            {captchaError && (
+                                <div className="bg-danger text-white px-3 py-2 mt-1 fw-medium" style={{
+                                    fontSize: '0.875rem',
+                                    borderRadius: '0 0 0.5rem 0.5rem'
+                                }}>
+                                    {captchaError}
+                                </div>
+                            )}
                         </div>
-                        {emailError && (
-                            <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
-                                {emailError}
-                            </div>
-                        )}
-                    </div>
 
-                    {/* Captcha Section */}
-                    <div className="mb-6">
-                        <div className="flex items-center mb-4 flex-wrap gap-2">
-                            <div className="bg-white px-4 py-2 rounded border-2 border-gray-300 font-mono text-lg font-bold text-gray-800 tracking-wider">
-                                {captchaCode}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={getCaptchaFromAPI}
-                                className="text-white text-xl underline hover:no-underline"
-                                style={{ backgroundColor: theme.BGColor }}
+                        {/* Buttons */}
+                        <div className="d-flex flex-column flex-sm-row gap-2">
+                            <Button
+                                colorVariant="default"
+                                onClick={handleCancel}
+                                className="btn btn-outline-light flex-fill py-2"
+                                isDisabled={isLoading}
                             >
-                                Refresh
-                            </button>
+                                Cancel
+                            </Button>
+                            <Button
+                                colorVariant="default"
+                                onClick={handleSubmit}
+                                className="btn btn-outline-light flex-fill py-2"
+                                isDisabled={
+                                    isLoading || !!emailError || !!captchaError || !email || !captchaInput
+                                }
+                            >
+                                {isLoading ? 'Processing...' : 'Next'}
+                            </Button>
                         </div>
-
-                        <p className="text-white mb-2">Input symbols</p>
-                        <input
-                            type="text"
-                            value={captchaInput}
-                            onChange={handleCaptchaChange}
-                            placeholder="Enter the symbols shown above"
-                            className={`w-full px-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${captchaError
-                                ? 'border-red-600 bg-red-100'
-                                : 'border-gray-300 bg-white'
-                                } focus:outline-none focus:border-blue-500`}
-                        />
-                        {captchaError && (
-                            <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
-                                {captchaError}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
-                        <Button
-                            colorVariant="default"
-                            onClick={handleCancel}
-                            className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
-                            isDisabled={isLoading}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            colorVariant="default"
-                            onClick={handleSubmit}
-                            className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
-                            isDisabled={
-                                isLoading || !!emailError || !!captchaError || !email || !captchaInput
-                            }
-                        >
-                            {isLoading ? 'Processing...' : 'Next'}
-                        </Button>
                     </div>
                 </div>
             </div>

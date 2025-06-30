@@ -6,6 +6,7 @@ import { Button, Icon } from "@ketan_nimase/ui";
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { AuthenticationService } from '../../services/authentication/UserService';
+import MaximEyes from '../../assets/maximeyeslogo.png';
 import { ResetLinkSendRequestModel } from '../../model/patient_portal/ResetLinkSendRequestModel';
 
 interface PageProps {
@@ -131,98 +132,129 @@ const CredentialsSendForExistingUser: React.FC<PageProps> = ({ recoveryType }) =
     };
 
     return (
-        <div className="flex min-h-screen w-screen">
-            {/* Left Panel */}
-            <div className="w-1/2 flex flex-col justify-center items-center bg-white p-10 relative">
-                <img
-                    src={
-                        GlobalParams.LOGO
-                            ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
-                            : ''
-                    }
-                    alt="Company Logo"
-                    className="w-90 h-30 inline-block align-middle"
-                />
-                <div className="absolute bottom-5 left-5 text-xs text-gray-400">
-                    <Footer />
-                </div>
-            </div>
+        <div className="container-fluid min-vh-100 min-vw-100 p-0">
+            <div className="row g-0 min-vh-100">
+                {/* Left Panel */}
+                <div className="col-12 col-md-6 d-flex flex-column bg-white p-2 p-md-5">
+                    {/* Centered Logo */}
+                    <div className="flex-grow-1 d-flex justify-content-center align-items-center">
+                        <img
+                            src={
+                                GlobalParams.LOGO
+                                    ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
+                                    : ''
+                            }
+                            alt="Company Logo"
+                            className="img-fluid"
+                            style={{ maxWidth: '240px', height: 'auto' }}
+                        />
+                    </div>
 
-            {/* Right Panel */}
-            <div
-                className="w-1/2 flex flex-col justify-center items-center p-10"
-                style={{ backgroundColor: theme.BGColor, color: theme.secondaryTextColor }}
-            >
-                <div className="w-full max-w-md">
-                    {/* Lock Icon - Centered */}
-                    <div className="flex justify-center mb-8">
-                        <div className="border-3 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-                            <Icon
-                                colorVariant="light"
-
-                                height="60px"
-                                isbadge
-                                name="lock"
-                                stroke
-                                width="60px"
-                            />
+                    {/* Footer at Bottom */}
+                    <div className="flex-shrink-0">
+                        <div className="d-none d-md-flex justify-content-between align-items-center gap-2">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '64px', width: 'auto' }} />
+                            <div className="text-end" style={{ fontSize: '0.75rem' }}>
+                                &copy; 2025, First Insight Corporation. All rights reserved.
+                            </div>
+                        </div>
+                        <div className="d-flex d-md-none align-items-center justify-content-between gap-3 px-2 py-2 bg-white rounded">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '32px', width: 'auto' }} />
+                            <div className="text-center text-muted" style={{ fontSize: '0.75rem' }}>
+                                &copy; 2025, First Insight Corporation. All rights reserved.
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Dynamic Title */}
-                    <h1 className="text-3xl font-light text-center mb-6 text-white">
-                        {getTitle()}
-                    </h1>
+                {/* Right Panel */}
+                <div
+                    className="col-12 col-md-6 d-flex flex-column justify-content-center align-items-center p-5"
+                    style={{ backgroundColor: theme.BGColor, color: theme.secondaryTextColor }}
+                >
+                    <div className="w-100" style={{ maxWidth: '400px' }}>
+                        {/* Lock Icon - Centered */}
+                        <div className="d-flex justify-content-center mb-4">
+                            <div className="border border-3 rounded-circle p-4 d-flex align-items-center justify-content-center">
+                                <Icon
+                                    colorVariant="light"
+                                    height="60px"
+                                    isbadge
+                                    name="lock"
+                                    stroke
+                                    width="60px"
+                                />
+                            </div>
+                        </div>
 
-                    {/* Success Message - Left Aligned */}
-                    <p className="text-lg text-white mb-8 text-left">
-                        {getSuccessMessage()}
-                    </p>
+                        {/* Dynamic Title */}
+                        <h1 className="h2 fw-light text-center mb-4 text-white">
+                            {getTitle()}
+                        </h1>
 
-                    {/* Didn't receive email section - Left Aligned */}
-                    <div className="mb-2 text-left">
-                        <p className="text-white mb-2">
-                            Didn't receive the email yet?
+                        {/* Success Message - Left Aligned */}
+                        <p className="fs-5 text-white mb-4 text-start">
+                            {getSuccessMessage()}
                         </p>
-                    </div>
 
-                    {/* Timer and Resend Section - Left Aligned */}
-                    <div className="mb-8 text-left">
-                        {isTimerActive ? (
-                            <div>
-                                <p className="text-white mb-2">
-                                    Check your spam folder or resend email in:
-                                </p>
-                                <p className="text-yellow-300 text-lg font-medium">
-                                    {formatTime(timeLeft)}
-                                </p>
-                            </div>
-                        ) : (
-                            <div>
-                                <p className="text-white mb-4">
-                                    Check your spam folder or{' '}
-                                    <button
-                                        onClick={handleResendEmail}
-                                        disabled={isResending}
-                                        className="text-white mb-4 hover:no-underline disabled:opacity-50"
-                                        style={{ backgroundColor: theme.BGColor }}
-                                    >
-                                        {isResending ? 'Sending...' : 'Resend Email'}
-                                    </button>
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                        {/* Didn't receive email section - Left Aligned */}
+                        <div className="mb-2 text-start">
+                            <p className="text-white mb-2">
+                                Didn't receive the email yet?
+                            </p>
+                        </div>
 
-                    {/* Back to Login Button - Left Aligned */}
-                    <div className="mt-8 text-left">
-                        <Button
-                            colorVariant="default"
-                            onClick={() => navigate('/login')}
-                            className="px-8 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
-                        >
-                            Back to Login
-                        </Button>
+                        {/* Timer and Resend Section - Left Aligned */}
+                        <div className="mb-4 text-start">
+                            {isTimerActive ? (
+                                <div>
+                                    <p className="text-white mb-2">
+                                        Check your spam folder or resend email in:
+                                    </p>
+                                    <p className="text-warning fs-5 fw-medium">
+                                        {formatTime(timeLeft)}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="text-white mb-3">
+                                        Check your spam folder or{' '}
+                                        <button
+                                            onClick={handleResendEmail}
+                                            disabled={isResending}
+                                            className="btn btn-link text-white p-0 text-decoration-none"
+                                            style={{
+                                                backgroundColor: 'transparent',
+                                                border: 'none',
+                                                opacity: isResending ? 0.5 : 1,
+                                                transition: 'opacity 0.3s ease'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isResending) {
+                                                    e.currentTarget.style.textDecoration = 'underline';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.textDecoration = 'none';
+                                            }}
+                                        >
+                                            {isResending ? 'Sending...' : 'Resend Email'}
+                                        </button>
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Back to Login Button - Left Aligned */}
+                        <div className="mt-4 text-start">
+                            <Button
+                                colorVariant="default"
+                                onClick={() => navigate('/login')}
+                                className="px-4 py-2 rounded border border-2 border-white text-white bg-transparent"
+                            >
+                                Back to Login
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>

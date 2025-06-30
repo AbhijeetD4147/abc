@@ -1,4 +1,4 @@
-import { Input } from '@ketan_nimase/ui';
+import { Checkbox, DropdownList, Input } from '@ketan_nimase/ui';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 // import { GetUserDetailServices } from '@/services/GetUserDetailService';
 
@@ -36,6 +36,14 @@ export const InsuranceCard = forwardRef<InsuranceCardRef, InsuranceCardProps>((
     base64bitInsCardFront: '',
     base64bitInsCardBack: ''
   });
+
+  const listitems = [
+    { val: '"self"', label: 'Self' },
+    { label: 'Spouse', val: 'spouse' },
+    { label: 'Child', val: 'child' },
+    { label: 'Parent', val: 'parent' },
+    { label: 'Other', val: 'other' },
+  ]
 
   // Load initial data when component mounts or initialData changes
   useEffect(() => {
@@ -184,6 +192,10 @@ export const InsuranceCard = forwardRef<InsuranceCardRef, InsuranceCardProps>((
     }
   };
 
+  const handleSelection = (event: React.MouseEvent<HTMLLIElement>, val: string) => {
+    handleChange('relationship', val)
+  };
+
   // Auto-populate form data when 'self' is selected in relationship dropdown
   //   if (field === 'relationship' && value === 'self') {
   //     const ptCustomerID = localStorage.getItem('ptCusomterID');
@@ -252,25 +264,11 @@ export const InsuranceCard = forwardRef<InsuranceCardRef, InsuranceCardProps>((
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium">Insurance {index + 1}</h3>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <input
-              type="checkbox"
-              id={`no-longer-use-${index}`}
-              onChange={(e) => e.target.checked && onRemove(index)}
-              className="sr-only"
-            />
-            <div
-              className={`w-5 h-5 border-2 rounded cursor-pointer bg-red-500 border-red-600 hover:border-red-500`}
-              onClick={() => onRemove(index)}
-            >
-              <div className="absolute inset-0 flex items-center justify-center text-white text-md leading-none">
-                ✕
-              </div>
-            </div>
-          </div>
-          <label htmlFor={`no-longer-use-${index}`} className="text-sm text-gray-600 cursor-pointer">
-            I no longer use this
-          </label>
+          <Checkbox
+            checked
+            labelText="I no longer use this"
+            showText
+          />
         </div>
       </div>
 
@@ -290,30 +288,16 @@ export const InsuranceCard = forwardRef<InsuranceCardRef, InsuranceCardProps>((
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
           {!noCard && <span>Insurance Card Photo</span>}
+          {noCard && <span> </span>}
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <input
-                type="checkbox"
-                id={`no-card-${index}`}
-                checked={noCard}
-                onChange={(e) => handleNoCardChange(e.target.checked)}
-                className="sr-only"
-              />
-              <div
-                className={`w-5 h-5 border-2 rounded cursor-pointer ${noCard ? 'bg-green-500 border-green-500' : 'bg-white border-gray-600'}`}
-                onClick={() => handleNoCardChange(!noCard)}
-              >
-                {noCard && (
-                  <div className="absolute inset-0 flex items-center justify-center text-white text-lg leading-none">
-                    ✓
-                  </div>
-                )}
-              </div>
-            </div>
-            <label htmlFor={`no-card-${index}`} className="text-sm text-gray-600 cursor-pointer">
-              No Insurance Card
-            </label>
+            <Checkbox
+              checked={noCard}
+              labelText="No Insurance Card"
+              showText
+              onChange={() => handleNoCardChange(!noCard)}
+            />
           </div>
+
         </div>
       </div>
 
@@ -385,53 +369,55 @@ export const InsuranceCard = forwardRef<InsuranceCardRef, InsuranceCardProps>((
       ) : (
         <div>
           <div className="flex gap-4 mb-4 flex-col md:flex-row">
-            <div className="w-full md:w-1/2">
-              <label className="block mb-2">Patient Relationship to Insured <span className="text-red-500">*</span></label>
-              <select
-                className={`w-full px-3 py-2 bg-gray-200 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.relationship ? 'border-red-500 bg-red-50' : ''}`}
-                value={formData.relationship}
-                onChange={(e) => handleChange('relationship', e.target.value)}
-              >
-                <option value="" disabled>Select</option>
-                <option value="self">Self</option>
-                <option value="spouse">Spouse</option>
-                <option value="child">Child</option>
-                <option value="parent">Parent</option>
-                <option value="other">Other</option>
-              </select>
+            <div className="w-full md:w-1/2 mt-2">
+              <DropdownList
+                borderDropdown
+                isPlaceholder
+                onClick={handleSelection}
+                isMandatory
+                showSelectedOption
+                listItems={listitems}
+                placeholder="Select"
+                showTitle
+                title="Patient Relationship to Insured "
+              />
               {errors.relationship && <p className="text-red-500 text-sm mt-1">{errors.relationship}</p>}
             </div>
             <div className="w-full md:w-1/2">
-              <label className="block mb-2">Insured ID <span className="text-red-500">*</span></label>
               <Input
                 inputType="text"
                 placeholder="Insured ID"
+                label
+                required
                 className={`bg-gray-200 ${errors.insuredId ? 'border-red-500 bg-red-50' : ''}`}
                 value={formData.insuredId}
-                onChange={(e) => handleChange('insuredId', e.target.value)} name={''} />
+                onChange={(e) => handleChange('insuredId', e.target.value)} name={'Insured ID'} />
               {errors.insuredId && <p className="text-red-500 text-sm mt-1">{errors.insuredId}</p>}
             </div>
           </div>
 
           <div className="mb-4">
-            <label className="block mb-2">Insured Name <span className="text-red-500">*</span></label>
             <div className="flex gap-4 mb-4">
               <div className="w-1/2">
                 <Input
                   inputType="text"
+                  label
+                  required
                   placeholder="Legal First Name"
                   className={`bg-gray-200 ${errors.firstName ? 'border-red-500 bg-red-50' : ''}`}
                   value={formData.firstName}
-                  onChange={(e) => handleChange('firstName', e.target.value)} name={''} />
+                  onChange={(e) => handleChange('firstName', e.target.value)} name={'Insured Name'} />
                 {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
               </div>
               <div className="w-1/2">
                 <Input
+                  label
+                  required
                   inputType="text"
                   placeholder="Last Name"
                   className={`bg-gray-200 ${errors.lastName ? 'border-red-500 bg-red-50' : ''}`}
                   value={formData.lastName}
-                  onChange={(e) => handleChange('lastName', e.target.value)} name={''} />
+                  onChange={(e) => handleChange('lastName', e.target.value)} name={'Last Name'} />
                 {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
               </div>
             </div>
@@ -439,31 +425,34 @@ export const InsuranceCard = forwardRef<InsuranceCardRef, InsuranceCardProps>((
             <div className="flex gap-4 mb-4">
               <div className="w-1/2">
                 <Input
+                  label
                   inputType="text"
                   placeholder="Middle Name (Optional)"
                   className="bg-gray-200"
                   value={formData.middleName}
-                  onChange={(e) => handleChange('middleName', e.target.value)} name={''} />
+                  onChange={(e) => handleChange('middleName', e.target.value)} name={'Middle Name'} />
               </div>
               <div className="w-1/2">
                 <Input
+                  label
                   inputType="text"
                   placeholder="Suffix (Optional)"
                   className="bg-gray-200"
                   value={formData.suffix}
-                  onChange={(e) => handleChange('suffix', e.target.value)} name={''} />
+                  onChange={(e) => handleChange('suffix', e.target.value)} name={'Suffix'} />
               </div>
             </div>
           </div>
 
           <div className="flex gap-4 mb-4">
             <div className="w-1/2">
-              <label className="block mb-2">Date of Birth <span className="text-red-500">*</span></label>
               <Input
+                label
+                required
                 inputType="date"
                 className={`bg-gray-200 ${errors.dob ? 'border-red-500 bg-red-50' : ''}`}
                 value={formData.dob}
-                onChange={(e) => handleChange('dob', e.target.value)} name={''} />
+                onChange={(e) => handleChange('dob', e.target.value)} name={'Date of Birth'} />
               {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
             </div>
             <div className="w-1/2">

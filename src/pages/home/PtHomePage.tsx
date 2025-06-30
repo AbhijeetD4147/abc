@@ -7,6 +7,7 @@ import HomeService from '../../services/home/HomeService';
 import { GlobalParams } from '../../utils/GlobalParameters';
 import MaximEyes from '../../assets/maximeyeslogo.png';
 import { Loader, RdsFeatureList, Header, Button } from '@ketan_nimase/ui';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface ThemeData {
   primaryTextColor: string;
@@ -179,83 +180,100 @@ const PtHomePage: React.FC = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen w-screen">
+      <div className="d-flex justify-content-center align-items-center vh-100 vw-100">
         <Loader loaderType="spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen w-screen md:flex-row">
-      {/* Left section - Full width on mobile, 3/5 on desktop */}
-      <div className="w-full md:w-3/5 p-3 md:p-8 flex flex-col text-[color:var(--primary-text-color)]">
+    <div className="container-fluid d-flex flex-column flex-md-row min-vh-100 min-vw-100 p-0">
+      {/* Left section - Full width on mobile, 60% on desktop */}
+      <div className="col-12 col-md-7 col-lg-8 p-2 p-md-3 d-flex flex-column" style={{ color: theme?.primaryTextColor }}>
         {/* Logo - Centered on mobile */}
-        <div className="flex justify-center items-center mb-4">
-  <img src={homePageData?.logoSrc || ''} alt={homePageData?.logoAlt || 'Logo'} className="w-22 h-22 md:w-26 md:h-29 mt-0" />
-</div>
+        <div className="d-flex justify-content-center align-items-center mb-4">
+          <img
+            src={homePageData?.logoSrc || ''}
+            alt={homePageData?.logoAlt || 'Logo'}
+            className="img-fluid"
+            style={{ width: '200px', height: '130px', maxWidth: '290px', maxHeight: '250px' }}
+          />
+        </div>
 
         {/* Company Name - Centered on mobile */}
         <Header
-          className="text-3xl md:text-4xl font-regular justify-center text-center mb-2"
+          className="display-4 fw-normal justify-center text-center mb-1"
           colorVariant="dark"
-          headerText={homePageData.companyName}
+          headerText={homePageData?.companyName || ''}
           size="h1"
         />
 
         {/* Portal Title - Centered on mobile */}
         <Header
-          className="text-lg md:text-xl font-medium text-center mb-4"
+          className="h4 fw-medium text-center mb-2"
           colorVariant="dark"
-          headerText={homePageData.portalTitle}
+          headerText={homePageData?.portalTitle || ''}
           size="h1"
         />
 
         {/* Description - Centered on mobile, left-aligned on desktop */}
-        <p className="text-center md:text-start max-w-full md:max-w-4xl mb-6 md:ml-10 text-sm md:text-md px-4 md:px-0"
-          style={{ color: theme.quaternaryTextColor }}>
-          {homePageData.description}
+        <p
+          className="text-center text-lg-start mb-4 px-2 px-md-0 ms-md-5"
+          style={{
+            color: theme?.quaternaryTextColor,
+            fontSize: '1.0rem',
+            maxWidth: '100%'
+          }}
+        >
+          {homePageData?.description}
         </p>
 
         {/* Feature List - Centered on mobile */}
-        <div className="flex justify-center md:justify-start">
+        <div className="d-flex justify-content-center ml-12 justify-content-sm-start">
           <RdsFeatureList
             columns={1}
             iconName="tick_circle"
-            className="!border-0 !text-gray-600"
-            itemList={homePageData.features}
+            className=" border-none text-gray-600"
+            itemList={homePageData?.features || []}
             heading={''}
           />
         </div>
 
         {/* Tagline - Centered */}
-        <p className="text-sm md:text-md mt-auto text-center px-4 md:px-0" style={{ color: theme.quaternaryTextColor }}>
-          {homePageData.tagline}
+        <p
+          className="mt-auto text-center px-3 px-md-0 sm-mt-2"
+          style={{
+            color: theme?.quaternaryTextColor,
+            fontSize: '1.0rem'
+          }}
+        >
+          {homePageData?.tagline}
         </p>
 
         {/* Footer - Hidden on mobile, shown on desktop */}
-        <div className="hidden md:flex flex-col md:flex-row justify-between items-center gap-2 mt-4">
-          <img src={MaximEyes} alt="Maximeyes Logo" className="h-16 w-auto" />
-          <div className="text-xs text-center md:text-right mt-2 md:mt-12">
+        <div className="d-none d-md-flex flex-column flex-md-row justify-content-between align-items-center gap-2 mt-4">
+          <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '64px', width: 'auto' }} />
+          <div className="text-end mt-2 mt-md-3" style={{ fontSize: '0.9rem' }}>
             &copy; 2025, First Insight Corporation. All rights reserved.
           </div>
         </div>
       </div>
 
-      {/* Right section - Full width on mobile, 2/5 on desktop */}
+      {/* Right section - Full width on mobile, 40% on desktop */}
       <div
-        className="w-full md:w-2/5 flex flex-col justify-center items-center p-6"
-        style={{ color: theme.secondaryTextColor, backgroundColor: theme.BGColor }}
+        className="col-12 col-md-5 col-lg-4 d-flex flex-column justify-content-center align-items-center p-4"
+        style={{ color: theme?.secondaryTextColor, backgroundColor: theme?.BGColor }}
       >
         {/* Buttons - Side by side on all screens, smaller on mobile */}
-        <div className="flex flex-row gap-2 md:gap-4 w-full max-w-md">
+        <div className="d-flex flex-row gap-2 gap-md-3 w-100" style={{ maxWidth: '400px' }}>
           <Button
-            className="text-sm md:text-lg w-full px-2 md:px-4 py-2 md:py-3 border rounded focus:outline-none"
+            className="btn flex-fill px-2 px-md-3 py-2 py-md-3 border rounded"
             onClick={() => handleNavigation('/signup')}
           >
             Create New Account
           </Button>
           <Button
-            className="text-sm md:text-lg w-full px-2 md:px-4 py-2 md:py-3 border rounded focus:outline-none"
+            className="btn flex-fill px-2 px-md-3 py-2 py-md-3 border rounded"
             onClick={() => handleNavigation('/login')}
           >
             Sign In
@@ -263,19 +281,18 @@ const PtHomePage: React.FC = () => {
         </div>
 
         {/* Contact section - Reduced top margin on small screens */}
-        <div className="text-center mt-3 md:mt-6 px-2" style={{ color: theme.secondaryTextColor }}>
-          <p className="text-lg font-medium">Questions?</p>
-          <p>
-            Call our office at <strong>{homePageData.phoneNumber}</strong>
+        <div className="text-center mt-3 mt-md-4 px-2" style={{ color: theme?.secondaryTextColor }}>
+          <p className="h5 fw-medium mb-2">Questions?</p>
+          <p className="mb-0">
+            Call our office at <strong>{homePageData?.phoneNumber}</strong>
           </p>
         </div>
-
-
       </div>
+
       {/* Footer - Shown on mobile, hidden on desktop */}
-      <div className="flex md:hidden flex-row items-center justify-between gap-3 mt-0 px-2 py-2 bg-white rounded-lg">
-        <img src={MaximEyes} alt="Maximeyes Logo" className="h-8 w-auto" />
-        <div className="text-xs text-center text-gray-600">
+      <div className="d-flex d-md-none flex-row align-items-center justify-content-between gap-3 mt-0 px-2 py-2 bg-white rounded">
+        <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '32px', width: 'auto' }} />
+        <div className="text-center text-muted" style={{ fontSize: '0.75rem' }}>
           &copy; 2025, First Insight Corporation. All rights reserved.
         </div>
       </div>

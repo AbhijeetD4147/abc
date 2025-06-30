@@ -1,9 +1,9 @@
-import { Icon } from '@ketan_nimase/ui';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { Button, Header, Icon } from '@ketan_nimase/ui';
 import { AuthenticationService } from "../../services/authentication/UserService";
-import { GlobalParams } from '../../utils/GlobalParameters';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface LocationState {
     locationId?: string;
@@ -45,12 +45,12 @@ const OTPVerification: React.FC = () => {
 
         try {
             setLoading(true);
-            
+
             // Determine the user type based on available data
             let userType = "Patient";
             let authId = "";
             let callFrom = "";
-            
+
             // If this is coming from a specific flow, adjust the userType
             if (userData?.source === "new_auth") {
                 userType = "NEW_AUTH_INDIVIDUAL";
@@ -58,17 +58,17 @@ const OTPVerification: React.FC = () => {
             } else if (userData?.source === "auth") {
                 userType = "Auth";
             }
-            
+
             // Call the checkOtp API
             await authService.checkOtp(userType, authId, otpValue, callFrom);
-            
+
             if (authService.response_Status_Code_API_1 === 200) {
                 const verifyOtpResponseModel = authService.verifyOtpResponseModel;
-                
+
                 if (verifyOtpResponseModel?.status) {
                     // OTP verification successful
                     toast.success("OTP verified successfully");
-                    
+
                     // Navigate based on the user type
                     if (userType === "NEW_AUTH_INDIVIDUAL") {
                         navigate("/create-credentials", { state: userData });
@@ -102,11 +102,11 @@ const OTPVerification: React.FC = () => {
         try {
             setIsResendDisabled(true);
             setResendTimer(300);
-            
+
             // Determine the user type based on available data
             let userType = "Patient";
             let authId = "";
-            
+
             // If this is coming from a specific flow, adjust the userType
             if (userData?.source === "new_auth") {
                 userType = "NEW_AUTH_INDIVIDUAL";
@@ -114,10 +114,10 @@ const OTPVerification: React.FC = () => {
             } else if (userData?.source === "auth") {
                 userType = "Auth";
             }
-            
+
             // Call the resendOtp API
             await authService.resendOtp(userType, authId);
-            
+
             if (authService.response_Status_Code_API_26 === 200) {
                 const result = authService.resendOtpResult;
                 if (result === "true" || result === true) {
@@ -205,11 +205,11 @@ const OTPVerification: React.FC = () => {
     }, [resendTimer]);
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row">
+        <div className="vh-100 vw-100 d-flex flex-column flex-md-row">
             {/* Left Panel - Teal Background */}
-            <div className="flex-1 md:flex-none md:w-2/5 h-1/4 md:h-auto bg-teal-500 p-6 md:p-12 flex flex-col items-center justify-center text-white" style={{ backgroundColor: '#05afaf' }}>
+            <div className="flex-fill flex-md-grow-0 col-md-4 h-100 h-md-auto d-flex flex-column align-items-center justify-content-center text-white p-3 p-md-5" style={{ backgroundColor: '#05afaf' }}>
                 <div className="text-center">
-                    <div className="mb-6">
+                    <div className="mb-4">
                         <Icon
                             name="message_bubble"
                             height="90px"
@@ -218,18 +218,21 @@ const OTPVerification: React.FC = () => {
                             stroke
                         />
                     </div>
-                    <h2 className="text-xl md:text-4xl font-demibold mb-6">Security Code Sent</h2>
+                    <h2 className="h1 h-md-1 fw-semibold mb-4">Security Code Sent</h2>
                 </div>
             </div>
 
             {/* Right Panel - White Background */}
-            <div className="flex-3 md:flex-none md:w-3/5 h-3/4 md:h-auto bg-white p-6 md:p-12 flex flex-col items-center justify-center">
-                <div className="max-w-xl w-full">
-                    <h2 className="text-2xl md:text-2xl font-semibold mb-6">
-                        Enter security code received on your Phone/Email
-                    </h2>
+            <div className="flex-fill flex-md-grow-0 col-md-8 h-100 h-md-auto bg-white d-flex flex-column align-items-center justify-content-center p-3 p-md-5">
+                <div className="w-100" style={{ maxWidth: '36rem' }}>
+                    <Header
+                        className="h-md-3 fw-semibold mb-4"
+                        colorVariant="dark"
+                        headerText="Enter security code received on your Phone/Email"
+                        size="h2"
+                    />
 
-                    <div className="flex gap-2 md:gap-4 mb-8">
+                    <div className="d-flex gap-2 gap-md-3 mb-4">
                         {otp.map((digit, index) => (
                             <input
                                 key={index}
@@ -240,20 +243,25 @@ const OTPVerification: React.FC = () => {
                                 onChange={(e) => handleOtpChange(index, e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(index, e)}
                                 onPaste={(e) => handlePaste(index, e)}
-                                className={`w-16 h-12 md:w-16 md:h-16 mr-4 text-center text-xl md:text-2xl border-2 rounded-md focus:outline-none ${digit
-                                    ? 'border-green-500 focus:border-green-600'
-                                    : 'border-gray-300 focus:border-blue-500'
+                                className={`form-control text-center fs-4 fs-md-3 border-2 rounded me-2 ${digit
+                                    ? 'border-success'
+                                    : 'border-secondary'
                                     }`}
+                                style={{
+                                    width: '4rem',
+                                    height: '3rem',
+                                    fontSize: '1.25rem'
+                                }}
                                 disabled={loading}
                             />
                         ))}
                     </div>
-                    <p className="text-lg text-gray-600 mb-6">
+                    <p className="fs-5 text-muted mb-4">
                         If you did not receive a code click resend to try again. If you are still not receiving a code via
                         your text or message please{' '}
                         <a
                             href="/"
-                            className="underline text-blue-500 hover:text-blue-600"
+                            className="text-decoration-underline text-primary"
                             onClick={(e) => {
                                 e.preventDefault();
                                 navigate('/');
@@ -264,28 +272,28 @@ const OTPVerification: React.FC = () => {
                         as your contact information may not be up to date.
                     </p>
 
-                    <div className="flex gap-2 md:gap-4">
-                        <button
-                            disabled={isResendDisabled || loading}
+                    <div className="d-flex gap-2 gap-md-3">
+                        <Button
+                            isDisabled={isResendDisabled || loading}
                             onClick={handleResendOtp}
-                            className={`px-6 py-2 md:px-10 md:py-2 ${isResendDisabled || loading
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-gray-200 hover:bg-gray-300'
-                                } text-gray-700 rounded`}
+                            className={`btn px-3 px-md-4 py-2 ${isResendDisabled || loading
+                                ? 'btn-outline disabled'
+                                : 'btn-outline-secondary'
+                                }`}
                         >
                             {resendTimer > 0
                                 ? `Resend in ${Math.floor(resendTimer / 60)}:${(resendTimer % 60)
                                     .toString()
                                     .padStart(2, '0')}`
                                 : 'Resend Code'}
-                        </button>
-                        <button
+                        </Button>
+                        <Button 
                             onClick={handleProceed}
-                            disabled={loading || otp.join('').length !== 4}
-                            className="px-10 py-2 md:px-10 md:py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+                            isDisabled={loading || otp.join('').length !== 4}
+                            className="btn btn-primary px-4 py-2"
                         >
                             {loading ? 'Verifying...' : 'Proceed'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { Input, Button, Icon, Header } from "@ketan_nimase/ui";
 import logo from "../../../assets/user_lock_logo.png";
 import { Navbar } from "../../../components/ui/Navbar";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const passwordCriteria = {
     minLength: "At least 8 characters long",
@@ -26,26 +27,26 @@ const UpdatePassword: React.FC = () => {
     const showError = touched && password.trim() === "";
 
     return (
-        <div className="h-screen w-screen flex flex-col items-center justify-center">
+        <div className="vh-100 vw-100 d-flex flex-column align-items-center justify-content-center">
             <Navbar patientName={{ firstName: "Jeffery", lastName: "Stevenson" }} />
 
-            <div className="flex w-screen justify-center text-center py-2 border-b m-0">
+            <div className="d-flex w-100 justify-content-center text-center py-2 border-bottom m-0">
                 <Header
-                    className="text-lg md:text-xl font-medium text-center"
+                    className="fs-5 fs-md-4 fw-medium text-center"
                     colorVariant="dark"
                     headerText="Update Password"
                     size="h2"
                 />
             </div>
 
-            <img src={logo} alt="User Logo" className="w-26 h-24 mb-4 mt-4" />
+            <img src={logo} alt="User Logo" className="mb-3 mt-3" style={{ width: '6.5rem', height: '6rem' }} />
 
-            <p className="text-2xl mb-2 font-medium">Choose a new password to reset account</p>
+            <p className="h3 mb-2 fw-medium">Choose a new password to reset account</p>
 
-            <div className="w-full max-w-4xl border-t pt-8">
-                <div className="flex flex-col md:flex-row justify-between gap-4">
+            <div className="w-100 border-top pt-4" style={{ maxWidth: '64rem' }}>
+                <div className="d-flex flex-column flex-md-row justify-content-between gap-3">
                     {/* Left: Inputs */}
-                    <div className="flex-1">
+                    <div className="flex-fill">
                         <Input
                             placeholder="Password"
                             value={password}
@@ -68,7 +69,6 @@ const UpdatePassword: React.FC = () => {
                             width="20px"
                         /> */}
                         <Input
-                            className="p-0 bg-blue"
                             placeholder="Confirm Password"
                             inputType="password"
                             value={confirmPassword}
@@ -79,9 +79,9 @@ const UpdatePassword: React.FC = () => {
                     </div>
 
                     {/* Right: Criteria */}
-                    <div className="flex-1">
-                        <p className="text-lg font-semibold mb-2">Password Criteria</p>
-                        <ul className="space-y-2 text-gray-500">
+                    <div className="flex-fill">
+                        <p className="fs-5 fw-semibold mb-2">Password Criteria</p>
+                        <ul className="list-unstyled text-muted">
                             <CriteriaItem met={isMinLength} text={passwordCriteria.minLength} />
                             <CriteriaItem met={hasUppercase} text={passwordCriteria.uppercase} />
                             <CriteriaItem met={hasLowercase} text={passwordCriteria.lowercase} />
@@ -90,12 +90,12 @@ const UpdatePassword: React.FC = () => {
                         </ul>
                     </div>
                 </div>
-                <p className="mt-2 text-center text-md ">
+                <p className="mt-2 text-center">
                     We will send you a security code on your phone for additional verification.
                 </p>
             </div>
             {/* Button: Centered Below */}
-            <div className="flex w-screen justify-center text-center py-3 border-t-2 m-0">
+            <div className="d-flex w-100 justify-content-center text-center py-3 border-top border-2 m-0">
                 <Button
                     colorVariant="success"
                     onClick={() => setTouched(true)}
@@ -104,7 +104,7 @@ const UpdatePassword: React.FC = () => {
                     Change Password
                 </Button>
 
-                <p className="absolute bottom-2 left-2 text-xs text-gray-500">Version: 1.0</p>
+                <p className="position-absolute bottom-0 start-0 m-2 small text-muted">Version: 1.0</p>
             </div>
         </div>
     );
@@ -112,11 +112,11 @@ const UpdatePassword: React.FC = () => {
 
 const CriteriaItem: React.FC<{ met: boolean; text: string }> = ({ met, text }) => {
     return (
-        <li className={`flex items-center gap-2 ${met ? "text-green-600" : "text-gray-700"}`}>
+        <li className={`d-flex align-items-center gap-2 mb-2 ${met ? "text-success" : "text-dark"}`}>
             {met ? (
                 <Icon name="check" colorVariant="success" width="16" height="16" />
             ) : (
-                <span className="w-2 h-2 mr-2 bg-black rounded-full inline-block"></span>
+                <span className="bg-dark rounded-circle d-inline-block me-2" style={{ width: '0.5rem', height: '0.5rem' }}></span>
             )}
             <span>{text}</span>
         </li>

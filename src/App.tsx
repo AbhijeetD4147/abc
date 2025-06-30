@@ -40,6 +40,11 @@ import HealthSummary from "./pages/health_summary/HealthSummary";
 import PoliciesForm from "./pages/PoliciesAndConsentsForm/PoliciesForm";
 import AuthPatientList from "./pages/authentication/authorized_individual/AuthPatientList";
 import AddAuthorizedIndividual from "./pages/authentication/authorized_individual/AddAuthorizedIndividual";
+import AuthIndividualTermsAndConditions from "./pages/authentication/authorized_individual/AuthIndividualTermasAndConditions";
+import SignUpComplete from "./pages/authentication/SignUpComplete";
+import AuthRecordMatchFound from "./pages/authentication/AuthRecordMatchFound";
+import RecoverPassword from "./pages/authentication/RecoverPassword";
+import RecoverUsername from "./pages/authentication/RecoverUsername";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -107,7 +112,7 @@ function App() {
         setInitialRoute(route);
 
         // Add this code to fetch the logo during initialization
-       
+
       } catch (error) {
         console.error("App init error", error);
       }
@@ -136,9 +141,9 @@ function App() {
   };
 
   if (!initialRoute) return (
-  <div className="flex justify-center items-center min-h-screen w-screen">
-    <Loader loaderType="spin" />
-  </div>
+    <div className="flex justify-center items-center min-h-screen w-screen">
+      <Loader loaderType="spin" />
+    </div>
   );
 
   return (
@@ -147,27 +152,31 @@ function App() {
       <Routes>
         <Route path="/" element={<PtHomePage />} />
         <Route path="/home" element={<PtHomePage />} />
-        <Route path="/login" element={<LoginPage logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
-        <Route path="/signup" element={<SignUpPage />} />
+
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<PatientProfile />} />
-        <Route path="/sample" element={<SamplePage />} />
-        <Route path="/sample2" element={<SamplePage2 />} />
         <Route path="/update-username" element={<UpdateUsername />} />
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/opt-out" element={<OptOut />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/activity-logs" element={<ActivityLogs />} />
+        <Route path="/policies-form" element={<PoliciesForm />} />
+
+        {/* Authentication */}
+        <Route path="/login" element={<LoginPage logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
+        <Route path="/signup" element={<SignUpPage />} />
         <Route path="/forgot-username" element={<ForgotUsername logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
         <Route path="/forgot-password" element={<ForgotPassword logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
         <Route path="/credentials-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="username" />} />
         <Route path="/password-reset-sent" element={<CredentialsSendForExistingUser logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} recoveryType="password" />} />
-        <Route path="/recover-credentials" element={<CredentialsSendForExistingUser recoveryType="userinfo" logoUrl={""} companyName={""} />} />
+        <Route path="/recover-credentials" element={<CredentialsSendForExistingUser recoveryType="userinfo" logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
         <Route path="/otp-verification" element={<VerificationOtp />} />
         <Route path="/patient-terms-conditions" element={<PatientTermsAndConditions optedPatient={true} />} />
         <Route path="/record-match-found" element={<RecordMatchFound email={""} patientNumber={0} />} />
         <Route path="/record-match-not-found" element={<RecordMatchNotFound />} />
-        <Route path="/policies-form" element={<PoliciesForm />} />
+        <Route path="/sign-up-complete" element={<SignUpComplete />} />
+        <Route path="/recover-username" element={<RecoverUsername logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
+        <Route path="/recover-password" element={<RecoverPassword logoUrl={GlobalParams.LOGO} companyName={GlobalParams.COMPANY_NAME} />} />
 
         {/* Appointment Pages */}
         <Route path="/appointment" element={<AppointmentPage />} />
@@ -179,15 +188,22 @@ function App() {
           firstName: "",
           lastName: ""
         }} />} />
+        <Route path="/insurance" element={<Insurance />} />
 
         {/* Authorized Individual */}
         <Route path="/authorized-individual" element={<AuthPatientList />} />
         <Route path="/add-authorized-individual" element={<AddAuthorizedIndividual />} />
+        <Route path="/auth-individual-terms-conditions" element={<AuthIndividualTermsAndConditions optedPatient={false} />} />
+        <Route path="/auth-individual-record-match-found" element={<AuthRecordMatchFound />} />
 
-        {/* <Route path="/insurance" element={<Insurance />} /> */}
+
         {/*<Route path="/authterms" element={<AuthTermsAndConditionScreen />} />
         <Route path="/invalidLinkScreen" element={<InvalidLinkScreen />} /> */}
         <Route path="*" element={<Navigate to={initialRoute} />} />
+
+        {/* Sample pages */}
+        <Route path="/sample" element={<SamplePage />} />
+        <Route path="/sample2" element={<SamplePage2 />} />
       </Routes>
     </Router>
   );

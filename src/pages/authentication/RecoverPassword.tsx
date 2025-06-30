@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { getTheme } from "../../utils/ThemeSelection";
 import { GlobalParams } from '../../utils/GlobalParameters';
-import Footer from "../../components/ui/Footer";
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import MaximEyes from '../../assets/maximeyeslogo.png';
+import { Icon } from '@ketan_nimase/ui';
 
 interface PageProps {
     logoUrl: string;
@@ -93,143 +94,194 @@ const RecoverPassword: React.FC<PageProps> = () => {
     };
 
     const CriteriaItem = ({ met, children }: { met: boolean; children: React.ReactNode }) => (
-        <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full flex items-center justify-center">
+        <div className="d-flex align-items-center gap-2">
+            <div className="d-flex align-items-center justify-content-center" style={{ width: '16px', height: '16px' }}>
                 {met ? (
-                    <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="text-success" width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                 ) : (
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                    <div className="bg-white rounded-circle" style={{ width: '8px', height: '8px' }}></div>
                 )}
             </div>
-            <span className={`text-sm ${met ? 'text-green-400' : 'text-white'}`}>{children}</span>
+            <span className={`small ${met ? 'text-success' : 'text-white'}`}>{children}</span>
         </div>
     );
 
     return (
-        <div className="flex min-h-screen w-screen">
-            {/* Left Panel */}
-            <div className="w-1/2 flex flex-col justify-center items-center bg-white p-10 relative">
-                <img
-                    src={
-                        GlobalParams.LOGO
-                            ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
-                            : ''
-                    }
-                    alt="Company Logo"
-                    className="w-90 h-30 inline-block align-middle"
-                />
-                <div className="absolute bottom-5 left-5 text-xs text-gray-400">
-                    <Footer />
+        <div className="container-fluid vh-100 vw-100 p-0">
+            <div className="row h-100 g-0">
+                {/* Left Panel */}
+                <div className="col-12 col-md-6 d-flex flex-column bg-white p-2 p-md-5">
+                    {/* Centered Logo */}
+                    <div className="flex-grow-1 d-flex justify-content-center align-items-center">
+                        <img
+                            src={
+                                GlobalParams.LOGO
+                                    ? `data:image/jpeg;base64,${GlobalParams.LOGO}`
+                                    : ''
+                            }
+                            alt="Company Logo"
+                            className="img-fluid"
+                            style={{ maxWidth: '240px', height: 'auto' }}
+                        />
+                    </div>
+
+                    {/* Footer at Bottom */}
+                    <div className="flex-shrink-0">
+                        <div className="d-none d-md-flex justify-content-between align-items-center gap-2">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '64px', width: 'auto' }} />
+                            <div className="text-end" style={{ fontSize: '0.75rem' }}>
+                                &copy; 2025, First Insight Corporation. All rights reserved.
+                            </div>
+                        </div>
+                        <div className="d-flex d-md-none align-items-center justify-content-between gap-3 px-2 py-2 bg-white rounded">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '32px', width: 'auto' }} />
+                            <div className="text-center text-muted" style={{ fontSize: '0.75rem' }}>
+                                &copy; 2025, First Insight Corporation. All rights reserved.
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Right Panel */}
-            <div
-                className="w-1/2 flex flex-col justify-center items-center p-10"
-                style={{ backgroundColor: theme.BGColor, color: theme.secondaryTextColor }}
-            >
-                <div className="w-full max-w-md space-y-6">
-                    {/* Icon and Title */}
-                    <div className="text-center space-y-4">
-                        <div className="mx-auto w-20 h-20 rounded-full border-2 border-white flex items-center justify-center relative">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-light text-white">Reset Your Password</h1>
-                            <p className="text-white/80 mt-2">Choose a new password to reset account.</p>
-                        </div>
-                    </div>
-
-                    {/* Password Input Fields */}
-                    <div className="space-y-4">
-                        <div className="relative">
-                            <div className="absolute left-3 top-3 z-10">
-                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </div>
-                            <input
-                                type="password"
-                                placeholder="Password"
-                                value={password}
-                                onChange={handlePasswordChange}
-                                className="w-full pl-10 pr-10 py-2 bg-white/90 border border-white/30 rounded-md text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
-                            />
-                            <div className="absolute right-3 top-3 z-10">
-                                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            {showPasswordError && (
-                                <div className="mt-1 bg-red-600 text-white text-sm px-3 py-1 rounded">
-                                    Password needs to follow criteria
+                {/* Right Panel */}
+                <div
+                    className="col-12 col-lg-6 d-flex flex-column justify-content-center align-items-center p-5"
+                    style={{ backgroundColor: theme.BGColor, color: theme.secondaryTextColor }}
+                >
+                    <div className="w-100" style={{ maxWidth: '400px' }}>
+                        {/* Icon and Title */}
+                        <div className="text-center mb-4">
+                             <div className="d-flex justify-content-center mb-4 position-relative">
+                                <div
+                                    className="border border-3 rounded-circle p-1 p-sm-2 p-lg-3 d-flex align-items-center justify-content-center"
+                                >
+                                    <Icon
+                                        colorVariant="light"
+                                        height="60px"
+                                        isCursorPointer
+                                        isbadge
+                                        name="lock"
+                                        stroke
+                                        width="60px"
+                                    />
                                 </div>
-                            )}
-                        </div>
-
-                        <div className="relative">
-                            <div className="absolute left-3 top-3 z-10">
-                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
                             </div>
-                            <input
-                                type="password"
-                                placeholder="Confirm Password"
-                                value={confirmPassword}
-                                onChange={handleConfirmPasswordChange}
-                                className="w-full pl-10 pr-4 py-2 bg-white/90 border border-white/30 rounded-md text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50"
-                            />
-                            {showConfirmError && (
-                                <div className="mt-1 bg-red-600 text-white text-sm px-3 py-1 rounded">
-                                    Confirm Password does not match the Password
+                            <div>
+                                <h1 className="fs-2 fw-light text-white mb-2">Reset Your Password</h1>
+                                <p className="text-white-50 mb-0">Choose a new password to reset account.</p>
+                            </div>
+                        </div>
+
+                        {/* Password Input Fields */}
+                        <div className="mb-4">
+                            <div className="position-relative mb-3">
+                                <div className="position-absolute start-0 top-50 translate-middle-y ms-3" style={{ zIndex: 10 }}>
+                                    <svg className="text-muted" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                                <input
+                                    type="password"
+                                    placeholder="Password"
+                                    value={password}
+                                    onChange={handlePasswordChange}
+                                    className="form-control ps-5 pe-5 py-2"
+                                    style={{
+                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                                        color: '#495057'
+                                    }}
+                                />
+                                <div className="position-absolute end-0 top-50 translate-middle-y me-3" style={{ zIndex: 10 }}>
+                                    <svg className="text-primary" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                {showPasswordError && (
+                                    <div className="mt-1 bg-danger text-white small px-3 py-1 rounded">
+                                        Password needs to follow criteria
+                                    </div>
+                                )}
+                            </div>
 
-                    {/* Password Criteria */}
-                    <div className="space-y-2">
-                        <h3 className="text-white font-medium">Password Criteria</h3>
-                        <div className="space-y-1">
-                            <CriteriaItem met={criteria.minLength}>
-                                At least 8 characters long (longer password are more secure)
-                            </CriteriaItem>
-                            <CriteriaItem met={criteria.hasUppercase}>
-                                At least 1 uppercase letter (A, B, C...)
-                            </CriteriaItem>
-                            <CriteriaItem met={criteria.hasLowercase}>
-                                At least 1 lowercase letter (a, b, c...)
-                            </CriteriaItem>
-                            <CriteriaItem met={criteria.hasNumber}>
-                                At least 1 number (1, 2, 3...)
-                            </CriteriaItem>
-                            <CriteriaItem met={criteria.hasSpecialChar}>
-                                At least 1 special character/punctuation (%, @, #, ?...)
-                            </CriteriaItem>
+                            <div className="position-relative">
+                                <div className="position-absolute start-0 top-50 translate-middle-y ms-3" style={{ zIndex: 10 }}>
+                                    <svg className="text-muted" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </div>
+                                <input
+                                    type="password"
+                                    placeholder="Confirm Password"
+                                    value={confirmPassword}
+                                    onChange={handleConfirmPasswordChange}
+                                    className="form-control ps-5 pe-4 py-2"
+                                    style={{
+                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                                        color: '#495057'
+                                    }}
+                                />
+                                {showConfirmError && (
+                                    <div className="mt-1 bg-danger text-white small px-3 py-1 rounded">
+                                        Confirm Password does not match the Password
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-4 pt-4">
-                        <button
-                            onClick={handleCancel}
-                            className="flex-1 py-1 px-6 border-2 border-white text-white rounded-md hover:bg-blue-300 transition-colors font-medium"
-                            style={{ backgroundColor: 'transparent' }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleConfirm}
-                            className="flex-1 py-1 px-6 border-2 border-white text-white rounded-md hover:bg-blue-300 transition-colors font-medium"
-                            style={{ backgroundColor: 'transparent' }}
-                        >
-                            Confirm
-                        </button>
+                        {/* Password Criteria */}
+                        <div className="mb-4">
+                            <h3 className="text-white fw-medium mb-2">Password Criteria</h3>
+                            <div className="d-flex flex-column gap-1">
+                                <CriteriaItem met={criteria.minLength}>
+                                    At least 8 characters long (longer password are more secure)
+                                </CriteriaItem>
+                                <CriteriaItem met={criteria.hasUppercase}>
+                                    At least 1 uppercase letter (A, B, C...)
+                                </CriteriaItem>
+                                <CriteriaItem met={criteria.hasLowercase}>
+                                    At least 1 lowercase letter (a, b, c...)
+                                </CriteriaItem>
+                                <CriteriaItem met={criteria.hasNumber}>
+                                    At least 1 number (1, 2, 3...)
+                                </CriteriaItem>
+                                <CriteriaItem met={criteria.hasSpecialChar}>
+                                    At least 1 special character/punctuation (%, @, #, ?...)
+                                </CriteriaItem>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="d-flex gap-3 pt-3">
+                            <button
+                                onClick={handleCancel}
+                                className="btn btn-outline-light flex-fill py-2 px-4 fw-medium transition-all"
+                                style={{ backgroundColor: 'transparent' }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(173, 216, 230, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirm}
+                                className="btn btn-outline-light flex-fill py-2 px-4 fw-medium transition-all"
+                                style={{ backgroundColor: 'transparent' }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(173, 216, 230, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                            >
+                                Confirm
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

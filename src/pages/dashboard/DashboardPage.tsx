@@ -2,11 +2,11 @@ import { FC, useEffect, useState, useCallback } from "react";
 import dayjs from "dayjs";
 import WarningPopup from '../../components/ui/WarningPopup';
 import { toast } from "react-toastify";
-import {
-  CalendarX2Icon,
-  Settings,
-  X,
-} from "lucide-react";
+// import {
+//   CalendarX2Icon,
+//   Settings,
+//   X,
+// } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Icon, Loader } from "@ketan_nimase/ui";
 import { AppointmentService } from "../../services/appointment/AppointmentService";
@@ -494,9 +494,9 @@ const DashboardPage: FC = () => {
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-white text-lg font-medium">{userName || "Jeffery Stevenson"}</span>
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                </svg> */}
               </div>
             </div>
 
@@ -507,9 +507,23 @@ const DashboardPage: FC = () => {
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-blue-600 cursor-pointer transition-colors duration-200"
               >
                 {isOpen ? (
-                  <X size={24} stroke="white" strokeWidth={1.5} />
+                  <Icon
+                    colorVariant="light"
+                    height="20px"
+                    isCursorPointer
+                    name="cancel"
+                    stroke
+                    width="20px"
+                  />
                 ) : (
-                  <Settings size={24} stroke="white" strokeWidth={1.5} />
+                  <Icon
+                    colorVariant="light"
+                    height="24px"
+                    isCursorPointer
+                    name="settings"
+                    stroke
+                    width="24px"
+                  />
                 )}
               </div>
 
@@ -575,20 +589,145 @@ const DashboardPage: FC = () => {
             <div className="flex-1 bg-white flex flex-col">
               {hasUpcomingAppointment ? (
                 <div className="flex-1 p-6">
-                  {/* Mobile appointment content - simplified */}
-                  <div className="text-center py-8">
-                    <h2 className="text-xl font-medium mb-4">{appointmentData.appointmentHeader || "You have an upcoming appointment"}</h2>
-                    <p className="text-lg text-gray-600 mb-6">
-                      {formattedTime}
-                      <br />
-                      Reason: {appointmentData.appointmentReason || "Annual Checkup"}
-                    </p>
+                  {/* Mobile appointment content */}
+                  {showConfirmPopup && (
+                    <WarningPopup
+                      message={`Are you sure you want to mark yourself as arrived for your ${formattedTime} appointment with ${appointmentData.practicePersonName}?`}
+                      onConfirm={handleArrivalConfirm}
+                      onCancel={() => setShowConfirmPopup(false)}
+                    />
+                  )}
+                  
+                  <div className="text-center py-4">
+                    {!hasArrived ? (
+                      <>
+                        <h2 className="text-xl font-medium mb-4">{appointmentData.appointmentHeader || "You have an upcoming appointment"}</h2>
+                        <p className="text-lg text-gray-600 mb-6">
+                          {formattedTime}
+                          <br />
+                          Reason: {appointmentData.appointmentReason || "Annual Checkup"}
+                        </p>
+                        
+                        {/* Mobile Action Buttons */}
+                        <div className="flex justify-center gap-4 mb-8">
+                          <div className="flex flex-col items-center cursor-pointer group" onClick={cancelAppointment}>
+                            <div className="w-12 h-12 flex items-center justify-center rounded-full p-2 group-hover:bg-blue-200 transition-colors">
+                              <Icon
+                                badgeColor="success"
+                                colorVariant="dark"
+                                height="32px"
+                                isCursorPointer
+                                name="calendar"
+                                stroke
+                                width="32px"
+                              />
+                            </div>
+                            <span className="text-sm mt-1 text-blue-400">Cancel</span>
+                          </div>
+                          <div className="flex flex-col items-center cursor-pointer group" onClick={getRescheduleAppointmentPermission}>
+                            <div className="w-12 h-12 flex items-center justify-center rounded-full p-2 group-hover:bg-blue-200 transition-colors">
+                              <Icon
+                                backgroundShape="circle"
+                                backgroundShapeColor="#f5f5f5"
+                                badgeColor="success"
+                                colorVariant="dark"
+                                height="32px"
+                                isCursorPointer
+                                name="refresh_sync"
+                                stroke
+                                width="32px"
+                              />
+                            </div>
+                            <span className="text-sm mt-1 text-blue-500">Reschedule</span>
+                          </div>
+                          <div
+                            className={`flex flex-col items-center group ${disabled ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
+                            onClick={() => !disabled && setShowConfirmPopup(true)}
+                          >
+                            <div className="w-12 h-12 flex items-center justify-center rounded-full p-2 group-hover:bg-blue-200 transition-colors">
+                              <Icon
+                                backgroundShape="circle"
+                                backgroundShapeColor="#f5f5f5"
+                                badgeColor="success"
+                                colorVariant="dark"
+                                height="32px"
+                                isCursorPointer
+                                name="location"
+                                stroke
+                                width="32px"
+                                className={`${disabled ? 'text-gray-400' : 'text-blue-500'}`}
+                              />
+                            </div>
+                            <span className={`text-sm mt-1 ${disabled ? 'text-gray-400' : 'text-blue-500'}`}>
+                              Mark As Arrived
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center py-8">
+                        <Icon
+                          backgroundShape="circle"
+                          backgroundShapeColor="#f5f5f5"
+                          badgeColor="success"
+                          colorVariant="success"
+                          height="48px"
+                          isCursorPointer
+                          name="location"
+                          stroke
+                          width="48px"
+                        />
+                        <span className="text-lg text-green-500 mt-2 mb-4">Arrived</span>
+                        <p className="text-base text-gray-600 text-center px-4 leading-snug">
+                          You have arrived for your {dayjs(appointmentData.appointmentDateTime).format("h:mm A")} appointment with {appointmentData.practicePersonName}. Someone will assist you shortly.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mobile Intake Form Section */}
+                  <div className="border-t pt-6 px-2">
+                    {!intakeData.isIntakeFormSubmit ? (
+                      // When intake is NOT filled
+                      <>
+                        <h3 className="text-lg font-medium mb-2">Speed up your arrival</h3>
+                        <p className="text-base text-gray-600 mb-4">
+                          Save time at the doctor's office by filling{" "}
+                          <a href="/intake-form" className="text-blue-500 underline">
+                            Intake Form
+                          </a>
+                        </p>
+                      </>
+                    ) : (
+                      // When intake IS filled
+                      <>
+                        <h3 className="text-lg font-medium mb-2">Intake Form</h3>
+                        <p className="text-base text-gray-600">
+                          Filled on{" "}
+                          <span className="font-medium text-black">
+                            {intakeData.intakeLastUpdatedDate ? new Date(intakeData.intakeLastUpdatedDate).toLocaleDateString() : ""}
+                          </span>
+                        </p>
+                        <p className="text-base text-gray-600 mb-4">
+                          <a href="/intake-form" className="text-blue-500 underline">
+                            View/Update Again
+                          </a>
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               ) : (
                 // No Upcoming Appointment UI - Mobile
                 <div className="flex flex-col justify-center items-center flex-1 px-6">
-                  <CalendarX2Icon className="w-20 h-20 text-gray-400 mb-4 stroke-1" />
+                  <Icon
+                    colorVariant="light"
+                    height="24px"
+                    isCursorPointer
+                    name="calendar"
+                    stroke
+                    width="24px"
+                  />
                   <p className="text-xl text-gray-500 mb-8 text-center">No upcoming appointments</p>
                   <button
                     className="bg-blue-500 text-white text-lg px-8 py-3 rounded w-full max-w-sm hover:bg-blue-600 transition"
@@ -638,19 +777,33 @@ const DashboardPage: FC = () => {
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-white hover:bg-blue-100 cursor-pointer transition-colors duration-200"
                 >
                   {isOpen ? (
-                    <X size={30} stroke="#3556fd" strokeWidth={1} />
+                    <Icon
+                      colorVariant="primary"
+                      height="20px"
+                      isCursorPointer
+                      name="cancel"
+                      stroke
+                      width="20px"
+                    />
                   ) : (
-                    <Settings size={30} stroke="#3556fd" strokeWidth={1} />
+                    <Icon
+                      colorVariant="primary"
+                      height="24px"
+                      isCursorPointer
+                      name="settings"
+                      stroke
+                      width="24px"
+                    />
                   )}
                 </div>
 
                 {isOpen && (
-                  <ul className="absolute right-0 mt-2 min-w-max max-w-xs bg-white border border-gray-200 rounded shadow-md z-50">
+                  <ul className="absolute right-0 mt-3 p-0 min-w-max max-w-sm bg-white border border-gray-200 rounded shadow-md z-100">
                     {fabItems.map(({ label, href }) => (
-                      <li key={label} className="border-b last:border-b-0 border-gray-200 cursor-pointer ">
+                      <li key={label} className="border-b last:border-b-0 border-gray-200 cursor-pointer pl-6">
                         <a
                           href={href}
-                          className="block px-4 py-2 font-normal no-underline hover:text-blue-500 hover:bg-gray-100 text-black transition-all duration-200"
+                          className="block pr-14 py-2 font-normal text-lg no-underline hover:text-blue-500 hover:bg-gray-100 text-black transition-all duration-200"
                         >
                           {label}
                         </a>
@@ -838,7 +991,14 @@ const DashboardPage: FC = () => {
                 // No Upcoming Appointment UI
                 <div className="flex flex-col justify-center min-h-screen pl-24 -mt-10">
                   <div className="flex flex-col items-center">
-                    <CalendarX2Icon className="w-24 h-24 text-gray-400 mb-6 stroke-1" />
+                    <Icon
+                      colorVariant="light"
+                      height="24px"
+                      isCursorPointer
+                      name="calendar"
+                      stroke
+                      width="24px"
+                    />
                     <p className="text-2xl text-gray-500 mb-6">No upcoming appointment</p>
                     <button
                       className="bg-blue-500 text-white text-lg px-20 py-2 rounded w-full max-w-sm hover:bg-blue-600 transition"

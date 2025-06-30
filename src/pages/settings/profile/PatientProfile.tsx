@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Navbar } from "../../../components/ui/Navbar";
 import { FaCamera, FaFolderOpen, FaTrash, FaUserPlus } from "react-icons/fa";
 import WarningPopup from "../../../components/ui/WarningPopup";
-import { Header, Icon } from "@ketan_nimase/ui";
+import { Header, Icon, Loader } from "@ketan_nimase/ui";
 import { ProfileService } from "../../../services/settings/ProfileService";
 import { ProfileModel } from "../../../model/settings/ProfileModel";
 import { GlobalParams } from "../../../utils/GlobalParameters";
 import { ApiPath } from "../../../utils/constants";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const PatientProfile: React.FC = () => {
     const [editing, setEditing] = useState(false);
@@ -47,7 +48,7 @@ const PatientProfile: React.FC = () => {
                 setLastChangePasswordDate(model.lastChangePasswordDate || "");
                 setPhotoImage(model.userProfilePhotoBase64 || null);
                 setIdImage(model.userIdPhotoBase64 || null);
-                
+
                 // Update global parameters
                 GlobalParams.USER_PROFILE_PHOTO_BASE64 = model.userProfilePhotoBase64 ? new TextEncoder().encode(model.userProfilePhotoBase64) : new Uint8Array();
                 GlobalParams.USER_ID_PHOTO_BASE64 = model.userIdPhotoBase64 || "";
@@ -92,42 +93,42 @@ const PatientProfile: React.FC = () => {
 
     const updateProfilePhoto = async (base64Image: string) => {
         if (!profileModel) return;
-        
+
         const updatedModel = new ProfileModel({
             ...profileModel,
             userProfilePhotoBase64: base64Image,
             isProfilePhotoUploading: true,
             contentType: "image/jpeg"
         });
-        
+
         setProfileModel(updatedModel);
         await updatePatientDetail(updatedModel);
     };
 
     const updateIdPhoto = async (base64Image: string) => {
         if (!profileModel) return;
-        
+
         const updatedModel = new ProfileModel({
             ...profileModel,
             userIdPhotoBase64: base64Image,
             isIdPhotoUploading: true,
             contentType: "image/jpeg"
         });
-        
+
         setProfileModel(updatedModel);
         await updatePatientDetail(updatedModel);
     };
 
     const handleDeleteConfirm = () => {
-        deleteImage();          
+        deleteImage();
         setShowConfirmPopup(false);
     };
 
     const deleteImage = async () => {
         if (!profileModel) return;
-        
+
         let updatedModel: ProfileModel;
-        
+
         if (activeTab === "photo") {
             setPhotoImage(null);
             updatedModel = new ProfileModel({
@@ -143,27 +144,27 @@ const PatientProfile: React.FC = () => {
                 isIdPhotoDeleting: true
             });
         }
-        
+
         setProfileModel(updatedModel);
         await updatePatientDetail(updatedModel);
     };
 
     const handleSaveName = async () => {
         if (!profileModel) return;
-        
+
         // Check for special characters
         if (checkForSpecialCharacters(firstName) || checkForSpecialCharacters(lastName)) {
             alert("Special characters are not allowed in name fields");
             return;
         }
-        
+
         const updatedModel = new ProfileModel({
             ...profileModel,
             firstName: firstName,
             lastName: lastName,
             isNameChanged: true
         });
-        
+
         setProfileModel(updatedModel);
         await updatePatientDetail(updatedModel);
         setEditing(false);
@@ -181,7 +182,7 @@ const PatientProfile: React.FC = () => {
                 // Update global parameters
                 GlobalParams.USER_PROFILE_PHOTO_BASE64 = model.userProfilePhotoBase64 ? new TextEncoder().encode(model.userProfilePhotoBase64) : new Uint8Array();
                 GlobalParams.USER_ID_PHOTO_BASE64 = model.userIdPhotoBase64 || "";
-                
+
                 // Refresh data
                 await fetchProfileData();
             }
@@ -191,7 +192,7 @@ const PatientProfile: React.FC = () => {
     };
 
     return (
-        <div className="h-screen w-screen">
+        <div className="vh-100 vw-100">
             {showConfirmPopup && (
                 <WarningPopup
                     message={`Are you sure you want to delete this image?`}
@@ -205,16 +206,16 @@ const PatientProfile: React.FC = () => {
             />
 
             {/* Header */}
-            <div className=" flex justify-content-center text-center py-2 border border-bottom m-0">
+            <div className="d-flex justify-content-center text-center py-2 border-bottom m-0">
                 <Header
-                    className="text-lg md:text-xl font-medium text-center"
+                    className="fs-5 fs-md-4 fw-medium text-center"
                     colorVariant="dark"
                     headerText="Profile"
                     size="h2"
                 />
                 {/* Info Icon */}
-                <div className="relative group ml-2 inline-block">
-                    <div className="border-2 border-blue-500 rounded-full mt-1 ml-4 p-1 sm:p-1 lg:p-1 flex items-center justify-center hover:bg-blue-100 cursor-pointer">
+                <div className="position-relative d-inline-block ms-2">
+                    <div className="border border-2 border-primary rounded-circle mt-1 ms-4 p-1 d-flex align-items-center justify-content-center" style={{ cursor: 'pointer' }}>
                         <Icon
                             colorVariant="primary"
                             height="12px"
@@ -234,33 +235,33 @@ const PatientProfile: React.FC = () => {
 
             {/* Main Content */}
             {isLoading ? (
-                <div className="flex justify-center items-center h-screen">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
+                <div className="flex justify-center items-center h-screen w-screen">
+                    <Loader loaderType="spin" />
                 </div>
             ) : (
-                <div className="flex min-h-screen w-screen">
-                    <div className="flex flex-1 w-screen">
+                <div className="min-vh-100 min-vw-100">
+                    <div className="d-flex flex-column flex-lg-row min-vh-100 min-vw-100">
                         {/* Left Section */}
-                        <div className="w-1/2 flex flex-col justify-center items-center bg-blue-500 p-5 relative">
+                        <div className="w-100 w-lg-100 d-flex flex-column justify-content-center align-items-center bg-primary p-4 position-relative">
                             {/* Tab Headers */}
-                            <div className="flex mb-0">
+                            <div className="d-flex mb-0">
                                 <div
-                                    className={`px-3 py-1 fw-bold cursor-pointer border-2 border-white  rounded-top-2 ${activeTab === "photo"
-                                        ? "bg-blue-500 text-white"
-                                        : "bg-blue-500 text-white opacity-75"
+                                    className={`px-3 py-1 fw-bold border border-2 border-white rounded-top-2 ${activeTab === "photo"
+                                            ? "bg-primary text-white"
+                                            : "bg-primary text-white opacity-75"
                                         }`}
+                                    style={{ cursor: 'pointer' }}
                                     onClick={() => setActiveTab("photo")}
                                 >
                                     Photo
                                 </div>
                                 {ApiPath.isIDDriverLicenceEnabled && (
                                     <div
-                                        className={`px-3 py-1 fw-bold cursor-pointer border-2 border-white rounded-top-2 ${activeTab === "id"
-                                            ? "bg-blue-500 text-white"
-                                            : "bg-blue-500 text-white opacity-75"
+                                        className={`px-3 py-1 fw-bold border border-2 border-white rounded-top-2 ${activeTab === "id"
+                                                ? "bg-primary text-white"
+                                                : "bg-primary text-white opacity-75"
                                             }`}
+                                        style={{ cursor: 'pointer' }}
                                         onClick={() => setActiveTab("id")}
                                     >
                                         ID/Driver's License
@@ -270,7 +271,7 @@ const PatientProfile: React.FC = () => {
 
                             {/* Profile Image Box */}
                             <div
-                                className="d-flex justify-content-center align-items-center bg-blue-500 p-2 border-2 border-white border-top-0"
+                                className="d-flex justify-content-center align-items-center bg-primary p-2 border border-2 border-white border-top-0"
                                 style={{
                                     width: "256px",
                                     height: "230px",
@@ -297,12 +298,11 @@ const PatientProfile: React.FC = () => {
                                 )}
                             </div>
 
-
                             {/* Icons */}
-                            <div className="flex gap-4 mb-1">
+                            <div className="d-flex gap-3 mb-1">
                                 {/* Upload from Files */}
                                 <label
-                                    className="flex justify-center items-center "
+                                    className="d-flex justify-content-center align-items-center"
                                     style={{ width: "56px", height: "56px", cursor: "pointer" }}
                                 >
                                     <Icon
@@ -323,7 +323,7 @@ const PatientProfile: React.FC = () => {
 
                                 {/* Open Camera */}
                                 <label
-                                    className="flex justify-center items-center "
+                                    className="d-flex justify-content-center align-items-center"
                                     style={{ width: "56px", height: "56px", cursor: "pointer" }}
                                 >
                                     <Icon
@@ -346,7 +346,7 @@ const PatientProfile: React.FC = () => {
                                 {/* Delete Image */}
                                 <button
                                     type="button"
-                                    className="flex justify-center items-center bg-transparent p-0"
+                                    className="d-flex justify-content-center align-items-center bg-transparent p-0 border-0"
                                     style={{
                                         width: "56px",
                                         height: "56px",
@@ -368,7 +368,7 @@ const PatientProfile: React.FC = () => {
 
                             {/* Name Section */}
                             <div
-                                className="bg-blue-500 text-white p-1 rounded position-relative"
+                                className="bg-primary text-white p-1 rounded position-relative"
                                 style={{ width: "70%" }}
                             >
                                 {/* Header Row */}
@@ -376,14 +376,14 @@ const PatientProfile: React.FC = () => {
                                     <label className="form-label text-white mb-0">Name</label>
                                     {editing ? (
                                         <button
-                                            className="btn btn-link p-0 text-white"
+                                            className="btn btn-link p-0 text-white text-decoration-none"
                                             onClick={handleSaveName}
                                         >
                                             Save
                                         </button>
                                     ) : (
                                         <button
-                                            className="btn btn-link p-0 pl-24 text-white bg-transparent focus-none"
+                                            className="btn btn-link p-0 text-white text-decoration-none bg-transparent"
                                             onClick={() => setEditing(true)}
                                         >
                                             Edit
@@ -396,14 +396,16 @@ const PatientProfile: React.FC = () => {
                                     <div className="mb-3">
                                         <input
                                             type="text"
-                                            className="form-control mb-2 bg-blue-200 text-black py-2 px-3 fs-5"
+                                            className="form-control mb-2 text-dark py-2 px-3 fs-5"
+                                            style={{ backgroundColor: '#bfdbfe' }}
                                             placeholder="First Name"
                                             value={firstName}
                                             onChange={(e) => setFirstName(e.target.value)}
                                         />
                                         <input
                                             type="text"
-                                            className="form-control bg-blue-200 text-dark py-2 px-3 fs-5"
+                                            className="form-control text-dark py-2 px-3 fs-5"
+                                            style={{ backgroundColor: '#bfdbfe' }}
                                             placeholder="Last Name"
                                             value={lastName}
                                             onChange={(e) => setLastName(e.target.value)}
@@ -411,38 +413,38 @@ const PatientProfile: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="mb-3">
-                                        <p className="bg-blue-200 text-dark py-2 px-3 fs-5 mb-2 rounded">{firstName}</p>
-                                        <p className="bg-blue-200 text-dark py-2 px-3 fs-5 rounded">{lastName}</p>
+                                        <p className="text-dark py-2 px-3 fs-5 mb-2 rounded" style={{ backgroundColor: '#bfdbfe' }}>{firstName}</p>
+                                        <p className="text-dark py-2 px-3 fs-5 rounded" style={{ backgroundColor: '#bfdbfe' }}>{lastName}</p>
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Right Section */}
-                        <div className="flex flex-col w-50 bg-white  pl-16 pt-10 align-item-center mt-20 ml-10">
+                        <div className="d-flex flex-column w-100 w-lg-50 bg-white ps-3 ps-lg-5 pt-3 pt-lg-5 align-items-center mt-3 mt-lg-5 ms-0 ms-lg-4">
                             {/* Change Username */}
-                            <div className="hover:bg-gray-100 p-2 mr-40">
-                                <a href="/update-username" className="text-3xl d-block text-black no-underline mb-2">
+                            <div className="p-2 w-100" style={{ maxWidth: '600px' }}>
+                                <a href="/update-username" className="h2 d-block text-black text-decoration-none mb-2">
                                     Change Username
                                 </a>
-                                <small className="text-lg text-muted">
+                                <small className="fs-6 text-muted">
                                     Change your email address for login
                                 </small>
                             </div>
-                            <hr className="mt-0 mr-40 mb-0" />
+                            <hr className="mt-0 mb-0 w-100" style={{ maxWidth: '600px' }} />
 
                             {/* Change Password */}
-                            <div className="hover:bg-gray-100 p-2 mr-40">
-                                <a href="/update-password" className="text-3xl d-block text-black no-underline mb-2">
+                            <div className="p-2 w-100" style={{ maxWidth: '600px' }}>
+                                <a href="/update-password" className="h2 d-block text-black text-decoration-none mb-2">
                                     Change Password
                                 </a>
-                                <small className="text-lg text-muted">Last changed on: {lastChangePasswordDate || "N/A"}</small>
+                                <small className="fs-6 text-muted">Last changed on: {lastChangePasswordDate || "N/A"}</small>
                             </div>
-                            <hr className="mt-0 mr-40 mb-0" />
+                            <hr className="mt-0 mb-0 w-100" style={{ maxWidth: '600px' }} />
 
                             {/* Make Account Inactive */}
-                            <div className="hover:bg-gray-100 pt-3 pl-2 mr-40 pb-3">
-                                <a href="/opt-out" className="text-3xl d-block text-black no-underline mb-2 text-danger">
+                            <div className="pt-3 ps-2 pb-3 w-100" style={{ maxWidth: '600px' }}>
+                                <a href="/opt-out" className="h2 d-block text-black text-decoration-none mb-2 text-danger">
                                     Make My Account Inactive
                                 </a>
                             </div>

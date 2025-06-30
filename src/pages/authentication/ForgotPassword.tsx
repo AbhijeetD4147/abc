@@ -218,12 +218,12 @@ const ForgotPassword: React.FC<PageProps> = () => {
 
 
     return (
-        <div className="flex flex-col md:flex-row min-h-screen w-screen">
-            <div className="flex flex-col md:flex-row flex-1">
+        <div className="container-fluid d-flex flex-column min-vh-100 min-vw-100 p-0">
+            <div className="row flex-grow-1 g-0">
                 {/* Left Panel */}
-                <div className="w-full md:w-1/2 flex flex-col bg-white p-2 md:p-10 relative flex-1">
+                <div className="col-12 col-md-6 d-flex flex-column bg-white p-2 p-md-5">
                     {/* Centered Logo */}
-                    <div className="flex-1 flex justify-center items-center">
+                    <div className="flex-grow-1 d-flex justify-content-center align-items-center">
                         <img
                             src={
                                 GlobalParams.LOGO
@@ -231,21 +231,22 @@ const ForgotPassword: React.FC<PageProps> = () => {
                                     : ''
                             }
                             alt="Company Logo"
-                            className="w-60 max-w-full h-auto inline-block align-middle"
+                            className="img-fluid"
+                            style={{ maxWidth: '240px', height: 'auto' }}
                         />
                     </div>
 
                     {/* Footer at Bottom */}
-                    <div className="flex-shrink-0 m-0">
-                        <div className="hidden md:flex flex-col md:flex-row justify-between items-center gap-2">
-                            <img src={MaximEyes} alt="Maximeyes Logo" className="h-16 w-auto" />
-                            <div className="text-xs text-center md:text-right">
+                    <div className="flex-shrink-0">
+                        <div className="d-none d-md-flex justify-content-between align-items-center gap-2">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '64px', width: 'auto' }} />
+                            <div className="text-end" style={{ fontSize: '0.75rem' }}>
                                 &copy; 2025, First Insight Corporation. All rights reserved.
                             </div>
                         </div>
-                        <div className="flex md:hidden flex-row items-center justify-between gap-3 px-2 py-2 bg-white rounded-lg">
-                            <img src={MaximEyes} alt="Maximeyes Logo" className="h-8 w-auto" />
-                            <div className="text-xs text-center text-gray-600">
+                        <div className="d-flex d-md-none align-items-center justify-content-between gap-3 px-2 py-2 bg-white rounded">
+                            <img src={MaximEyes} alt="Maximeyes Logo" className="img-fluid" style={{ height: '32px', width: 'auto' }} />
+                            <div className="text-center text-muted" style={{ fontSize: '0.75rem' }}>
                                 &copy; 2025, First Insight Corporation. All rights reserved.
                             </div>
                         </div>
@@ -254,16 +255,27 @@ const ForgotPassword: React.FC<PageProps> = () => {
 
                 {/* Right Panel */}
                 <div
-                    className="w-full md:w-1/2 flex flex-col justify-center items-center p-6 md:p-10"
+                    className="col-12 col-md-6 d-flex flex-column justify-content-center align-items-center p-3 p-md-5"
                     style={{ backgroundColor: theme.BGColor, color: theme.secondaryTextColor }}
                 >
-                    <div className="w-full max-w-md">
+                    <div className="w-100" style={{ maxWidth: '400px' }}>
                         {/* Header Icon */}
-                        <div className="flex justify-center mb-8 relative">
-                            <div className="border-2 rounded-full p-4 sm:p-6 lg:p-8 flex items-center justify-center hover:bg-blue-600 cursor-pointer">
+                        <div className="d-flex justify-content-center mb-4 position-relative">
+                            <div
+                                className="border border-2 rounded-circle p-3 p-sm-4 p-lg-5 d-flex align-items-center justify-content-center"
+                                style={{
+                                    cursor: 'pointer',
+                                    transition: 'background-color 0.3s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#0d6efd';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                            >
                                 <Icon
                                     colorVariant="light"
-
                                     height="60px"
                                     isCursorPointer
                                     isbadge
@@ -272,24 +284,23 @@ const ForgotPassword: React.FC<PageProps> = () => {
                                     width="60px"
                                 />
                             </div>
-
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-3xl font-light text-center mb-2 text-white">
+                        <h1 className="h2 fw-light text-center mb-2 text-white">
                             Recover your account
                         </h1>
 
                         {/* Subtitle */}
-                        <div className="text-center mb-5 text-white text-sm">
-                            <p>We can help you reset your password.</p>
-                            <p>Follow the instruction below.</p>
+                        <div className="text-center mb-4 text-white" style={{ fontSize: '0.875rem' }}>
+                            <p className="mb-1">We can help you reset your password.</p>
+                            <p className="mb-0">Follow the instruction below.</p>
                         </div>
 
                         {/* Username Input */}
                         <div className="mb-3">
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <div className="position-relative">
+                                <div className="position-absolute top-50 start-0 translate-middle-y ps-3">
                                     <Icon name="user" height="20px" width="20px" colorVariant="dark" stroke />
                                 </div>
                                 <input
@@ -298,28 +309,48 @@ const ForgotPassword: React.FC<PageProps> = () => {
                                     onChange={handleUsernameChange}
                                     onBlur={handleUsernameBlur}
                                     placeholder="Username"
-                                    className={`w-full pl-10 pr-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${usernameError ? 'border-red-600 bg-red-100' : 'border-gray-300 bg-white'
-                                        } focus:outline-none focus:border-blue-500`}
+                                    className={`form-control ps-5 py-2 ${usernameError ? 'border-danger bg-danger bg-opacity-10' : 'border-secondary'
+                                        }`}
+                                    style={{
+                                        borderWidth: '2px',
+                                        borderRadius: '0.5rem'
+                                    }}
                                 />
                             </div>
                             {usernameError && (
-                                <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
+                                <div className="bg-danger text-white px-3 py-2 mt-1 fw-medium" style={{
+                                    fontSize: '0.875rem',
+                                    borderRadius: '0 0 0.5rem 0.5rem'
+                                }}>
                                     {usernameError}
                                 </div>
                             )}
                         </div>
 
                         {/* Captcha Section */}
-                        <div className="mb-6">
-                            <div className="flex flex-wrap items-center gap-2 mb-4">
-                                <div className="bg-white px-4 py-2 rounded border-2 border-gray-300 font-mono text-lg font-bold text-gray-800 tracking-wider">
+                        <div className="mb-4">
+                            <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                <div className="bg-white px-3 py-2 border border-2 border-secondary rounded fw-bold text-dark" style={{
+                                    fontFamily: 'monospace',
+                                    fontSize: '1.125rem',
+                                    letterSpacing: '0.1em'
+                                }}>
                                     {captchaCode}
                                 </div>
                                 <button
                                     type="button"
                                     onClick={generateCaptcha}
-                                    className="text-white text-base underline hover:no-underline"
-                                    style={{ backgroundColor: theme.BGColor }}
+                                    className="btn btn-link text-white text-decoration-underline p-0"
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        fontSize: '1rem'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.classList.remove('text-decoration-underline');
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.classList.add('text-decoration-underline');
+                                    }}
                                 >
                                     Refresh
                                 </button>
@@ -331,22 +362,29 @@ const ForgotPassword: React.FC<PageProps> = () => {
                                 value={captchaInput}
                                 onChange={handleCaptchaChange}
                                 placeholder="Enter the symbols shown above"
-                                className={`w-full px-4 py-2 rounded-lg text-gray-900 placeholder-gray-600 border-2 ${captchaError ? 'border-red-600 bg-red-100' : 'border-gray-300 bg-white'
-                                    } focus:outline-none focus:border-blue-500`}
+                                className={`form-control py-2 ${captchaError ? 'border-danger bg-danger bg-opacity-10' : 'border-secondary'
+                                    }`}
+                                style={{
+                                    borderWidth: '2px',
+                                    borderRadius: '0.5rem'
+                                }}
                             />
                             {captchaError && (
-                                <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
+                                <div className="bg-danger text-white px-3 py-2 mt-1 fw-medium" style={{
+                                    fontSize: '0.875rem',
+                                    borderRadius: '0 0 0.5rem 0.5rem'
+                                }}>
                                     {captchaError}
                                 </div>
                             )}
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
+                        <div className="d-flex flex-column flex-sm-row gap-2">
                             <Button
                                 colorVariant="default"
                                 onClick={handleCancel}
-                                className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
+                                className="btn btn-outline-light flex-fill py-2"
                                 isDisabled={isLoading}
                             >
                                 Cancel
@@ -354,7 +392,7 @@ const ForgotPassword: React.FC<PageProps> = () => {
                             <Button
                                 colorVariant="default"
                                 onClick={handleSubmit}
-                                className="w-full sm:flex-1 py-2 rounded-lg border-2 border-white text-white bg-transparent hover:bg-white hover:text-blue-600 transition-colors"
+                                className="btn btn-outline-light flex-fill py-2"
                                 isDisabled={
                                     isLoading || !!usernameError || !!captchaError || !username || !captchaInput
                                 }
@@ -363,11 +401,6 @@ const ForgotPassword: React.FC<PageProps> = () => {
                             </Button>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div className="md:hidden w-full py-1 px-3 bg-white border-t border-gray-200">
-                <div className="text-xs text-gray-400 text-center">
-                    <Footer />
                 </div>
             </div>
         </div>

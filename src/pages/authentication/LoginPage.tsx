@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { getTheme } from "../../utils/ThemeSelection";
 import { GlobalParams } from '../../utils/GlobalParameters';
@@ -9,6 +9,7 @@ import { AuthenticationService } from "../../services/authentication/UserService
 import { ApiPath } from "../../utils/constants";
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import MaximEyes from '../../assets/maximeyeslogo.png';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface SignInProps {
   logoUrl: string;
@@ -139,11 +140,11 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-screen">
+    <div className="container-fluid d-flex flex-column flex-md-row" style={{ minHeight: '100vh', minWidth: '100vw' }}>
       {/* Left Panel */}
-      <div className="w-full md:w-1/2 flex flex-col bg-white p-2 md:p-10 relative flex-1">
+      <div className="col-12 col-md-6 d-flex flex-column bg-white p-2 p-md-5 position-relative">
         {/* Centered Logo */}
-        <div className="flex-1 flex justify-center items-center">
+        <div className="flex-grow-1 d-flex justify-content-center align-items-center">
           <img
             src={
               GlobalParams.LOGO
@@ -151,21 +152,22 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
                 : ''
             }
             alt="Company Logo"
-            className="w-60 max-w-full h-auto inline-block align-middle"
+            className="img-fluid"
+            style={{ width: '15rem', maxWidth: '100%', height: 'auto' }}
           />
         </div>
         
         {/* Footer at Bottom */}
         <div className="flex-shrink-0 m-0">
-          <div className="hidden md:flex flex-col md:flex-row justify-between items-center gap-2">
-            <img src={MaximEyes} alt="Maximeyes Logo" className="h-16 w-auto" />
-            <div className="text-xs text-center md:text-right">
+          <div className="d-none d-md-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <img src={MaximEyes} alt="Maximeyes Logo" className="" style={{ height: '3rem', width: 'auto' }} />
+            <div className="small text-center text-md-end">
               &copy; 2025, First Insight Corporation. All rights reserved.
             </div>
           </div>
-          <div className="flex md:hidden flex-row items-center justify-between gap-3 px-2 py-2 bg-white rounded-lg">
-            <img src={MaximEyes} alt="Maximeyes Logo" className="h-8 w-auto" />
-            <div className="text-xs text-center text-gray-600">
+          <div className="d-flex d-md-none flex-row align-items-center justify-content-between gap-3 px-2 py-2 bg-white rounded">
+            <img src={MaximEyes} alt="Maximeyes Logo" className="" style={{ height: '4rem', width: 'auto' }} />
+            <div className="small text-center text-muted">
               &copy; 2025, First Insight Corporation. All rights reserved.
             </div>
           </div>
@@ -174,40 +176,44 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
       {/* Right Panel */}
       <div
-        className="w-full md:w-1/2 flex flex-col justify-center items-center p-6 md:p-10 flex-1"
+        className="col-12 col-md-6 d-flex flex-column justify-content-center align-items-center p-3 p-md-5"
         style={{ backgroundColor: theme.BGColor, color: theme.secondaryTextColor }}
       >
         {/* Logged Out Screen */}
         {isLoggedOut ? (
-          <div className="flex flex-col w-full max-w-md text-center">
+          <div className="d-flex flex-column w-100 text-center" style={{ maxWidth: '28rem' }}>
             {/* Lock Icon */}
-            <div className="text-center mb-6">
-              <div className="w-24 h-24 mx-auto mb-6 rounded-full border-4 border-white flex items-center justify-center">
+            <div className="text-center mb-4">
+              <div 
+                className="mx-auto mb-4 rounded-circle border border-4 border-white d-flex align-items-center justify-content-center"
+                style={{ width: '6rem', height: '6rem' }}
+              >
                 <Icon name="lock" height="40px" width="40px" colorVariant="light" stroke />
               </div>
             </div>
 
             {/* Logged Out Title */}
-            <h2 className="text-2xl font-semibold text-white mb-4">Logged Out</h2>
+            <h2 className="h4 fw-semibold text-white mb-3">Logged Out</h2>
 
             {/* Logged Out Message */}
-            <p className="text-white mb-8 leading-relaxed">
+            <p className="text-white mb-4 lh-base">
               For your security, you have been logged out due to 20 minutes of inactivity. Sign In again.
             </p>
 
             {/* Username Field */}
             <div className="mb-2">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+              <div className="position-relative">
+                <div className="position-absolute top-50 start-0 translate-middle-y ps-3 pe-none" style={{ zIndex: 10 }}>
                   <Icon name="user" height="20px" width="20px" colorVariant="dark" stroke />
                 </div>
                 <input
                   type="text"
                   placeholder="Username"
-                  className="w-full pl-10 pr-4 py-2 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2"
+                  className="form-control form-control-lg ps-5 pe-4 py-2 rounded-3 fs-5 border-2"
                   style={{
                     backgroundColor: theme.textfieldFilledColor,
                     borderColor: theme.textfieldDefaultBorderColor,
+                    color: '#6c757d'
                   }}
                 />
               </div>
@@ -215,7 +221,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
             <Link
               to="/forgot-username"
-              className="text-base underline mb-4 text-left"
+              className="text-decoration-underline mb-3 text-start"
               style={{ color: theme.secondaryTextColor }}
             >
               Forgot Username?
@@ -223,17 +229,18 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
             {/* Password Field */}
             <div className="mb-2">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+              <div className="position-relative">
+                <div className="position-absolute top-50 start-0 translate-middle-y ps-3 pe-none" style={{ zIndex: 10 }}>
                   <Icon name="lock" height="20px" width="20px" colorVariant="dark" stroke />
                 </div>
                 <input
                   type="password"
                   placeholder="Password"
-                  className="w-full pl-10 pr-4 py-2 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2"
+                  className="form-control form-control-lg ps-5 pe-4 py-2 rounded-3 fs-5 border-2"
                   style={{
                     backgroundColor: theme.textfieldFilledColor,
                     borderColor: theme.textfieldDefaultBorderColor,
+                    color: '#6c757d'
                   }}
                 />
               </div>
@@ -241,7 +248,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
             <Link
               to="/forgot-password"
-              className="text-base underline mb-6 text-left"
+              className="text-decoration-underline mb-4 text-start"
               style={{ color: theme.secondaryTextColor }}
             >
               Forgot Password?
@@ -250,11 +257,12 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
             {/* Sign In Button */}
             <button
               onClick={handleBackToSignIn}
-              className="w-full px-6 py-2 text-lg font-medium border rounded-full hover:bg-blue-200 hover:text-white transition duration-200"
+              className="btn w-100 px-4 py-2 fs-5 fw-medium border rounded-pill"
               style={{
                 backgroundColor: theme.BGColor,
                 borderColor: theme.secondaryTextColor,
-                color: theme.secondaryTextColor
+                color: theme.secondaryTextColor,
+                transition: 'background-color 0.2s'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = theme.ButtonHover;
@@ -267,34 +275,38 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
             </button>
           </div>
         ) : isAccountLocked ? (
-          <div className="flex flex-col w-full max-w-md text-center">
+          <div className="d-flex flex-column w-100 text-center" style={{ maxWidth: '28rem' }}>
             {/* Lock Icon */}
-            <div className="text-center mb-6">
-              <div className="w-24 h-24 mx-auto mb-6 rounded-full border-4 border-white flex items-center justify-center">
+            <div className="text-center mb-4">
+              <div 
+                className="mx-auto mb-4 rounded-circle border border-4 border-white d-flex align-items-center justify-content-center"
+                style={{ width: '6rem', height: '6rem' }}
+              >
                 <Icon name="lock" height="40px" width="40px" colorVariant="light" stroke />
               </div>
             </div>
 
             {/* Account Locked Title */}
-            <h2 className="text-2xl font-semibold text-white mb-4">Account Locked</h2>
+            <h2 className="h4 fw-semibold text-white mb-3">Account Locked</h2>
 
             {/* Account Locked Message */}
-            <p className="text-white mb-6 leading-relaxed">
+            <p className="text-white mb-3 lh-base">
               Your account has been temporarily locked due to multiple failed sign in attempts.
             </p>
 
-            <p className="text-white mb-8 leading-relaxed">
+            <p className="text-white mb-4 lh-base">
               You can unlock your account after {Math.ceil((timeRemaining || 0) / 60)} minutes from the time locked, by clicking forgot password link.
             </p>
 
             {/* Back to Sign In Button */}
             <button
               onClick={handleBackToSignIn}
-              className="w-full px-6 py-3 text-lg font-medium border rounded-full hover:bg-blue-200 hover:text-white transition duration-200"
+              className="btn w-100 px-4 py-3 fs-5 fw-medium border rounded-pill"
               style={{
                 backgroundColor: 'transparent',
                 borderColor: theme.secondaryTextColor,
-                color: theme.secondaryTextColor
+                color: theme.secondaryTextColor,
+                transition: 'background-color 0.2s'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = theme.ButtonHover;
@@ -308,23 +320,24 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
           </div>
         ) : (
           /* Login Form */
-          <form className="flex flex-col w-full max-w-md" onSubmit={handleSubmit(onSubmit)}>
+          <form className="d-flex flex-column w-100" style={{ maxWidth: '28rem' }} onSubmit={handleSubmit(onSubmit)}>
             {/* Logo on top */}
-            <div className="text-center mb-10">
+            <div className="text-center mb-5">
               <img
                 src={loginFailed ? "/signin-failed-logo.png" : "/profile-logo-white.png"}
                 alt="Profile"
-                className="w-24 h-24 mx-auto mb-6"
+                className="mx-auto mb-4"
+                style={{ width: '6rem', height: '6rem' }}
               />
               {loginFailed && (
-                <h2 className="text-xl font-semibold text-white mb-2">Sign In attempt failed</h2>
+                <h2 className="h5 fw-semibold text-white mb-2">Sign In attempt failed</h2>
               )}
             </div>
 
             {/* Error Message Lines Above Username */}
             {loginFailed && errorMessage && (
-              <div className="mb-4">
-                <p className="text-white text-center leading-relaxed">
+              <div className="mb-3">
+                <p className="text-white text-center lh-base">
                   {errorMessage}
                 </p>
               </div>
@@ -332,26 +345,28 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
             {/* Username Field */}
             <div className="mb-2">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+              <div className="position-relative">
+                <div className="position-absolute top-50 start-0 translate-middle-y ps-3 pe-none" style={{ zIndex: 10 }}>
                   <Icon name="user" height="20px" width="20px" colorVariant="dark" stroke />
                 </div>
                 <input
                   type="text"
                   placeholder="Username"
                   {...register("username", { required: "Username is required" })}
-                  className={`w-full pl-10 pr-4 py-2 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${errors.username ? "bg-red-100 border-red-500" : ""
-                    }`}
+                  className={`form-control form-control-lg ps-5 pe-4 py-2 rounded-3 fs-5 border-2 ${
+                    errors.username ? "bg-danger-subtle border-danger" : ""
+                  }`}
                   style={{
                     backgroundColor: theme.textfieldFilledColor,
                     borderColor: errors.username
                       ? "crimson"
                       : theme.textfieldDefaultBorderColor,
+                    color: '#6c757d'
                   }}
                 />
               </div>
               {errors.username && (
-                <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
+                <div className="bg-danger text-white px-3 py-2 rounded-bottom mt-0 small fw-medium" style={{ marginTop: '-1px' }}>
                   {errors.username.message as string}
                 </div>
               )}
@@ -359,7 +374,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
             <Link
               to="/forgot-username"
-              className="text-base underline mb-4"
+              className="text-decoration-underline mb-3"
               style={{ color: theme.secondaryTextColor }}
             >
               Forgot Username?
@@ -367,26 +382,28 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
             {/* Password Field */}
             <div className="mb-2">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+              <div className="position-relative">
+                <div className="position-absolute top-50 start-0 translate-middle-y ps-3 pe-none" style={{ zIndex: 10 }}>
                   <Icon name="lock" height="20px" width="20px" colorVariant="dark" stroke />
                 </div>
                 <input
                   type="password"
                   placeholder="Password"
                   {...register("password", { required: "Password is required" })}
-                  className={`w-full pl-10 pr-4 py-2 rounded-lg text-xl text-gray-900 placeholder-gray-600 border-2 ${errors.password ? "bg-red-100 border-red-500" : ""
-                    }`}
+                  className={`form-control form-control-lg ps-5 pe-4 py-2 rounded-3 fs-5 border-2 ${
+                    errors.password ? "bg-danger-subtle border-danger" : ""
+                  }`}
                   style={{
                     backgroundColor: theme.textfieldFilledColor,
                     borderColor: errors.password
                       ? "crimson"
                       : theme.textfieldDefaultBorderColor,
+                    color: '#6c757d'
                   }}
                 />
               </div>
               {errors.password && (
-                <div className="bg-red-600 text-white px-4 py-2 rounded-b-lg -mt-1 text-sm font-medium">
+                <div className="bg-danger text-white px-3 py-2 rounded-bottom mt-0 small fw-medium" style={{ marginTop: '-1px' }}>
                   {errors.password.message as string}
                 </div>
               )}
@@ -394,7 +411,7 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
 
             <Link
               to="/forgot-password"
-              className="text-base underline mb-6"
+              className="text-decoration-underline mb-4"
               style={{ color: theme.secondaryTextColor }}
             >
               Forgot Password?
@@ -404,10 +421,13 @@ const LoginPage: React.FC<SignInProps> = ({ logoUrl, companyName }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-6 py-2 text-lg font-medium border rounded-full hover:bg-blue-200 hover:text-white transition duration-200 disabled:opacity-50"
+              className="btn w-100 px-4 py-2 fs-5 fw-medium border rounded-pill disabled:opacity-50"
               style={{
                 backgroundColor: theme.BGColor,
                 borderColor: theme.secondaryTextColor,
+                color: theme.secondaryTextColor,
+                transition: 'background-color 0.2s',
+                opacity: isLoading ? 0.5 : 1
               }}
               onMouseEnter={(e) => {
                 if (!isLoading) {
