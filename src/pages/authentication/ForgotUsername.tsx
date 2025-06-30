@@ -119,7 +119,7 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
             return;
         }
 
-        if (captchaInput !== captchaCode) {
+        if (captchaInput !== captchaCode.trim()) {
             setCaptchaError('Captcha does not match');
             return;
         }
@@ -179,7 +179,7 @@ const ForgotUsername: React.FC<PageProps> = ({ logoUrl, companyName }) => {
         const value = e.target.value;
         setCaptchaInput(value);
 
-        if (value && value !== captchaCode) {
+        if (value && value !== captchaCode.trim()) {
             setCaptchaError('Captcha does not match');
         } else {
             setCaptchaError('');
