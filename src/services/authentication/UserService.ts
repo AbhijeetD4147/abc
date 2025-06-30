@@ -334,7 +334,8 @@ export class AuthenticationService {
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_3 = 205;
             } else if (response.status === 200) {
-                this.isSent = response.data;
+                // Convert response.data to boolean
+                this.isSent = (response.data === true || response.data === "true" || String(response.data).toLowerCase() === "true") ? "true" : "false";
                 this.response_Status_Code_API_3 = response.status;
             } else {
                 this.maximum_Calling_API_3 = this.maximum_Calling_API_3 + 1;

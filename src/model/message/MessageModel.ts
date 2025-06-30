@@ -553,3 +553,143 @@ export class MessageThreadModel implements MessageThread {
     return data;
   }
 }
+
+// Add this interface at the end of the file
+export interface MessageForward {
+  ptcustomerId?: number;
+  toEmail?: string;
+  isActive?: boolean;
+  messageSubject?: string;
+  messageText?: string;
+  messageDateTime?: string;
+  messageStatus?: string;
+  isDirectMessage?: boolean;
+  kno2Id?: string;
+  isCustomer?: boolean;
+  isIncoming?: boolean;
+  isFavourite?: boolean;
+  isReplied?: boolean;
+  parentMessageId?: number;
+  ptPracticePersonId?: number;
+  userId?: number;
+  switchUserId?: number;
+  ptMessageAttachment?: MessageAttachment[];
+}
+
+// Add this class implementation after the interface
+export class MessageForwardModel implements MessageForward {
+  ptcustomerId?: number;
+  toEmail?: string;
+  isActive?: boolean;
+  messageSubject?: string;
+  messageText?: string;
+  messageDateTime?: string;
+  messageStatus?: string;
+  isDirectMessage?: boolean;
+  kno2Id?: string;
+  isCustomer?: boolean;
+  isIncoming?: boolean;
+  isFavourite?: boolean;
+  isReplied?: boolean;
+  parentMessageId?: number;
+  ptPracticePersonId?: number;
+  userId?: number;
+  switchUserId?: number;
+  ptMessageAttachment?: MessageAttachmentModel[];
+
+  constructor({
+    ptcustomerId,
+    toEmail,
+    isActive,
+    messageSubject,
+    messageText,
+    messageDateTime,
+    messageStatus,
+    isDirectMessage,
+    kno2Id,
+    isCustomer,
+    isIncoming,
+    isFavourite,
+    isReplied,
+    parentMessageId,
+    ptPracticePersonId,
+    userId,
+    switchUserId,
+    ptMessageAttachment,
+  }: MessageForward) {
+    this.ptcustomerId = ptcustomerId;
+    this.toEmail = toEmail;
+    this.isActive = isActive;
+    this.messageSubject = messageSubject;
+    this.messageText = messageText;
+    this.messageDateTime = messageDateTime;
+    this.messageStatus = messageStatus;
+    this.isDirectMessage = isDirectMessage;
+    this.kno2Id = kno2Id;
+    this.isCustomer = isCustomer;
+    this.isIncoming = isIncoming;
+    this.isFavourite = isFavourite;
+    this.isReplied = isReplied;
+    this.parentMessageId = parentMessageId;
+    this.ptPracticePersonId = ptPracticePersonId;
+    this.userId = userId;
+    this.switchUserId = switchUserId;
+    this.ptMessageAttachment = ptMessageAttachment?.map(
+      (attachment) => new MessageAttachmentModel(attachment)
+    );
+  }
+
+  static fromJson(json: { [key: string]: any }): MessageForwardModel {
+    return new MessageForwardModel({
+      ptcustomerId: json['ptcustomerId'],
+      toEmail: json['toEmail'],
+      isActive: json['isActive'],
+      messageSubject: json['messageSubject'],
+      messageText: json['messageText'],
+      messageDateTime: json['messageDateTime'],
+      messageStatus: json['messageStatus'],
+      isDirectMessage: json['isDirectMessage'],
+      kno2Id: json['kno2Id'],
+      isCustomer: json['isCustomer'],
+      isIncoming: json['isIncoming'],
+      isFavourite: json['isFavourite'],
+      isReplied: json['isReplied'],
+      parentMessageId: json['parentMessageId'],
+      ptPracticePersonId: json['ptPracticePersonId'],
+      userId: json['userId'],
+      switchUserId: json['switchUserId'],
+      ptMessageAttachment: json['ptMessageAttachment']
+        ? (json['ptMessageAttachment'] as any[]).map((i) =>
+            MessageAttachmentModel.fromJson(i)
+          )
+        : undefined,
+    });
+  }
+
+  toJson(): { [key: string]: any } {
+    const data: { [key: string]: any } = {};
+    data['ptcustomerId'] = this.ptcustomerId;
+    data['toEmail'] = this.toEmail;
+    data['isActive'] = this.isActive;
+    data['messageSubject'] = this.messageSubject;
+    data['messageText'] = this.messageText;
+    data['messageDateTime'] = this.messageDateTime;
+    data['messageStatus'] = this.messageStatus;
+    data['isDirectMessage'] = this.isDirectMessage;
+    data['kno2Id'] = this.kno2Id;
+    data['isCustomer'] = this.isCustomer;
+    data['isIncoming'] = this.isIncoming;
+    data['isFavourite'] = this.isFavourite;
+    data['isReplied'] = this.isReplied;
+    data['parentMessageId'] = this.parentMessageId;
+    data['ptPracticePersonId'] = this.ptPracticePersonId;
+    data['userId'] = this.userId;
+    data['switchUserId'] = this.switchUserId;
+    if (this.ptMessageAttachment) {
+      data['ptMessageAttachment'] = this.ptMessageAttachment.map((v) =>
+        v.toJson()
+      );
+    }
+    return data;
+  }
+}

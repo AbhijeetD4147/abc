@@ -1,127 +1,86 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:camera/camera.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:first_insight/model/settings/profile_model.dart';
-import 'package:first_insight/screens/settings/optOut/opt_out_screen.dart';
-import 'package:first_insight/screens/settings/profile/camera_screen.dart';
-import 'package:first_insight/utils/base_textstyle.dart';
+import 'package:first_insight/model/authentication/add_authorized_individual_request_model.dart';
+import 'package:first_insight/model/authentication/insert_auth_individual_model.dart';
+import 'package:first_insight/model/patient_portal/ValidatePatientForAddIndividualResponse.dart';
+import 'package:first_insight/screens/authentication/authorized_individual/auth_access_granted.dart';
+import 'package:first_insight/screens/dashboard/dashboard_detail_screen.dart';
+import 'package:first_insight/screens/dashboard/dashboard_screen.dart';
+import 'package:first_insight/services/authentication/user_service.dart';
 import 'package:first_insight/utils/theme_selection_service.dart';
-import 'package:first_insight/utils/popup_menu.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:toastification/toastification.dart';
-import '../../../utils/idle_wrapper.dart';
-import 'update_password_screen.dart';
-import 'update_username_screen.dart';
-import 'package:first_insight/services/settings/profile_service.dart';
-import 'package:first_insight/utils/constants.dart';
-import 'package:first_insight/utils/global_params.dart';
 import 'package:first_insight/utils/appBar.dart';
+import 'package:first_insight/utils/base_textstyle.dart';
 import 'package:first_insight/utils/base_widget.dart';
-import 'package:first_insight/utils/manager.dart';
+import 'package:first_insight/utils/constants.dart';
+import 'package:first_insight/utils/popup_menu.dart';
 import 'package:first_insight/utils/responsive.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:get/get_utils/src/extensions/dynamic_extensions.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:sizer/sizer.dart';
+import 'package:toastification/toastification.dart';
 
-class Profile extends StatefulWidget {
-  const Profile({super.key});
+import '../../utils/idle_wrapper.dart';
+
+// ignore: must_be_immutable
+class RecordMatchFoundScreen extends StatefulWidget {
+  String alertMsg;
+  String userMatchType;
+
+  RecordMatchFoundScreen(
+      {super.key, required this.alertMsg, required this.userMatchType});
 
   @override
-  State<Profile> createState() => _ProfileState();
+  State<RecordMatchFoundScreen> createState() =>
+      _PatientRecordMatchFoundScreenState();
 }
 
-class _ProfileState extends State<Profile> with TickerProviderStateMixin {
-  bool profilePhoto = true;
-  bool idPhoto = false;
-  bool isFileFormatPopupVisible = false;
-  ProfileModel? profileModel;
-  ProfileService profileService = ProfileService();
-  String? profilePhotoBase64;
-  String? idPhotoBase64;
-  String lastPasswordChangeDate = "";
-  TextEditingController firstNameTextEditingController =
-      TextEditingController(text: "");
-  TextEditingController lastNameTextEditingController =
-      TextEditingController(text: "");
-  bool _validateFirstName = false;
-  bool _validateLastName = false;
-  bool isNameEditingEnable = true;
-  bool loading = false;
-  List<CameraDescription> _cameras = [];
-  bool isProfilePhotoDeleting = false;
-  bool isIdPhotoDeleting = false;
-  bool isProfilePhotoUploading = false;
-  bool isIdPhotoUploading = false;
-  late CameraController controller;
-  String contentType = "";
+class _PatientRecordMatchFoundScreenState extends State<RecordMatchFoundScreen>
+    with TickerProviderStateMixin {
+  double height = 0.0;
+  double width = 0.0;
 
-  String tempFirstName = "";
-  String tempLastName = "";
-  final ScrollController _scrollController = ScrollController();
-  List<String> AllowedExtensions = ["jpeg", "png", "jpg", "JPG", "JPEG", "PNG"];
-
-  final FocusNode focusNode = FocusNode();
+  var isSent = "0";
+  ValidatePatientForAddIndividualResponse? userData;
+  AddAuthorizedIndividualRequestModel? addAuthorizedIndividualRequestModel;
+  dynamic argumentData;
+  GlobalKey<ScaffoldState> drawerScaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
-  initState() {
-    getCameraList();
-    getPatientDetail();
+  void initState() {
+    argumentData = Get.arguments;
+    userData = argumentData[0]['responseData'];
+    addAuthorizedIndividualRequestModel = argumentData[1]['accessData'];
     super.initState();
   }
 
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
+  InsertAuthorizedIndividualModel? insertAuthorizedIndividualModel;
+  AuthenticationService authenticationService = new AuthenticationService();
 
-  getCameraList() async {
-    try {
-      WidgetsFlutterBinding.ensureInitialized();
-      _cameras = await availableCameras();
-    } catch (e) {}
-  }
-
-  Future<void> getPatientDetail() async {
+  sendCredential() async {
     setState(() {
-      loading = true;
+      isSent = "1";
     });
 
-    await profileService.getProfileDetail();
-    if (profileService.response_Status_Code_API_1 == 200) {
+    await authenticationService.addAuthPatient(
+        addAuthorizedIndividualRequestModel!.toMap(), widget.userMatchType);
+    if (authenticationService.response_Status_Code_API_14 == 200) {
       setState(() {
-        profileModel = profileService.profileResponseModel;
-        firstNameTextEditingController.text = profileModel!.firstName!;
-        lastNameTextEditingController.text = profileModel!.lastName!;
-        lastPasswordChangeDate = profileModel!.lastChangePasswordDate!;
-        idPhotoBase64 = profileModel!.userIdPhotoBase64;
-        profilePhotoBase64 = profileModel!.userProfilePhotoBase64;
-        if (profilePhotoBase64!.isNotEmpty) {
-          GlobalParams.USER_PROFILE_PHOTO_BASE64 =
-              Base64Decoder().convert(profilePhotoBase64!);
-        } else {
-          GlobalParams.USER_PROFILE_PHOTO_BASE64 = null;
+        insertAuthorizedIndividualModel =
+            authenticationService.insertAuthorizedIndividualModel;
+        if (insertAuthorizedIndividualModel!.insertStatus!) {
+          Get.to(
+              AuthAccessGranted(
+                  locationPhone:
+                      insertAuthorizedIndividualModel!.locationPhone),
+              arguments: userData);
+          isSent = "2";
         }
-        GlobalParams.USER_ID_PHOTO_BASE64 = profileModel!.userIdPhotoBase64!;
-        GlobalParams.USER_INITIAL = profileModel!.userInitial!;
-        tempFirstName = profileModel!.firstName!;
-        tempLastName = profileModel!.lastName!;
-
-        loading = false;
       });
     } else {
-      if (profileService.response_Status_Code_API_1 != 205) {
+      if (authenticationService.response_Status_Code_API_14 != 205) {
         setState(() {
-          loading = false;
+          isSent = "2";
         });
         showToast(
           context,
@@ -133,107 +92,38 @@ class _ProfileState extends State<Profile> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> updatePatientDetail() async {
-    if (profileModel!.userProfilePhotoBase64!.isNotEmpty) {
-      GlobalParams.USER_PROFILE_PHOTO_BASE64 =
-          Base64Decoder().convert(profileModel!.userProfilePhotoBase64!);
-    } else {
-      GlobalParams.USER_PROFILE_PHOTO_BASE64 = null;
-    }
-    GlobalParams.USER_ID_PHOTO_BASE64 = profileModel!.userIdPhotoBase64!;
-    profileModel!.isProfilePhotoDeleting = isProfilePhotoDeleting;
-    profileModel!.isIdPhotoDeleting = isIdPhotoDeleting;
-    profileModel!.isProfilePhotoUploading = isProfilePhotoUploading;
-    profileModel!.isIdPhotoUploading = isIdPhotoUploading;
-    profileModel!.contentType = contentType;
-
-    if (tempFirstName != firstNameTextEditingController.text || //MBT 47776
-        tempLastName != lastNameTextEditingController.text) {
-      profileModel!.isNameChanged = true;
-      profileModel!.firstName = firstNameTextEditingController.text;
-      profileModel!.lastName = lastNameTextEditingController.text;
-    } else {
-      profileModel!.isNameChanged = false;
-    }
-
-    await profileService.saveProfileDetail(profileModel!);
-    if (profileService.response_Status_Code_API_2 == 200 &&
-        profileService.profileResponse.toLowerCase() == 'true') {
-      setState(() {
-        GlobalParams.USER_ID_PIC = GlobalParams.USER_ID_PHOTO_BASE64;
-        isIdPhotoDeleting = false;
-        isProfilePhotoDeleting = false;
-        isProfilePhotoUploading = false;
-        isIdPhotoUploading = false;
-      });
-    } else {
-      if (profileService.response_Status_Code_API_2 != 205) {
-        showToast(
-          context,
-          message:
-              'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
-          type: ToastificationType.error,
-        );
-      }
-    }
-  }
-
-  void _checkForSpecialCharacters(String value) {
-    if (RegExp(r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?~`]')
-        .hasMatch(value)) {
-      // Display a toast message
-      showToast(
-        context,
-        message: 'Special characters are not allowed!',
-        type: ToastificationType.warning,
-      );
-    }
-  }
-
+  @override
   Widget build(BuildContext context) {
+    height = MediaQuery.of(context).size.height;
+    width = MediaQuery.of(context).size.width;
+
     return IdleWrapper(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            ApiPath.isSettingIconPopupVisible = false;
-            ApiPath.isSettingIconPopupOpen.value = true;
-          });
-        },
-        child: Scaffold(
-          body: Stack(
-            children: [
-              Scaffold(
-                appBar: !Responsive.isMobile(context)
-                    ? CommonAppBar(
-                        context,
-                        TabController(length: 6, vsync: this, initialIndex: 0),
-                        setState,
-                        null,
-                        "")
-                    : PreferredSize(
-                        preferredSize: Size(0, 0),
-                        child: SizedBox(),
-                      ),
-                body: loading
-                    ? Center(
-                        child: CircularProgressIndicator(),
-                      )
-                    : Responsive(
-                        mobile: mobileView(),
-                        tablet: webView(),
-                        desktop: webView(),
-                        k4Desktop: webView(),
-                      ),
-              ),
-              Visibility(
-                visible: ApiPath.isSettingIconPopupVisible,
-                child: Positioned(
-                  right: 0.5.w,
-                  top: Responsive.is1600900(context) ? 1.85.h : 2.20.h,
-                  child: MenuOptions(context, setState, true),
-                ),
-              ),
-            ],
+      child: SafeArea(
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              ApiPath.isSettingIconPopupVisible = false;
+              ApiPath.isSettingIconPopupOpen.value = false;
+            });
+          },
+          child: Scaffold(
+            appBar: !Responsive.isMobile(context)
+                ? CommonAppBar(
+                    context,
+                    TabController(length: 6, vsync: this, initialIndex: 0),
+                    setState,
+                    null,
+                    "")
+                : PreferredSize(
+                    preferredSize: Size(0, 0),
+                    child: SizedBox(),
+                  ),
+            body: Responsive(
+              mobile: mobileView(),
+              tablet: webView(),
+              desktop: webView(),
+              k4Desktop: webView(),
+            ),
           ),
         ),
       ),
@@ -241,1071 +131,525 @@ class _ProfileState extends State<Profile> with TickerProviderStateMixin {
   }
 
   Widget mobileView() {
-    return Scrollbar(
-      trackVisibility: true,
-      thumbVisibility: true,
-      controller: _scrollController,
-      child: SingleChildScrollView(
-        controller: _scrollController,
-        child: Column(
-          children: [
-            AppBarMobile(),
-            Container(
-              height: 65.h,
-              child: Scrollbar(child: ProfileSection()),
-            ),
-            Container(
-              height: 29.h,
-              child: OptionsSection(),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget webView() {
     return Column(
       children: [
-        WebHeader(),
+        topBarMobile(),
+        Expanded(
+          flex: 1,
+          child: Container(
+            color: ThemeSelection.BGColor,
+            child: Center(
+              child: widget.userMatchType == 'ExistingPatientPartialMatch' ||
+                      widget.userMatchType == 'ExistingAuthPartialMatch'
+                  ? recordMatchFoundSectionOfExistingPatientPartial()
+                  : recordMatchFoundSection(),
+            ),
+          ),
+        ),
         Container(
-          height: 0.5,
           color: ThemeSelection.greyBorderColor,
+          width: 1.0,
         ),
         Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                flex: 1,
-                child: ProfileSection(),
-              ),
-              Container(
-                width: 0.5,
-                color: ThemeSelection.greyBorderColor,
-              ),
-              Expanded(
-                flex: 1,
-                child: OptionsSection(),
-              )
-            ],
+          flex: 1,
+          child: Container(
+            width: width,
+            color: ThemeSelection.textfieldFilledColor,
+            child: widget.userMatchType == 'ExistingPatientPartialMatch' ||
+                    widget.userMatchType == 'ExistingAuthPartialMatch'
+                ? sendCredentialSectionOfExistingPatientPartial()
+                : sendCredentialSection(),
           ),
         )
       ],
     );
   }
 
-  Widget WebHeader() {
-    return Column(
-      mainAxisSize: MainAxisSize.max,
+  Widget webView() {
+    return Stack(
       children: [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 5),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Profile",
-                style: TextStyle(
-                  fontFamily: 'SegoeUi',
-                  color: ThemeSelection.primaryTextColor,
-                  fontSize: 6.sp,
-                ),
+        Column(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            topBarWeb(),
+            Expanded(
+              flex: 2,
+              child: Container(
+                color: ThemeSelection.BGColor,
+                child: widget.userMatchType == 'ExistingPatientPartialMatch' ||
+                        widget.userMatchType == 'ExistingAuthPartialMatch'
+                    ? recordMatchFoundSectionOfExistingPatientPartial()
+                    : recordMatchFoundSection(),
               ),
-              SizedBox(
-                width: 1.75.w,
+            ),
+            Container(
+              color: ThemeSelection.greyBorderColor,
+              width: 1.0,
+            ),
+            Expanded(
+              flex: 1,
+              child: Container(
+                color: ThemeSelection.secondaryTextColor,
+                child: widget.userMatchType == 'ExistingPatientPartialMatch' ||
+                        widget.userMatchType == 'ExistingAuthPartialMatch'
+                    ? sendCredentialSectionOfExistingPatientPartial()
+                    : sendCredentialSection(),
               ),
-              Transform.scale(
-                scale: Responsive.isk4Desktop(context) ? 1.35 : 1,
-                child: customHoverTooltip(
-                  context,
-                  toolTipMessage:
-                      "Adding the ID/Driver's License will assist the practice in getting the bills and claims resolved faster.",
-                  hoverColor: ThemeSelection.iconHoverSecondaryColor,
-                  iconData: Symbols.info,
-                  iconColor: ThemeSelection.iconDefaultSecondaryColor,
-                ),
-              ),
-            ],
+            )
+          ],
+        ),
+        Visibility(
+          visible: ApiPath.isSettingIconPopupVisible,
+          child: Positioned(
+            right: 0.5.w,
+            child: MenuOptions(context, setState, false),
           ),
         ),
       ],
     );
   }
 
-  Widget AppBarMobile() {
-    return AppBar(
-      backgroundColor: ThemeSelection.BGColor,
-      automaticallyImplyLeading: false,
-      leading: customIconButton(
-        context,
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
-        hoverColor: ThemeSelection.iconHoverPrimaryColor,
-        splashColor: ThemeSelection.iconPressedPrimaryColor,
-        iconData: Symbols.arrow_back,
-        iconColor: ThemeSelection.iconDefaultTertiaryColor,
-      ),
-      title: Row(
+  Widget sendCredentialSection() {
+    return Container(
+      margin: Responsive.isMobile(context)
+          ? EdgeInsets.only(left: 20.0, right: 20.0)
+          : EdgeInsets.all(0.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 1,
-              ),
-            ),
-            child: GlobalParams.USER_PROFILE_PHOTO_BASE64 == null
-                ? Center(
-                    child: Text(
-                      GlobalParams.USER_INITIAL,
-                      style: CommonTextStyle.of(context).H24_SUR(
-                        ThemeSelection.secondaryTextColor,
-                      ),
-                    ),
-                  )
-                : CircleAvatar(
-                    backgroundImage: MemoryImage(
-                      GlobalParams.USER_PROFILE_PHOTO_BASE64!,
-                      scale: Responsive.isMobile(context)
-                          ? 2
-                          : Responsive.isTablet(context)
-                              ? 2
-                              : 1,
-                    ),
-                  ),
-          ),
-          SizedBox(
-            width: 15.0,
-          ),
           Text(
-            "Profile",
-            style: CommonTextStyle.of(context)
-                .H8_SUR(ThemeSelection.secondaryTextColor),
+            'Do you want to grant access to ${userData?.patientName ?? ""}?',
+            style: TextStyle(
+                fontFamily: 'SegoeUi',
+                fontSize: Responsive.isMobile(context) ? 20.0 : width * 0.015,
+                fontWeight: FontWeight.normal,
+                color: ThemeSelection.primaryTextColor),
+            key: ValueKey("Patient Name"),
           ),
           SizedBox(
-            width: 15.0,
+            height: 30.0,
           ),
+          isSent == "1"
+              ? CircularProgressIndicator()
+              : Container(
+                  key: ValueKey("Grant Access"),
+                  child: primaryButton(
+                    context,
+                    () {
+                      sendCredential();
+                    },
+                    "Grant Access",
+                    ThemeSelection.secondaryTextColor,
+                  ),
+                )
         ],
       ),
-      actions: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 5.w),
-          child: customTooltip(
-            context,
-            message:
-                "Adding the ID/Driver's License will assist the practice in getting the bills and claims resolved faster.",
-            child: Icon(
-              Symbols.info,
-              color: ThemeSelection.iconDefaultTertiaryColor,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
-  Future<String> getBase64Image(XFile? image) async {
-    List<int> imageBytes = await File(image!.path).readAsBytesSync();
-    String imgBase64 = base64Encode(imageBytes);
-    return imgBase64;
-  }
-
-  Future<String> getBase64ImageFromCrop(CroppedFile? image) async {
-    List<int> imageBytes = await File(image!.path).readAsBytesSync();
-    String imgBase64 = base64Encode(imageBytes);
-    return imgBase64;
-  }
-
-  Future<CroppedFile?> _cropImage(File imageFile) async {
-    return await ImageCropper().cropImage(
-      sourcePath: imageFile.path,
-      uiSettings: [
-        AndroidUiSettings(
-            toolbarTitle: 'Crop Image',
-            toolbarColor: Colors.deepOrange,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false),
-        IOSUiSettings(
-          minimumAspectRatio: 1.0,
-        ),
-      ],
-    );
-  }
-
-  checkFileSize(PlatformFile file) {
-    final size = file.size / 1024;
-    if (profilePhoto) {
-      if (size <= 2048) {
-        return true;
-      }
-    } else {
-      if (size <= 2048) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  checkFileFormat(PlatformFile file) {
-    final extension = file.extension;
-
-    if (AllowedExtensions.contains(extension)) {
-      if (extension == "jpg" ||
-          extension == "JPG" ||
-          extension == "jpeg" ||
-          extension == "JPEG") {
-        contentType = "jpg";
-      } else {
-        contentType = "png";
-      }
-      return true;
-    }
-    return false;
-  }
-
-  convertFileToBase64(PlatformFile file) {
-    setState(() async {
-      final pickedFile = file.bytes;
-      if (pickedFile != null) {
-        var file64 = base64Encode(pickedFile);
-        if (profilePhoto) {
-          profilePhotoBase64 = file64;
-          profileModel!.userProfilePhotoBase64 = profilePhotoBase64;
-          isProfilePhotoUploading = true;
-        } else {
-          idPhotoBase64 = file64;
-          profileModel!.userIdPhotoBase64 = idPhotoBase64;
-          isIdPhotoUploading = true;
-          isIdPhotoDeleting = false;
-        }
-      }
-    });
-    updatePatientDetail();
-  }
-
-  void loadSelectedFiles(PlatformFile file) {
-    if (checkFileSize(file) && checkFileFormat(file)) {
-      convertFileToBase64(file);
-    } else {
-      if (!checkFileFormat(file)) {
-        showCustomDialog(
-          context,
-          title:
-              "Invalid Image Format! Select an alternative image source file such as a PNG, JPEG or JPG",
-          firstButtonText: "Ok",
-          secondButtonText: "",
-          iconData: Symbols.warning,
-          firstButtonFunction: () {
-            Get.back();
-          },
-        );
-      } else {
-        showToast(
-          context,
-          message: profilePhoto
-              ? 'The attachment size exceeds the allowable limit. Maximum size of attachment allowed is 2 MB.'
-              : 'The attachment size exceeds the allowable limit. Maximum size of attachment allowed is 2 MB.',
-          type: ToastificationType.warning,
-        );
-      }
-    }
-  }
-
-  Widget ProfileSection() {
+  Widget sendCredentialSectionOfExistingPatientPartial() {
     return Container(
-      color: ThemeSelection.BGColor,
+      margin: Responsive.isMobile(context)
+          ? EdgeInsets.only(left: 20.0, right: 20.0)
+          : EdgeInsets.all(0.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            height: 0.25.h,
+          Text(
+            "QUESTIONS?",
+            style: TextStyle(
+                fontFamily: 'SegoeUi',
+                fontSize: Responsive.isMobile(context) ? 15.0 : width * 0.024,
+                fontWeight: FontWeight.normal,
+                color: ThemeSelection.primaryTextColor),
           ),
-          SizedBox(
-            width: Responsive.isMobile(context) ? 59.w : 15.w,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: ApiPath.isIDDriverLicenceEnabled == "Y"
-                        ? () {
-                            setState(() {
-                              idPhoto = !idPhoto;
-                              profilePhoto = !profilePhoto;
-                            });
-                          }
-                        : null,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          left: BorderSide(
-                            color: profilePhoto
-                                ? Colors.white
-                                : Colors.transparent,
-                          ),
-                          right: BorderSide(
-                            color: profilePhoto
-                                ? Colors.white
-                                : Colors.transparent,
-                          ),
-                          top: BorderSide(
-                            color: profilePhoto
-                                ? Colors.white
-                                : Colors.transparent,
-                          ),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(3.0),
-                        child: Center(
-                          child: Text(
-                            "Photo",
-                            style: TextStyle(
-                              fontFamily: 'SegoeUi-Bold',
-                              color: ThemeSelection.secondaryTextColor,
-                              fontSize:
-                                  Responsive.isMobile(context) ? 12.sp : 3.sp,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: ApiPath.isIDDriverLicenceEnabled == "Y"
-                      ? GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              idPhoto = !idPhoto;
-                              profilePhoto = !profilePhoto;
-                            });
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              border: Border(
-                                left: BorderSide(
-                                  color: idPhoto
-                                      ? Colors.white
-                                      : Colors.transparent,
-                                ),
-                                right: BorderSide(
-                                  color: idPhoto
-                                      ? Colors.white
-                                      : Colors.transparent,
-                                ),
-                                top: BorderSide(
-                                  color: idPhoto
-                                      ? Colors.white
-                                      : Colors.transparent,
-                                ),
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(3.0),
-                              child: Center(
-                                child: Text(
-                                  "ID/Driver's License",
-                                  style: TextStyle(
-                                    fontFamily: 'SegoeUi-Bold',
-                                    color: ThemeSelection.secondaryTextColor,
-                                    fontSize: Responsive.isMobile(context)
-                                        ? 12.sp
-                                        : 3.sp,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      : SizedBox(),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: Responsive.isMobile(context) ? 59.w : 15.w,
-            height: Responsive.isMobile(context) ? 59.w : 15.w,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.white,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(5),
-                bottomRight: Radius.circular(5),
-                topLeft: idPhoto ? Radius.circular(5) : Radius.zero,
-                topRight: profilePhoto ? Radius.circular(5) : Radius.zero,
-              ),
-            ),
-            child: ClipRRect(
-              child: profilePhoto
-                  ? profilePhotoBase64 != null && profilePhotoBase64 != ""
-                      ? Image.memory(
-                          Base64Decoder().convert(profilePhotoBase64!),
-                          scale: 1,
-                          gaplessPlayback: true,
-                          fit: BoxFit.fill,
-                        )
-                      : Icon(
-                          const IconData(0xE203, fontFamily: 'metro'),
-                          color: ThemeSelection.iconDefaultTertiaryColor,
-                          size: Responsive.isMobile(context)
-                              ? 40.sp
-                              : Responsive.isTablet(context)
-                                  ? 15.sp
-                                  : Responsive.isDesktop(context)
-                                      ? 12.sp
-                                      : 10.sp,
-                        )
-                  : idPhotoBase64 != null && idPhotoBase64 != ""
-                      ? Image.memory(
-                          Base64Decoder().convert(idPhotoBase64!),
-                          scale: 1,
-                          gaplessPlayback: true,
-                          fit: BoxFit.fill,
-                        )
-                      : Icon(
-                          const IconData(0xE203, fontFamily: 'metro'),
-                          color: ThemeSelection.iconDefaultTertiaryColor,
-                          size: Responsive.isMobile(context)
-                              ? 40.sp
-                              : Responsive.isTablet(context)
-                                  ? 15.sp
-                                  : Responsive.isDesktop(context)
-                                      ? 12.sp
-                                      : 10.sp,
-                        ),
+          InkWell(
+            key: ValueKey("Send Message"),
+            onTap: () {
+              Get.to(() =>
+                  DashboardDetailsScreen(index: 0, isComposeScreen: true));
+            },
+            child: Text(
+              "Send us Message",
+              style: TextStyle(
+                  fontFamily: 'SegoeUi',
+                  fontSize: Responsive.isMobile(context) ? 15.0 : width * 0.014,
+                  decoration: TextDecoration.underline,
+                  color: ThemeSelection.primaryTextColor),
             ),
           ),
           SizedBox(
-            height: Responsive.isMobile(context)
-                ? 0.40.h
-                : Responsive.isk4Desktop(context)
-                    ? 1.40.h
-                    : 1.h,
+            height: height * 0.06,
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Transform.scale(
-                scale: Responsive.isk4Desktop(context) ? 2 : 1,
-                child: IconButton(
-                  icon: Icon(
-                    Symbols.folder_open,
-                  ),
-                  color: profilePhoto
-                      ? profilePhotoBase64 != null && profilePhotoBase64 != ""
-                          ? ThemeSelection.iconDefaultQuaternaryColor
-                          : ThemeSelection.iconDefaultTertiaryColor
-                      : idPhotoBase64 != null && idPhotoBase64 != ""
-                          ? ThemeSelection.iconDefaultQuaternaryColor
-                          : ThemeSelection.iconDefaultTertiaryColor,
-                  onPressed: profilePhoto
-                      ? profilePhotoBase64 != null && profilePhotoBase64 != ""
-                          ? null
-                          : () async {
-                              if (kIsWeb) {
-                                FilePickerResult? result =
-                                    await FilePicker.platform.pickFiles(
-                                  type: FileType.custom,
-                                  allowedExtensions: [
-                                    'jpeg',
-                                    'png',
-                                  ],
-                                );
-                                if (result != null) {
-                                  loadSelectedFiles(result.files.first);
-                                }
-                              } else {
-                                ManagePermissions.askStoragePermission()
-                                    .then((value) async {
-                                  XFile? img = await ImagePicker()
-                                      .pickImage(source: ImageSource.gallery);
-                                  if (mounted) {
-                                    profilePhotoBase64 =
-                                        await getBase64Image(img!);
-                                    profileModel!.userProfilePhotoBase64 =
-                                        profilePhotoBase64;
-                                    isProfilePhotoUploading = true;
-                                    updatePatientDetail();
-                                  }
-                                });
-                              }
-                            }
-                      : idPhotoBase64 != null && idPhotoBase64 != ""
-                          ? null
-                          : () async {
-                              if (kIsWeb) {
-                                FilePickerResult? result =
-                                    await FilePicker.platform.pickFiles(
-                                  type: FileType.custom,
-                                  allowedExtensions: [
-                                    'jpeg',
-                                    'png',
-                                  ],
-                                );
-                                if (result != null) {
-                                  loadSelectedFiles(result.files.first);
-                                }
-                              } else {
-                                ManagePermissions.askStoragePermission()
-                                    .then((value) async {
-                                  XFile? img = await ImagePicker()
-                                      .pickImage(source: ImageSource.gallery);
-                                  if (mounted) {
-                                    idPhotoBase64 = await getBase64Image(img!);
-                                    profileModel!.userIdPhotoBase64 =
-                                        idPhotoBase64;
-                                    isIdPhotoUploading = true;
-                                    isIdPhotoDeleting = false;
-                                    updatePatientDetail();
-                                  }
-                                });
-                              }
-                            },
+              Container(
+                key: ValueKey("Home"),
+                child: primaryButton(
+                  context,
+                  () {
+                    Get.offAll(() => DashboardScreen());
+                  },
+                  "Home",
+                  ThemeSelection.secondaryTextColor,
                 ),
               ),
               SizedBox(
-                width: 1.w,
+                width: 20,
               ),
-              IconButton(
-                icon: Icon(
-                  Symbols.photo_camera,
+              Container(
+                key: ValueKey("Try Again"),
+                child: primaryButton(
+                  context,
+                  () {
+                    Navigator.pop(context);
+                  },
+                  "Try Again",
+                  ThemeSelection.secondaryTextColor,
                 ),
-                iconSize: Responsive.isMobile(context)
-                    ? 15.sp
-                    : Responsive.isTablet(context)
-                        ? 12.sp
-                        : Responsive.isDesktop(context)
-                            ? 5.sp
-                            : 4.sp,
-                color: profilePhoto
-                    ? profilePhotoBase64 != null && profilePhotoBase64 != ""
-                        ? ThemeSelection
-                            .pageIconDefaultColor //ThemeSelection.iconDefaultQuaternaryColor
-                        : ThemeSelection.iconDefaultTertiaryColor
-                    : idPhotoBase64 != null && idPhotoBase64 != ""
-                        ? ThemeSelection
-                            .pageIconDefaultColor // ThemeSelection.iconDefaultQuaternaryColor
-                        : ThemeSelection.iconDefaultTertiaryColor,
-                onPressed: profilePhoto
-                    ? profilePhotoBase64 != null && profilePhotoBase64 != ""
-                        ? null
-                        : () async {
-                            if (kIsWeb) {
-                              if (_cameras.isEmpty) {
-                                SchedulerBinding.instance
-                                    .addPostFrameCallback((_) async {});
-                              } else {
-                                Uint8List photoResult =
-                                    await Get.to(CameraScreen());
-                                profilePhotoBase64 = base64Encode(photoResult);
-                                profileModel!.userProfilePhotoBase64 =
-                                    profilePhotoBase64;
-                                isProfilePhotoUploading = true;
-                                updatePatientDetail();
-                              }
-                            } else {
-                              var status = await Permission.camera.status;
-                              if (!status.isGranted) {
-                                status = await Permission.camera.request();
-                              }
-
-                              if (status.isGranted) {
-                                // If permission is granted, pick the image
-                                final pickedImage = await ImagePicker()
-                                    .pickImage(source: ImageSource.camera);
-                                if (pickedImage != null) {
-                                  CroppedFile? croppedImage =
-                                      await _cropImage(File(pickedImage.path));
-                                  if (croppedImage != null) {
-                                    profilePhotoBase64 =
-                                        await getBase64ImageFromCrop(
-                                            croppedImage);
-                                    profileModel!.userProfilePhotoBase64 =
-                                        profilePhotoBase64;
-                                    isProfilePhotoUploading = true;
-                                    updatePatientDetail();
-                                  }
-                                }
-                              } else {
-                                // Handle permission denied state
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  content: Text(
-                                      'Camera permission is required to capture image'),
-                                ));
-                              }
-                              // ManagePermissions.askCameraPermission()
-                              //     .then((value) async {
-                              //   XFile? image = await ImagePicker()
-                              //       .pickImage(source: ImageSource.camera);
-
-                              //   if (image != null && mounted) {
-                              //     CroppedFile? croppedFile =
-                              //         await ImageCropper().cropImage(
-                              //       sourcePath: image.path,
-                              //       uiSettings: [
-                              //         AndroidUiSettings(
-                              //             toolbarTitle: 'Crop Image',
-                              //             toolbarColor: Colors.deepOrange,
-                              //             toolbarWidgetColor: Colors.white,
-                              //             initAspectRatio:
-                              //                 CropAspectRatioPreset.original,
-                              //             lockAspectRatio: false),
-                              //         IOSUiSettings(
-                              //           minimumAspectRatio: 1.0,
-                              //         ),
-                              //       ],
-                              //     );
-
-                              //     if (croppedFile != null) {
-                              //       print(
-                              //           'Cropped image path: ${croppedFile.path}');
-                              //     }
-
-                              //     profilePhotoBase64 =
-                              //         await getBase64ImageFromCrop(croppedFile);
-                              //     profileModel!.userProfilePhotoBase64 =
-                              //         profilePhotoBase64;
-                              //     isProfilePhotoUploading = true;
-                              //     updatePatientDetail();
-                              //   }
-                              // });
-                            }
-                          }
-                    : idPhotoBase64 != null && idPhotoBase64 != ""
-                        ? null
-                        : () async {
-                            if (kIsWeb) {
-                              if (_cameras.isEmpty) {
-                                SchedulerBinding.instance
-                                    .addPostFrameCallback((_) async {
-                                  // Toast.show("No camera found.");
-                                });
-                              } else {
-                                Uint8List photoResult =
-                                    await Get.to(CameraScreen());
-                                idPhotoBase64 = base64Encode(photoResult);
-                                profileModel!.userIdPhotoBase64 = idPhotoBase64;
-                                isIdPhotoUploading = true;
-                                isIdPhotoDeleting = false;
-                                updatePatientDetail();
-                              }
-                            } else {
-                              ManagePermissions.askCameraPermission()
-                                  .then((value) async {
-                                XFile? image = await ImagePicker()
-                                    .pickImage(source: ImageSource.camera);
-                                if (image != null && mounted) {
-                                  idPhotoBase64 = await getBase64Image(image);
-                                  profileModel!.userIdPhotoBase64 =
-                                      idPhotoBase64;
-                                  isIdPhotoUploading = true;
-                                  isIdPhotoDeleting = false;
-                                  updatePatientDetail();
-                                }
-                              });
-                            }
-                          },
-              ),
-              SizedBox(
-                width: 1.w,
-              ),
-              Transform.scale(
-                scale: Responsive.isk4Desktop(context) ? 1.38 : 1,
-                child: IconButton(
-                  icon: Icon(
-                    // const IconData(0xE102, fontFamily: 'metro'),
-                    Symbols.delete,
-                  ),
-                  iconSize: Responsive.isMobile(context)
-                      ? 15.sp
-                      : Responsive.isTablet(context)
-                          ? 6.sp
-                          : Responsive.isDesktop(context)
-                              ? 5.sp
-                              : 4.sp,
-                  color: profilePhoto
-                      ? profilePhotoBase64 != null && profilePhotoBase64 != ""
-                          ? ThemeSelection.iconDefaultTertiaryColor
-                          : ThemeSelection.pageIconDefaultColor
-                      : idPhotoBase64 != null && idPhotoBase64 != ""
-                          ? ThemeSelection.iconDefaultTertiaryColor
-                          : ThemeSelection.pageIconDefaultColor,
-                  onPressed: profilePhoto
-                      ? profilePhotoBase64 == null || profilePhotoBase64 == ""
-                          ? null
-                          : () {
-                              showCustomDialog(
-                                context,
-                                firstButtonText: "Cancel",
-                                secondButtonText: "Proceed",
-                                title: "Do you want to delete this picture?",
-                                iconData: Symbols.warning,
-                                firstButtonFunction: () {
-                                  Navigator.of(context).pop();
-                                },
-                                secondButtonFunction: () {
-                                  setState(() {
-                                    showToast(
-                                      context,
-                                      message: 'Photo deleted',
-                                      type: ToastificationType.success,
-                                    );
-                                    profilePhotoBase64 = "";
-                                    profileModel!.userProfilePhotoBase64 =
-                                        profilePhotoBase64;
-                                    isProfilePhotoDeleting = true;
-                                  });
-                                  updatePatientDetail();
-                                  Navigator.of(context).pop();
-                                },
-                              );
-                            }
-                      : idPhotoBase64 == null || idPhotoBase64 == ""
-                          ? null
-                          : () {
-                              showCustomDialog(
-                                context,
-                                firstButtonText: "Cancel",
-                                secondButtonText: "Proceed",
-                                title: "Do you want to delete this picture?",
-                                iconData: Symbols.warning,
-                                firstButtonFunction: () {
-                                  Navigator.of(context).pop();
-                                },
-                                secondButtonFunction: () {
-                                  setState(() {
-                                    showToast(
-                                      context,
-                                      // message: profilePhoto
-                                      //     ? 'Photo deleted'
-                                      //     : 'ID deleted',
-                                      message: 'ID deleted',
-                                      type: ToastificationType.success,
-                                    );
-                                    idPhotoBase64 = "";
-                                    profileModel!.userIdPhotoBase64 =
-                                        idPhotoBase64;
-                                    isIdPhotoDeleting = true;
-                                  });
-                                  updatePatientDetail();
-
-                                  Navigator.of(context).pop();
-                                },
-                              );
-                            },
-                ),
-              ),
+              )
             ],
-          ),
-          SizedBox(
-            height: Responsive.isMobile(context) ? 0.40.h : 5.h,
-          ),
-          SizedBox(
-            width: Responsive.isMobile(context) ? 70.w : 30.w,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Name",
-                      style: TextStyle(
-                        fontFamily: 'SegoeUi',
-                        color: ThemeSelection.secondaryTextColor,
-                        fontSize: Responsive.isMobile(context) ? 12.sp : 4.sp,
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        setState(() {
-                          isNameEditingEnable = !isNameEditingEnable;
-                        });
-                        if (!isNameEditingEnable) {
-                          FocusScope.of(context).requestFocus(focusNode);
-                          // Setting the selection to the end of the text
-                          firstNameTextEditingController.selection =
-                              TextSelection.fromPosition(
-                            TextPosition(
-                                offset:
-                                    firstNameTextEditingController.text.length),
-                          );
-                          Future.delayed(Duration.zero, () {
-                            firstNameTextEditingController.selection =
-                                TextSelection.fromPosition(
-                              TextPosition(
-                                  offset: firstNameTextEditingController
-                                      .text.length),
-                            );
-                          });
-                        } else {
-                          FocusScope.of(context).unfocus();
-                          if (firstNameTextEditingController.text
-                                  .trim()
-                                  .isNotEmpty &&
-                              lastNameTextEditingController.text
-                                  .trim()
-                                  .isNotEmpty) {
-                            updatePatientDetail();
-                          }
-                        }
-                      },
-                      child: Text(
-                        isNameEditingEnable ? "Edit" : "Save",
-                        style: TextStyle(
-                          fontFamily: 'SegoeUi',
-                          color: ThemeSelection.secondaryTextColor,
-                          fontSize:
-                              Responsive.isMobile(context) ? 10.sp : 2.95.sp,
-                          decoration: TextDecoration.underline,
-                          decorationColor: ThemeSelection.secondaryTextColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  height: 0.5.h,
-                ),
-                Container(
-                  alignment: Alignment.centerLeft,
-                  width: Responsive.isMobile(context) ? 80.w : 30.w,
-                  child: customTextFormField(
-                    context,
-                    errorText: 'First Name is required',
-                    hintText: 'First Name',
-                    readOnly: isNameEditingEnable,
-                    validate: _validateFirstName,
-                    textEditingController: firstNameTextEditingController,
-                    focusNode: focusNode,
-                    inlineError: true,
-                    inlineErrorTextColor: ThemeSelection.secondaryTextColor,
-                    textFieldColor: isNameEditingEnable
-                        ? ThemeSelection.textfieldNonEditingFilledColor
-                        : ThemeSelection.textfieldFilledColor,
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(35),
-                      FilteringTextInputFormatter.allow(RegExp(
-                          r'[a-zA-Z0-9!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]')),
-                    ],
-                    onChanged: (val) {
-                      // Check for special characters
-                      _checkForSpecialCharacters(val);
-
-                      // Filter out special characters
-                      String filteredText1 = val.replaceAll(
-                          RegExp(
-                              r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]'),
-                          '');
-
-                      // Update the controller only if text has been modified
-                      if (filteredText1 != val) {
-                        firstNameTextEditingController.text = filteredText1;
-                        firstNameTextEditingController.selection =
-                            TextSelection.fromPosition(
-                                TextPosition(offset: filteredText1.length));
-                      }
-
-                      setState(() {
-                        if (filteredText1.isEmpty) {
-                          _validateFirstName = true;
-                        } else {
-                          _validateFirstName = false;
-                        }
-                      });
-                    },
-                  ),
-                ),
-                SizedBox(
-                  height: _validateFirstName ? 2.5.h : 0.5.h,
-                ),
-                Container(
-                  alignment: Alignment.centerLeft,
-                  width: Responsive.isMobile(context) ? 80.w : 30.w,
-                  child: customTextFormField(
-                    context,
-                    errorText: 'Last Name is required',
-                    hintText: 'Last Name',
-                    readOnly: isNameEditingEnable,
-                    validate: _validateLastName,
-                    hoverColor: isNameEditingEnable
-                        ? ThemeSelection.textfieldNonEditingFilledColor
-                        : ThemeSelection.textfieldFilledColor,
-                    textEditingController: lastNameTextEditingController,
-                    inlineError: true,
-                    textFieldColor: isNameEditingEnable
-                        ? ThemeSelection.textfieldNonEditingFilledColor
-                        : ThemeSelection.textfieldFilledColor,
-                    inlineErrorTextColor: ThemeSelection.secondaryTextColor,
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(60),
-                      FilteringTextInputFormatter.allow(RegExp(
-                          r'[a-zA-Z0-9!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?~`]')),
-                    ],
-                    onChanged: (val) {
-                      // Check for special characters
-                      _checkForSpecialCharacters(val);
-
-                      // Filter out special characters
-                      String filteredText2 = val.replaceAll(
-                          RegExp(
-                              r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:"\\|,.<>\/?]'),
-                          '');
-
-                      // Update the controller only if text has been modified
-                      if (filteredText2 != val) {
-                        lastNameTextEditingController.text = filteredText2;
-                        lastNameTextEditingController.selection =
-                            TextSelection.fromPosition(
-                                TextPosition(offset: filteredText2.length));
-                      }
-
-                      setState(() {
-                        if (filteredText2.isEmpty) {
-                          _validateLastName = true;
-                        } else {
-                          _validateLastName = false;
-                        }
-                      });
-                    },
-                  ),
-                )
-              ],
-            ),
           )
         ],
       ),
     );
   }
 
-  Widget OptionsSection() {
-    return Padding(
-      padding: Responsive.isMobile(context)
-          ? EdgeInsets.zero
-          : EdgeInsets.symmetric(horizontal: 10.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: ThemeSelection.greyBorderColor,
-                  width: 0.1.h,
-                ),
-              ),
-            ),
-            child: ListTile(
-              onTap: () {
-                setState(() {
-                  ApiPath.isSettingIconPopupVisible = false;
-                  ApiPath.isSettingIconPopupOpen.value = true;
-                });
-                Get.to(
-                  UpdateUsernameScreen(
-                    username: profileModel!.userName ?? "",
-                  ),
-                );
-              },
-              hoverColor: ThemeSelection.listTileHoverColor,
-              title: Padding(
-                padding: EdgeInsets.only(
-                    bottom: Responsive.isMobile(context) ? 0.5.h : 1.h),
-                child: Text(
-                  "Change Username",
-                  style: TextStyle(
-                    fontFamily: 'SegoeUi',
-                    color: ThemeSelection.primaryTextColor,
-                    fontSize: Responsive.isMobile(context) ? 15.sp : 6.sp,
-                  ),
-                ),
-              ),
-            ),
+  Widget recordMatchFoundSection() {
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          height: 30,
+        ),
+        Container(
+          child: Icon(
+            const IconData(0xE166, fontFamily: 'metro'),
+            color: ThemeSelection.secondaryTextColor,
+            size: 100.0,
           ),
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: ThemeSelection.greyBorderColor,
-                  width: 0.1.h,
-                ),
-              ),
-            ),
-            child: ListTile(
-              onTap: () {
-                setState(() {
-                  ApiPath.isSettingIconPopupVisible = false;
-                  ApiPath.isSettingIconPopupOpen.value = true;
-                });
-                Get.to(UpdatePasswordScreen(
-                  username: profileModel!.userName ?? "",
-                ));
-              },
-              hoverColor: ThemeSelection.listTileHoverColor,
-              title: Padding(
-                padding: EdgeInsets.only(
-                    bottom: Responsive.isMobile(context) ? 0.5.h : 1.h),
-                child: Text(
-                  "Change Password",
-                  style: TextStyle(
-                    fontFamily: 'SegoeUi',
-                    color: ThemeSelection.primaryTextColor,
-                    fontSize: Responsive.isMobile(context) ? 15.sp : 6.sp,
-                  ),
-                ),
-              ),
-              subtitle: Padding(
-                padding: EdgeInsets.only(
-                    bottom: Responsive.isMobile(context) ? 1.h : 2.h),
-                child: Text(
-                  "Last Change " + lastPasswordChangeDate,
-                  style: TextStyle(
-                    fontFamily: 'SegoeUi',
-                    color: Color.fromRGBO(92, 92, 92, 1),
-                    fontSize: Responsive.isMobile(context) ? 12.sp : 4.sp,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          ListTile(
-            onTap: () {
-              setState(() {
-                ApiPath.isSettingIconPopupVisible = false;
-                ApiPath.isSettingIconPopupOpen.value = true;
-              });
-              Get.to(OptoutScreen());
-            },
-            hoverColor: ThemeSelection.listTileHoverColor,
-            title: Padding(
-              padding: EdgeInsets.only(
-                  bottom: Responsive.isMobile(context) ? 0.5.h : 1.h),
-              child: Text(
-                "Make My Account Inactive",
-                style: TextStyle(
+        ),
+        SizedBox(
+          height: 20.0,
+        ),
+        Text(
+          "Record Match Found",
+          style: TextStyle(
+              fontFamily: 'SegoeUi',
+              fontSize: Responsive.isMobile(context) ? 20.0 : width * 0.017,
+              fontWeight: FontWeight.normal,
+              color: ThemeSelection.secondaryTextColor),
+        ),
+        SizedBox(
+          height: Responsive.isMobile(context) ? 10.0 : 25.0,
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              widget.alertMsg,
+              style: TextStyle(
                   fontFamily: 'SegoeUi',
-                  color: ThemeSelection.primaryTextColor,
-                  fontSize: Responsive.isMobile(context) ? 15.sp : 6.sp,
-                ),
-              ),
+                  fontSize: Responsive.isMobile(context) ? 15.0 : width * 0.012,
+                  fontWeight: FontWeight.normal,
+                  color: ThemeSelection.secondaryTextColor),
+              key: ValueKey("Alert Message"),
             ),
-            subtitle: Padding(
-                padding: EdgeInsets.only(bottom: 0.5.h),
-                child: SizedBox(
-                  height: 0.5.h,
-                )),
+            SizedBox(
+              height: Responsive.isMobile(context) ? 10.0 : width * 0.01,
+            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Name: ",
+                      style: TextStyle(
+                          fontFamily: 'SegoeUi',
+                          fontSize: Responsive.isMobile(context)
+                              ? 15.0
+                              : width * 0.012,
+                          fontWeight: FontWeight.normal,
+                          color: ThemeSelection.secondaryTextColor),
+                    ),
+                    Text(
+                      userData?.patientName ?? '',
+                      style: TextStyle(
+                          fontFamily: 'SegoeUi',
+                          fontSize: Responsive.isMobile(context)
+                              ? 15.0
+                              : width * 0.012,
+                          fontWeight: FontWeight.bold,
+                          color: ThemeSelection.secondaryTextColor),
+                      key: ValueKey("Patient Name"),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
+                ),
+                Visibility(
+                  visible: !userData!.dob.isBlank!,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "DOB: ",
+                        style: TextStyle(
+                            fontFamily: 'SegoeUi',
+                            fontSize: Responsive.isMobile(context)
+                                ? 15.0
+                                : width * 0.012,
+                            fontWeight: FontWeight.normal,
+                            color: ThemeSelection.secondaryTextColor),
+                      ),
+                      !userData!.dob.isBlank!
+                          ? Text(
+                              userData?.dob
+                                      .toString()
+                                      .replaceRange(0, 5, "*****") ??
+                                  "",
+                              style: TextStyle(
+                                  fontFamily: 'SegoeUi',
+                                  fontSize: Responsive.isMobile(context)
+                                      ? 15.0
+                                      : width * 0.012,
+                                  fontWeight: FontWeight.bold,
+                                  color: ThemeSelection.secondaryTextColor),
+                              key: ValueKey("DOB"),
+                            )
+                          : SizedBox(),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Phone: ",
+                      style: TextStyle(
+                          fontFamily: 'SegoeUi',
+                          fontSize: Responsive.isMobile(context)
+                              ? 15.0
+                              : width * 0.012,
+                          fontWeight: FontWeight.normal,
+                          color: ThemeSelection.secondaryTextColor),
+                    ),
+                    Text(
+                      userData!.mobileNo
+                              ?.toString()
+                              .replaceRange(2, 10, "*******") ??
+                          "",
+                      style: TextStyle(
+                          fontFamily: 'SegoeUi',
+                          fontSize: Responsive.isMobile(context)
+                              ? 15.0
+                              : width * 0.012,
+                          fontWeight: FontWeight.bold,
+                          color: ThemeSelection.secondaryTextColor),
+                      key: ValueKey("Phone"),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Email: ",
+                      style: TextStyle(
+                          fontFamily: 'SegoeUi',
+                          fontSize: Responsive.isMobile(context)
+                              ? 15.0
+                              : width * 0.012,
+                          fontWeight: FontWeight.normal,
+                          color: ThemeSelection.secondaryTextColor),
+                    ),
+                    Text(
+                      userData?.emailId
+                              .toString()
+                              .replaceRange(0, 10, "*******") ??
+                          "",
+                      style: TextStyle(
+                          fontFamily: 'SegoeUi',
+                          fontSize: Responsive.isMobile(context)
+                              ? 15.0
+                              : width * 0.012,
+                          fontWeight: FontWeight.bold,
+                          color: ThemeSelection.secondaryTextColor),
+                      key: ValueKey("Email"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget recordMatchFoundSectionOfExistingPatientPartial() {
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          height: 30,
+        ),
+        Container(
+          child: Icon(
+            const IconData(0xE167, fontFamily: 'metro'),
+            color: ThemeSelection.secondaryTextColor,
+            size: 100.0,
+          ),
+        ),
+        SizedBox(
+          height: 20.0,
+        ),
+        Text(
+          "Record Match Found",
+          style: TextStyle(
+              fontFamily: 'SegoeUi',
+              fontSize: Responsive.isMobile(context) ? 20.0 : width * 0.017,
+              fontWeight: FontWeight.normal,
+              color: ThemeSelection.secondaryTextColor),
+        ),
+        SizedBox(
+          height: Responsive.isMobile(context) ? 10.0 : 25.0,
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              widget.alertMsg,
+              style: TextStyle(
+                  fontFamily: 'SegoeUi',
+                  fontSize: Responsive.isMobile(context) ? 15.0 : width * 0.012,
+                  fontWeight: FontWeight.normal,
+                  color: ThemeSelection.secondaryTextColor),
+              key: ValueKey("Alert Message"),
+            ),
+            SizedBox(
+              height: Responsive.isMobile(context) ? 10.0 : width * 0.01,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget topBarMobile() {
+    return Container(
+      height: 6.h,
+      padding:
+          EdgeInsets.only(left: 10.0, right: 10.0, top: 15.0, bottom: 15.0),
+      color: ThemeSelection.BGColor,
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              customIconButton(
+                context,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                hoverColor: ThemeSelection.iconHoverPrimaryColor,
+                splashColor: ThemeSelection.iconPressedPrimaryColor,
+                iconData: Symbols.arrow_back,
+                iconColor: ThemeSelection.iconDefaultTertiaryColor,
+              ),
+              SizedBox(
+                width: 15.0,
+              ),
+              Text(
+                "Add New Individual",
+                style: CommonTextStyle.of(context)
+                    .H8_SUR(ThemeSelection.secondaryTextColor),
+              )
+            ],
+          ),
+          customHoverTooltip(
+            context,
+            toolTipMessage:
+                'Add an authorized individual who can access your patient portal account.',
+            iconData: Symbols.info,
+            hoverColor: ThemeSelection.iconHoverSecondaryColor,
+            iconColor: ThemeSelection.iconDefaultSecondaryColor,
           ),
         ],
       ),
+    );
+  }
+
+  Widget topBarWeb() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        SizedBox(
+          height: 5.0,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Text(
+            //   "Add New Individual",
+            //   style: TextStyle(
+            //       fontFamily: 'SegoeUi',
+            //       fontWeight: FontWeight.normal,
+            //       color: ThemeSelection.primaryTextColor,
+            //       fontSize: width * 0.020),
+            // ),
+            Text(
+              "Add New Individual",
+              style: TextStyle(
+                fontFamily: 'SegoeUi',
+                color: ThemeSelection.primaryTextColor,
+                fontSize: 6.sp,
+              ),
+            ),
+            SizedBox(
+              width: 25.0,
+            ),
+            customHoverTooltip(
+              context,
+              toolTipMessage:
+                  'Add an authorized individual who can access your patient portal account.',
+              iconData: Symbols.info,
+              hoverColor: ThemeSelection.iconHoverSecondaryColor,
+              iconColor: ThemeSelection.iconDefaultSecondaryColor,
+            ),
+          ],
+        ),
+        SizedBox(
+          height: 5.0,
+        ),
+        Container(
+          height: 2.0,
+          color: ThemeSelection.textfieldFilledColor,
+        ),
+      ],
     );
   }
 }

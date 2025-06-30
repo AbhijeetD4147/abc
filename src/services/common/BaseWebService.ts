@@ -32,7 +32,7 @@ class BaseWebService {
     dataModel,
     token,
     practiceName,
-  }: { requestUrl: string; dataModel: any; token?: string; practiceName?: string }): Promise<AxiosResponse> {
+  }: { requestUrl: string; dataModel?: any; token?: string; practiceName?: string }): Promise<AxiosResponse> {
     let response: AxiosResponse;
     try {
       response = await axios.post(requestUrl, JSON.stringify(dataModel),

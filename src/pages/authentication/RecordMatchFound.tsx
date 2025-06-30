@@ -1,33 +1,60 @@
 import React, { useState } from 'react';
 import { getTheme } from "../../utils/ThemeSelection";
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import checkMark from '../../assets/check-mark.png';
 import { Button } from '@ketan_nimase/ui';
+import { AuthenticationService } from '../../services/authentication/UserService';
+import { GlobalParams } from '../../utils/GlobalParameters';
 
 interface RecordMatchFoundProps {
+    email?: string;
+    patientNumber?: number;
+}
+
+interface LocationState {
     email: string;
     patientNumber: number;
 }
 
 const theme = await getTheme();
 
-const RecordMatchFound: React.FC<RecordMatchFoundProps> = ({ email, patientNumber }) => {
+const RecordMatchFound: React.FC<RecordMatchFoundProps> = (props) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isSending, setIsSending] = useState(false);
+
+    // Get email and patientNumber from location state if available, otherwise use props
+    const state = location.state as LocationState;
+    const email = state?.email || props.email || "";
+    const patientNumber = state?.patientNumber || props.patientNumber || 0;
 
     const sendCredentials = async () => {
         setIsSending(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const isSent = 'true';
+            // Create an instance of AuthenticationService
+            const authService = new AuthenticationService();
 
-            if (isSent === 'true') {
-                navigate('/credentials-sent', {
-                    state: { email, patientNumber }
-                });
+            // Call the sendCredentials API
+            await authService.sendCredentials(email, patientNumber);
+
+            // Check response status
+            if (authService.response_Status_Code_API_3 === 200) {
+                // If successful, navigate to credentials-sent page
+                if (String(authService.isSent).toLowerCase() === "true") {
+                    navigate('/credentials-sent', {
+                        state: {
+                            email,
+                            patientNumber
+                        }
+                    });
+                }
+            } else if (authService.response_Status_Code_API_3 !== 205) {
+                // If error (not session invalid)
+                toast.error('An unexpected error has occurred. Please try again later. If the problem persists, call our office.');
             }
         } catch (error) {
+            console.error('Error sending credentials:', error);
             toast.error('An unexpected error has occurred. Please try again later. If the problem persists, call our office.');
         } finally {
             setIsSending(false);
@@ -72,7 +99,9 @@ const RecordMatchFound: React.FC<RecordMatchFoundProps> = ({ email, patientNumbe
 
                     {/* Footer */}
                     <div className="position-absolute bottom-0 start-0 p-3">
-                        <p className="small text-muted mb-0">version 1.0</p>
+                        <p className="small text-muted mb-0">
+                            {GlobalParams.Version}
+                        </p>
                     </div>
                 </div>
 
