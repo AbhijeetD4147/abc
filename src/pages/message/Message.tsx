@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Check } from 'lucide-react';
 import { Navbar } from "../../components/ui/Navbar";
-import { Button, Icon } from "@ketan_nimase/ui";
+import { Button, Checkbox, Icon, Input, Loader, TextArea } from "@ketan_nimase/ui";
 import dayjs from "dayjs";
 import isToday from "dayjs/plugin/isToday";
 import isYesterday from "dayjs/plugin/isYesterday";
 import { toast } from "react-toastify";
+import WarningPopup from "../../components/ui/WarningPopup";
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
@@ -54,8 +55,8 @@ const Messages: React.FC = () => {
     const [isReplyVisible, setIsReplyVisible] = useState(false);
     const [isForwardVisible, setIsForwardVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [showArchived, setShowArchived] = useState(false);
     const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+    const [showDeleteWarning, setShowDeleteWarning] = useState(false);
 
     // Search State
     const [searchQuery, setSearchQuery] = useState("");
@@ -147,6 +148,7 @@ const Messages: React.FC = () => {
     const [threads, setThreads] = useState<MessageThread[]>([]);
     const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
     const [showThreadView, setShowThreadView] = useState(true);
+    const [isMessageSentVisible, setIsMessageSentVisible] = useState(false);
 
     // Threading Helper Functions
     const generateThreadId = (subject: string, participants: string[]): string => {
@@ -540,6 +542,14 @@ const Messages: React.FC = () => {
         try {
             setIsLoading(true);
 
+            // Determine message type based on current state
+            let type: string | undefined;
+            if (isReplyVisible) {
+                type = "reply";
+            } else if (isForwardVisible) {
+                type = "forward";
+            }
+
             // Create new message with threading info
             const newMessage: Message = {
                 id: `msg_${Date.now()}`,
@@ -553,7 +563,8 @@ const Messages: React.FC = () => {
                 isArchived: false,
                 threadId: replyContext?.threadId,
                 parentMessageId: replyContext?.parentMessageId,
-                replyTo: selectedMessage?.sender
+                replyTo: selectedMessage?.sender,
+                messageType: type // Set the message type here
             };
 
             // Add to messages
@@ -575,6 +586,8 @@ const Messages: React.FC = () => {
             setIsForwardVisible(false);
             setIsComposing(false);
             setReplyContext(null);
+            setSelectedMessage(null); // Add this line to clear the selected message
+            setIsMessageSentVisible(true); // Set to true to show the message sent screen
         } catch (error) {
             toast.error("Failed to send message");
         } finally {
@@ -629,29 +642,47 @@ const Messages: React.FC = () => {
     const handleArchiveMessages = async () => {
         try {
             setIsLoading(true);
-            // TODO: Implement actual API call
-            const messagesToArchive = selectedIds.length > 0 ? selectedIds : selectedMessage ? [selectedMessage.id] : [];
-            if (messagesToArchive.length === 0) return;
+            const messagesToToggle = selectedIds.length > 0 ? selectedIds : selectedMessage ? [selectedMessage.id] : [];
 
-            toast.success("Messages archived successfully");
-            setMessages(prev => prev.map(msg =>
-                messagesToArchive.includes(msg.id) ? { ...msg, isArchived: true } : msg
-            ));
+            if (messagesToToggle.length === 0) {
+                toast.info("No messages selected");
+                return;
+            }
+
+            setMessages(prevMessages =>
+                prevMessages.map(msg =>
+                    messagesToToggle.includes(msg.id)
+                        ? { ...msg, isArchived: !msg.isArchived }
+                        : msg
+                )
+            );
+
+            const action = messages.find(m => messagesToToggle.includes(m.id))?.isArchived ? "unarchived" : "archived";
+            toast.success(`Messages ${action} successfully!`);
             setSelectedIds([]);
             setSelectedMessage(null);
         } catch (error) {
-            toast.error("Failed to archive messages");
+            toast.error(`Failed to toggle archive status`);
+            console.error("Error:", error);
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleDeleteMessages = async () => {
+        // Show warning popup instead of directly deleting
+        setShowDeleteWarning(true);
+    };
+
+    const confirmDeleteMessages = async () => {
+        setShowDeleteWarning(false); // Hide popup
         try {
             setIsLoading(true);
-            // TODO: Implement actual API call
             const messagesToDelete = selectedIds.length > 0 ? selectedIds : selectedMessage ? [selectedMessage.id] : [];
-            if (messagesToDelete.length === 0) return;
+            if (messagesToDelete.length === 0) {
+                toast.info("No messages selected for deletion.");
+                return;
+            }
 
             toast.success("Messages deleted successfully");
             setMessages(prev => prev.filter(msg => !messagesToDelete.includes(msg.id)));
@@ -664,9 +695,13 @@ const Messages: React.FC = () => {
         }
     };
 
+    const cancelDeleteMessages = () => {
+        setShowDeleteWarning(false); // Hide popup
+    };
+
     return (
         <div className="min-h-screen w-screen flex flex-col">
-            <Navbar patientName={{ firstName: "Jeffery", lastName: "Stevenson" }} />
+            <Navbar />
             {/* Two Column Layout */}
             <div className="flex flex-1">
                 {/* Left Sidebar */}
@@ -904,6 +939,7 @@ const Messages: React.FC = () => {
                                                 setIsReplyVisible(false);
                                                 setIsForwardVisible(false);
                                                 setIsComposing(false);
+                                                setIsMessageSentVisible(false); // Add this line
                                             }
                                         }}
                                     >
@@ -936,9 +972,6 @@ const Messages: React.FC = () => {
                                             } text-gray-700 truncate mb-1 ml-6`}>
                                             {highlightSearchTerm(message.subject, searchQuery)}
                                         </p>
-                                        <p className="text-xs text-gray-500 truncate ml-6">
-                                            {highlightSearchTerm(message.content[0] || "", searchQuery)}
-                                        </p>
                                         {message.attachments && message.attachments.length > 0 && (
                                             <div className="flex items-center mt-1 ml-6">
                                                 <Icon
@@ -964,9 +997,9 @@ const Messages: React.FC = () => {
                 <div className="flex-1 bg-gray-50 flex flex-col">
                     {/* Header */}
                     <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                        <h1 className="text-xl font-semibold text-gray-900">
+                        {/* <h1 className="text-xl font-semibold text-gray-900">
                             {isComposeVisible
-                                ? "Compose Message"
+                                ? "Compose"
                                 : isReplyVisible
                                     ? "Reply"
                                     : isForwardVisible
@@ -974,7 +1007,31 @@ const Messages: React.FC = () => {
                                         : selectedMessage
                                             ? selectedMessage.subject
                                             : "Select a Message"}
-                        </h1>
+                        </h1> */}
+                        {isComposeVisible
+                            ? <div className="flex items-center justify-start">
+                                <h1 className="text-xl font-semibold text-gray-900 mr-4">Compose</h1>
+                                <Icon
+                                    colorVariant="primary"
+                                    height="20px"
+                                    width="20px"
+                                    isCursorPointer
+                                    isbadge
+                                    name="info_circle"
+                                    stroke
+                                    tooltip
+                                    tooltipTitle="Send a secure message to us. Type a simple text message. No special characters allowed.
+                            Note: You will not be able to make changes to this message or attachments after sending it to Practice"
+                                    tooltipPlacement="bottom"
+                                />
+                            </div>
+                            : isReplyVisible
+                                ? "Reply"
+                                : isForwardVisible
+                                    ? "Forward"
+                                    : selectedMessage
+                                        ? selectedMessage.subject
+                                        : "Select a Message"}
 
                         <div className="flex items-center space-x-2">
                             {isComposing ? (
@@ -1004,10 +1061,13 @@ const Messages: React.FC = () => {
                                         colorVariant="primary"
                                         height="20px"
                                         isCursorPointer
-                                        name="archive"
+                                        name={selectedMessage?.isArchived ? "archive" : "archive"}
                                         stroke
                                         width="20px"
-                                        onClick={(e) => handleReply()}
+                                        onClick={handleArchiveMessages}
+                                        tooltip
+                                        tooltipPlacement='bottom'
+                                        tooltipTitle={selectedMessage?.isArchived ? "unarchive" : "archive"}
                                     />
                                     <Icon
                                         className="px-2"
@@ -1017,14 +1077,17 @@ const Messages: React.FC = () => {
                                         name="undo"
                                         stroke
                                         width="20px"
-                                        onClick={handleArchiveMessages}
+                                        onClick={(e) => handleReply()}
+                                        tooltip
+                                        tooltipPlacement='bottom'
+                                        tooltipTitle="Reply"
                                     />
                                     <Icon
                                         className="px-2"
                                         colorVariant="primary"
                                         height="20px"
                                         isCursorPointer
-                                        name="right_arrow_1"
+                                        name="redo"
                                         stroke
                                         width="20px"
                                         onClick={handleForward}
@@ -1047,8 +1110,8 @@ const Messages: React.FC = () => {
                     {/* Content */}
                     <div className="flex-1 px-6 py-4 overflow-y-auto space-y-6">
                         {isLoading && (
-                            <div className="flex justify-center items-center h-full">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                            <div className="flex justify-center items-center h-screen w-screen">
+                                <Loader loaderType="spin" />
                             </div>
                         )}
 
@@ -1057,41 +1120,43 @@ const Messages: React.FC = () => {
                             <div className="bg-white rounded-lg shadow p-6">
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700">To:</label>
-                                        <input
-                                            type="text"
+                                        <Input
+                                            inputType="text"
+                                            label
                                             value={composeMessage.to}
                                             onChange={(e) =>
                                                 setComposeMessage({ ...composeMessage, to: e.target.value })
                                             }
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                            disabled={isReplyVisible}
+                                            className="mt-1 block w-full text-sm font-medium text-gray-700 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" name={'To:'}
+                                            isDisabled={isReplyVisible}
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700">Subject:</label>
-                                        <input
-                                            type="text"
+                                        <Input
+                                            inputType="text"
+                                            label
                                             value={composeMessage.subject}
-                                            onChange={(e) =>
-                                                setComposeMessage({ ...composeMessage, subject: e.target.value })
-                                            }
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        />
+                                            onChange={(e) => setComposeMessage({ ...composeMessage, subject: e.target.value })}
+                                            className="mt-1 block w-full text-sm font-medium text-gray-700 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" name={'Subject:'} />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700">Message:</label>
-                                        <textarea
-                                            value={composeMessage.content}
+                                        <TextArea
+                                            label="Message"
+                                            placeholder="Enter Description"
+                                            rows={6}
                                             onChange={(e) =>
                                                 setComposeMessage({ ...composeMessage, content: e.target.value })
                                             }
-                                            rows={6}
                                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                            showTitle
                                         />
                                     </div>
+                                    <Checkbox
+                                        labelText="Add this Information to my Medical Chart"
+                                        showText
+                                    />
 
                                     {composeMessage.attachments?.length > 0 && (
                                         <div className="mt-4">
@@ -1113,7 +1178,7 @@ const Messages: React.FC = () => {
                                                         className="bg-gray-100 text-sm px-2 py-1 rounded flex items-center gap-2"
                                                     >
                                                         <span>{file.name}</span>
-                                                        <button
+                                                        <Button
                                                             onClick={() => {
                                                                 setComposeMessage((prev) => ({
                                                                     ...prev,
@@ -1121,10 +1186,9 @@ const Messages: React.FC = () => {
                                                                 }));
                                                             }}
                                                             className="text-red-600 hover:text-red-800 text-sm bg-gray-100 font-bold border-none"
-                                                            title="Remove"
                                                         >
                                                             ✕
-                                                        </button>
+                                                        </Button>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1134,6 +1198,7 @@ const Messages: React.FC = () => {
                                     <div className="flex justify-center space-x-4">
                                         <Button
                                             colorVariant="default"
+                                            className='px-4'
                                             onClick={() => {
                                                 setIsComposeVisible(false);
                                                 setIsReplyVisible(false);
@@ -1144,6 +1209,7 @@ const Messages: React.FC = () => {
                                             Cancel
                                         </Button>
                                         <Button
+                                            className='px-4'
                                             colorVariant="primary"
                                             onClick={handleSendMessage}
                                             isDisabled={isLoading}
@@ -1165,6 +1231,18 @@ const Messages: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-6">
+                                    {selectedMessage.messageType === "forward" && (
+                                        <div className="border-b border-gray-300 pb-2 mb-4">
+                                            <p className="text-sm text-gray-600">-----Forwarded Message-----</p>
+                                            <p className="text-sm text-gray-600">From: {selectedMessage.replyTo || selectedMessage.sender} | {selectedMessage.date}</p>
+                                        </div>
+                                    )}
+                                    {selectedMessage.messageType === "reply" && (
+                                        <div className="border-b border-gray-300 pb-2 mb-4">
+                                            <p className="text-sm text-gray-600">-----Replayed Message-----</p>
+                                            <p className="text-sm text-gray-600">From: {selectedMessage.replyTo || selectedMessage.sender} | {selectedMessage.date}</p>
+                                        </div>
+                                    )}
                                     {selectedMessage.content.map((line, i) => (
                                         <div key={i} className="bg-gray-50 p-4 rounded border">
                                             <div className="text-sm text-gray-700 mb-2">
@@ -1202,7 +1280,7 @@ const Messages: React.FC = () => {
                             </>
                         )}
 
-                        {!selectedMessage && !isComposeVisible && !isReplyVisible && !isForwardVisible && (
+                        {!selectedMessage && !isComposeVisible && !isReplyVisible && !isForwardVisible && !isMessageSentVisible && (
                             <div className="flex items-center justify-center h-full text-gray-500">
                                 <div className="text-center">
                                     <Icon
@@ -1217,10 +1295,37 @@ const Messages: React.FC = () => {
                                 </div>
                             </div>
                         )}
+
+                        {isMessageSentVisible && (
+                            <div className="flex items-center justify-center h-full">
+                                <div className="text-center">
+                                    <Icon
+                                        name="tick_circle"
+                                        height="100px"
+                                        width="100px"
+                                        colorVariant="success"
+                                    />
+                                    <h2 className="text-4xl font-semibold text-gray-800 mt-4">Message Sent</h2>
+                                    <p className="text-sm text-gray-500 mt-2">Your message has been sent successfully.</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
-        </div>
+
+            {showDeleteWarning && (
+                <WarningPopup
+                    message="Are you sure you want to delete the selected messages? This action cannot be undone."
+                    onConfirm={confirmDeleteMessages}
+                    onCancel={cancelDeleteMessages}
+                    confirmText="Delete"
+                    cancelText="Cancel"
+                    confirmColor="bg-red-500 text-white"
+                    iconName='delete'
+                />
+            )}
+        </div >
     );
 };
 

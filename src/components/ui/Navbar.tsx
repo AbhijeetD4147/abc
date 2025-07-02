@@ -1,20 +1,16 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Icon } from "@ketan_nimase/ui"
+import { GlobalParams } from "../../utils/GlobalParameters";
 
-interface NavbarProps {
-    patientName: {
-        firstName: string;
-        lastName: string;
-    };
-}
 
-export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
+export const Navbar: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const initials = `${patientName.firstName[0] ?? ""}${patientName.lastName[0] ?? ""}`.toUpperCase();
+    const initials = GlobalParams.USER_INITIAL;
 
     const menuItems = [
         { label: "Messages", href: "/messages" },
@@ -35,9 +31,15 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
         { label: "Opt-Out", href: "/opt-out" },
         { label: "Logout", href: "/logout" },
     ];
+    const isActiveRoute = (href: string) => {
+        if (href === "/") {
+            return location.pathname === "/" || location.pathname === "/dashboard";
+        }
+        return location.pathname === href || location.pathname.startsWith(href + "/");
+    };
 
     return (
-        <div className="w-full bg-blue-500 py-2 pl-4 pr-4 flex justify-between items-center">
+        <div className="w-full bg-blue-500 py-0 pl-4 pr-4 flex justify-between items-center">
             {/* Left: Home + Nav Buttons */}
             <div className="flex items-center space-x-2">
                 <div
@@ -53,7 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
                         width="24px"
                     />
                 </div>
-                
+
                 {/* Mobile Menu Button - visible on small and medium screens, smaller on medium */}
                 <div className="lg:hidden relative">
                     <div
@@ -87,13 +89,17 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
                             {menuItems.map(({ label, href }) => (
                                 <li
                                     key={label}
-                                    className="border-b last:border-b-0 border-gray-200 cursor-pointer"
+                                    className={`border-b last:border-b-0 border-gray-200 cursor-pointer ${isActiveRoute(href) ? "bg-red-500" : ""
+                                        }`}
                                     onClick={() => {
                                         navigate(href);
                                         setIsMobileMenuOpen(false);
                                     }}
                                 >
-                                    <span className="block px-3 py-2 text-sm font-normal no-underline text-black hover:text-blue-500 hover:bg-gray-100 transition-all duration-200">
+                                    <span className={`block px-3 py-2 text-sm font-normal no-underline transition-all duration-200 ${isActiveRoute(href)
+                                        ? "text-red-600 bg-red-50 border-l-4 border-red-500"
+                                        : "text-black hover:text-blue-500 hover:bg-gray-100"
+                                        }`}>
                                         {label}
                                     </span>
                                 </li>
@@ -103,12 +109,13 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
                 </div>
 
                 {/* Desktop Menu - hidden on small and medium screens */}
-                <div className="hidden lg:flex items-center space-x-2">
+                <div className="hidden lg:flex py-0 m-0 items-center space-x-2">
                     {menuItems.map(({ label, href }) => (
                         <button
                             key={label}
                             onClick={() => navigate(href)}
-                            className="text-md xl:text-md text-white bg-blue-500 transition m-0 py-2 px-4 xl:py-3 xl:px-4 hover:bg-blue-600 whitespace-nowrap"
+                            className={`text-md xl:text-md text-white bg-blue-500 transition m-0 py-2 px-4 xl:py-3 xl:px-4 hover:bg-blue-600 whitespace-nowrap relative ${isActiveRoute(href) ? "border-b-2 border-red-500" : ""
+                                }`}
                         >
                             {label}
                         </button>
@@ -125,14 +132,14 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
                         className="w-8 h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-full bg-transparent hover:bg-blue-100 cursor-pointer duration-200"
                     >
                         {isOpen ? (
-                             <Icon
-                             colorVariant="light"
-                             height="20px"
-                             isCursorPointer
-                             name="cancel"
-                             stroke
-                             width="20px"
-                         />
+                            <Icon
+                                colorVariant="light"
+                                height="20px"
+                                isCursorPointer
+                                name="cancel"
+                                stroke
+                                width="20px"
+                            />
                         ) : (
                             <Icon
                                 colorVariant="light"
@@ -150,10 +157,14 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
                             {fabItems.map(({ label, href }) => (
                                 <li
                                     key={label}
-                                    className="border-b last:border-b-0 border-gray-200 cursor-pointer"
+                                    className={`border-b last:border-b-0 border-gray-200 cursor-pointer ${isActiveRoute(href) ? "bg-red-50" : ""
+                                        }`}
                                     onClick={() => navigate(href)}
                                 >
-                                    <span className="block px-4 py-2 font-normal no-underline text-black hover:text-blue-500 hover:bg-gray-100 transition-all duration-200">
+                                    <span className={`block px-4 py-2 font-normal no-underline transition-all duration-200 ${isActiveRoute(href)
+                                        ? "text-red-600 bg-red-50 border-l-4 border-red-500"
+                                        : "text-black hover:text-blue-500 hover:bg-gray-100"
+                                        }`}>
                                         {label}
                                     </span>
                                 </li>
@@ -163,11 +174,11 @@ export const Navbar: React.FC<NavbarProps> = ({ patientName }) => {
                 </div>
 
                 {/* Patient Initials Avatar */}
-                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full cursor-pointer bg-blue-500 border border-white text-white flex items-center justify-center font-semibold text-sm md:text-base lg:text-lg" 
-                     onClick={() => navigate("/profile")}>
+                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full cursor-pointer bg-blue-500 border border-white text-white flex items-center justify-center font-semibold text-sm md:text-base lg:text-lg"
+                    onClick={() => navigate("/profile")}>
                     {initials}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

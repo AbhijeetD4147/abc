@@ -189,7 +189,12 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      countryCode: '+1'
+      countryCode: '+1',
+      mobile: '',
+      legalFirstName: '',
+      lastName: '',
+      email: '',
+      dob: ''
     }
   });
 
@@ -421,12 +426,29 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
               type="text"
               inputMode="numeric"
               placeholder="(000) 000-0000"
-              value={mobileController.field.value
-                ? `(${mobileController.field.value.slice(0, 3)}) ${mobileController.field.value.slice(3, 6)}-${mobileController.field.value.slice(6)}`
-                : ''}
+              value={mobileController.field.value}
               onChange={(e) => {
-                const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
-                mobileController.field.onChange(raw);
+                let rawValue = e.target.value.replace(/[^0-9]/g, '');
+                if (rawValue.length > 10) rawValue = rawValue.slice(0, 10);
+
+                let formattedValue = '';
+                if (rawValue.length === 0) {
+                  formattedValue = '';
+                } else if (rawValue.length <= 3) {
+                  formattedValue = `(${rawValue}`;
+                } else if (rawValue.length <= 6) {
+                  formattedValue = `(${rawValue.slice(0, 3)}) ${rawValue.slice(3)}`;
+                } else {
+                  formattedValue = `(${rawValue.slice(0, 3)}) ${rawValue.slice(3, 6)}-${rawValue.slice(6)}`;
+                }
+                mobileController.field.onChange(formattedValue);
+              }}
+              onKeyDown={(e) => {
+                // Handle backspace when field only contains '('
+                if (e.key === 'Backspace' && mobileController.field.value === '(') {
+                  mobileController.field.onChange('');
+                  e.preventDefault();
+                }
               }}
               className="form-control flex-grow-1"
               style={{
@@ -443,8 +465,8 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
               cursor: 'pointer',
               transition: 'background-color 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#cce7ff'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#cce7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
               <Icon
                 colorVariant="primary"
                 height="15px"
@@ -487,8 +509,8 @@ const SignUpPage: React.FC<SignUpPageProps> = (props) => {
               cursor: 'pointer',
               transition: 'background-color 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#cce7ff'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#cce7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
               <Icon
                 colorVariant="primary"
                 height="15px"

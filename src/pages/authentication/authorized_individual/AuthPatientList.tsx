@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { Navbar } from "../../../components/ui/Navbar";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Header, Icon } from "@ketan_nimase/ui";
+import { useNavigate } from "react-router-dom";
 
 const AuthPatientList: React.FC = () => {
     const logs = [
@@ -10,14 +10,20 @@ const AuthPatientList: React.FC = () => {
         { name: "Auth 2", expiry: "06/12/2025" },
         { name: "Auth 3", expiry: "06/12/2025" },
     ];
+    const navigate = useNavigate();
 
 
+
+
+    function hamdleAddAuthIndividual(event: React.MouseEvent<HTMLElement>): void {
+        navigate('/add-authorized-individual')
+    }
 
     return (
         <>
 
             <div className="min-h-screen w-screen flex flex-col items-center bg-white">
-                <Navbar patientName={{ firstName: "Jeffery", lastName: "Stevenson" }} />
+                <Navbar />
                 <div className="w-full border-b text-center py-2 justify-center ">
                     <Header
                         className="py-2 text-lg md:text-xl font-normal justify-center text-center"
@@ -48,6 +54,7 @@ const AuthPatientList: React.FC = () => {
                                 height="14px"
                                 width="14px"
                                 isCursorPointer
+                                onClick={hamdleAddAuthIndividual}
                                 name="plus"
                                 stroke
                                 fill

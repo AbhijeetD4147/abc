@@ -93,7 +93,7 @@ const ActivityLogs: React.FC = () => {
                     }
                 `}</style>
             <div className="min-vh-100 vw-100 d-flex flex-column align-items-center bg-white">
-                <Navbar patientName={{ firstName: "Jeffery", lastName: "Stevenson" }} />
+                <Navbar />
                 <div className="w-100 border-bottom text-center py-3">
                     <h2 className="display-6 fw-semibold">Activity Logs</h2>
                 </div>

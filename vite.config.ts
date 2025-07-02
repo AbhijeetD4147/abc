@@ -1,15 +1,13 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [react()],
   resolve: {
     alias: {
-      'buffer': 'buffer',
+      // We can remove the manual buffer alias as the plugin handles it.
     },
   },
   optimizeDeps: {
-    include: ['buffer'],
+    // The plugin also handles this, so we can remove it.
   },
   build: {
     target: 'esnext', // Add this line to support top-level await

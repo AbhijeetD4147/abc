@@ -438,7 +438,7 @@ const SelectTime: React.FC = () => {
 
   return (
     <div className="min-h-screen h-screen w-full bg-white flex flex-col overflow-hidden w-screen">
-      <Navbar patientName={{ firstName: "John", lastName: "Doe" }} />
+      <Navbar />
       {/* Header */}
       <div className="bg-white py-3 md:py-6 text-center px-4 border-b border-black">
        <h3 className="text-3xl">Request Appointment</h3>
