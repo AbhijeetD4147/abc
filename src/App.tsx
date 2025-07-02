@@ -45,6 +45,10 @@ import SignUpComplete from "./pages/authentication/SignUpComplete";
 import AuthRecordMatchFound from "./pages/authentication/AuthRecordMatchFound";
 import RecoverPassword from "./pages/authentication/RecoverPassword";
 import RecoverUsername from "./pages/authentication/RecoverUsername";
+import AuthAccessGranted from "./pages/authentication/authorized_individual/AuthAccessGranted";
+import AuthManagePermissions from "./pages/authentication/authorized_individual/AuthManagePermissions";
+import AuthUserLogin from "./pages/authentication/authorized_individual/AuthUserLogin";
+import UpdateDemographics from "./pages/settings/demographics/UpdateDemographics";
 
 function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -56,13 +60,13 @@ function App() {
         let practiceName = "";
         let queryParams = new URLSearchParams(window.location.search);
         let path = window.location.pathname;
-         practiceName = "ptportal278";
+        practiceName = "ptportal278";
         // if (window.location.hostname !== "localhost") {
         //   practiceName = path.split("/").pop() || "";
         // } else {
         //   practiceName = "ptportal278"; // dev fallback
         // }
-         // QA Binding Testing on Local
+        // QA Binding Testing on Local
         // practiceName = "ptportalqa";
         // var subDomain = "apptbookingqa1";
 
@@ -83,9 +87,9 @@ function App() {
         GlobalParams.PRACTICE_NAME = practiceName;
 
         // if (practiceName) {
-          const subDomain = "apptbookingqa1";
-          await new GetUrlService().getUrl(subDomain, "1", practiceName);
-          await AuthenticationService.generateToken();
+        const subDomain = "apptbookingqa1";
+        await new GetUrlService().getUrl(subDomain, "1", practiceName);
+        await AuthenticationService.generateToken();
         // }
 
         let queryType = "";
@@ -171,10 +175,6 @@ function App() {
         <Route path="/home" element={<PtHomePage />} />
 
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/profile" element={<PatientProfile />} />
-        <Route path="/update-username" element={<UpdateUsername />} />
-        <Route path="/update-password" element={<UpdatePassword />} />
-        <Route path="/opt-out" element={<OptOut />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/activity-logs" element={<ActivityLogs />} />
         <Route path="/policies-form" element={<PoliciesForm />} />
@@ -201,10 +201,7 @@ function App() {
         <Route path="/select-time" element={<SelectTime />} />
         <Route path="/visit-details" element={<VisitDetailsReason />} />
         <Route path="/request-confirm" element={<RequestConfirmed />} />
-        <Route path="/health-summary" element={<HealthSummary patientName={{
-          firstName: "",
-          lastName: ""
-        }} />} />
+        <Route path="/health-summary" element={<HealthSummary />} />
         <Route path="/insurance" element={<Insurance />} />
 
         {/* Authorized Individual */}
@@ -212,6 +209,17 @@ function App() {
         <Route path="/add-authorized-individual" element={<AddAuthorizedIndividual />} />
         <Route path="/auth-individual-terms-conditions" element={<AuthIndividualTermsAndConditions optedPatient={false} />} />
         <Route path="/auth-individual-record-match-found" element={<AuthRecordMatchFound />} />
+        <Route path="/auth-access-granted" element={<AuthAccessGranted />} />
+        <Route path="/auth-manage-permissions" element={<AuthManagePermissions />} />
+        <Route path="/auth-user-login" element={<AuthUserLogin />} />
+
+        {/* Setting */}
+        <Route path="/profile" element={<PatientProfile />} />
+        <Route path="/update-username" element={<UpdateUsername />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="/opt-out" element={<OptOut />} />
+        <Route path="/activity-logs" element={<ActivityLogs />} />
+        <Route path="/update-demographics" element={<UpdateDemographics />} />
 
 
         {/*<Route path="/authterms" element={<AuthTermsAndConditionScreen />} />

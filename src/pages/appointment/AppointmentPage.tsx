@@ -215,7 +215,7 @@ const AppointmentPage: React.FC<AppointmentPageProps> = ({
 
     return (
         <div className="min-h-screen w-screen flex flex-col">
-            <Navbar patientName={patientName} />
+            <Navbar />
 
             {/* Custom CSS for white theme */}
             <style>{`

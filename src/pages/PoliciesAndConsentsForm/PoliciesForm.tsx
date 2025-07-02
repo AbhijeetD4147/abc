@@ -61,7 +61,7 @@ export const PoliciesForm: React.FC<PoliciesFormProps> = () => {
     return (
         <div className="min-h-screen bg-gray-50 w-screen">
             {/* Navbar */}
-            <Navbar patientName={patientName} />
+            <Navbar />
 
             {/* Main Content */}
             <div className="bg-white">

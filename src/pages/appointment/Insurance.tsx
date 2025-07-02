@@ -390,9 +390,7 @@ export default function Insurance() {
   return (
     <div className="h-screen flex flex-col bg-white overflow-hidden w-screen">
       {/* Navbar */}
-      <Navbar
-        patientName={{ firstName: "Dynamic", lastName: "Name" }}
-      />
+      <Navbar />
       <div className=" flex justify-content-center text-center py-2 border-b-2 border-gray-400 m-0">
         <Header
           className="text-lg md:text-xl font-medium text-center"

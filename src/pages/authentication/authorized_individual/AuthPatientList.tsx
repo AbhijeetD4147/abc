@@ -23,7 +23,7 @@ const AuthPatientList: React.FC = () => {
         <>
 
             <div className="min-h-screen w-screen flex flex-col items-center bg-white">
-                <Navbar patientName={{ firstName: "Jeffery", lastName: "Stevenson" }} />
+                <Navbar />
                 <div className="w-full border-b text-center py-2 justify-center ">
                     <Header
                         className="py-2 text-lg md:text-xl font-normal justify-center text-center"

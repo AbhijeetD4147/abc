@@ -261,9 +261,7 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
     return (
         <div className="flex flex-col items-center justify-start md:justify-center mt-2 min-h-screen w-screen px-4 bg-white">
             {/* Navbar */}
-            <Navbar
-                patientName={{ firstName: "Jeffery", lastName: "Stevenson" }}
-            />
+            <Navbar />
 
             {/* Header */}
             <div className=" flex justify-content-center text-center py-1 border border-bottom m-0 w-full">

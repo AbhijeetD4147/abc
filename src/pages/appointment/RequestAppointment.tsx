@@ -322,7 +322,7 @@ const RequestAppointment: React.FC = () => {
   }
   return (
     <div className="min-h-screen bg-gray-50 relative flex flex-col">
-      <Navbar patientName={{ firstName: "John", lastName: "Doe" }} />
+      <Navbar />
 
       <div className="w-full bg-white pt-3 text-gray-600 text-center border-b border-black">
         <h1 className="text-4xl">Request Appointment</h1>

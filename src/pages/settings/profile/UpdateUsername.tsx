@@ -23,9 +23,7 @@ const UpdateUsername: React.FC<{ currentUsername?: string }> = ({ currentUsernam
 
     return (
         <div className="vh-100 vw-100 d-flex flex-column align-items-center justify-content-center">
-            <Navbar
-                patientName={{ firstName: "Jeffery", lastName: "Stevenson" }}
-            />
+            <Navbar />
             <div className="d-flex w-100 justify-content-center text-center py-2 border-bottom m-0">
                 <Header
                     className="fs-5 fs-md-4 fw-medium text-center"

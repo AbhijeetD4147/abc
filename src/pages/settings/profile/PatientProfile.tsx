@@ -201,9 +201,7 @@ const PatientProfile: React.FC = () => {
                 />
             )}
             {/* Navbar */}
-            <Navbar
-                patientName={{ firstName: firstName || "", lastName: lastName || "" }}
-            />
+            <Navbar />
 
             {/* Header */}
             <div className="d-flex justify-content-center text-center py-2 border-bottom m-0">
