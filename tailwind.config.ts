@@ -188,6 +188,7 @@ export default {
   },
   plugins: [
     require('tailwind-scrollbar-hide'),
-    require('@tailwindcss/forms')
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography') // Add this line
   ],
 } satisfies Config

@@ -75,23 +75,27 @@ export class AppointmentService {
     response_Status_Code_API_16: number | null = null;
     response_Status_Code_API_17: number | null = null;
 
-    static parsePracticePerson(responseBody: string): AppointmentPracticePersonModel[] {
-        const parsed = JSON.parse(responseBody);
+    static parsePracticePerson(responseBody: any): AppointmentPracticePersonModel[] {
+        // Check if responseBody is already an object
+        const parsed = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
         return parsed.map((json: any) => AppointmentPracticePersonModel.fromJson(json));
     }
 
-    static parseAppointmentList(responseBody: string): AppointmentListModel[] {
-        const parsed = JSON.parse(responseBody);
+    static parseAppointmentList(responseBody: any): AppointmentListModel[] {
+        // Check if responseBody is already an object
+        const parsed = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
         return parsed.map((json: any) => AppointmentListModel.fromJson(json));
     }
 
-    static parsePracticeReason(responseBody: string): AppointmentReasonModel[] {
-        const parsed = JSON.parse(responseBody);
+    static parsePracticeReason(responseBody: any): AppointmentReasonModel[] {
+        // Check if responseBody is already an object
+        const parsed = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
         return parsed.map((json: any) => AppointmentReasonModel.fromJson(json));
     }
 
-    static parse(responseBody: string): AppointmentBookingAllowModel[] {
-        const parsed = JSON.parse(responseBody);
+    static parse(responseBody: any): AppointmentBookingAllowModel[] {
+        // Check if responseBody is already an object
+        const parsed = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
         return parsed.map((json: any) => AppointmentReasonModel.fromJson(json));
     }
 
@@ -235,7 +239,7 @@ export class AppointmentService {
         }
     }
 
-    async getAppointmentLocation(): Promise<void> {
+    async getAppointmentLocation(): Promise<any> {
         try {
             const customerData = {
                 'PracticeName': GlobalParams.PRACTICE_NAME,
@@ -255,9 +259,14 @@ export class AppointmentService {
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_4 = 205;
             } else if (response.status === 200) {
-                this.newCompanyDataResponse = NewCompanyDataResponse.fromJson(JSON.parse(response.data));
+                // Remove this line
+                // this.newCompanyDataResponse = NewCompanyDataResponse.fromJson(JSON.parse(response.data));
+                                
+                // Use this instead
+                this.newCompanyDataResponse = NewCompanyDataResponse.fromJson(response.data);
                 this.locationData = this.newCompanyDataResponse?.locations || [];
                 this.response_Status_Code_API_4 = response.status;
+                 return this.newCompanyDataResponse; 
             } else {
                 this.maximum_Calling_API_4 = this.maximum_Calling_API_4 + 1;
                 if (this.maximum_Calling_API_4 < ApiPath.MaxAPICalling) {
@@ -320,7 +329,7 @@ export class AppointmentService {
         }
     }
 
-    async getAppointmentReason(): Promise<void> {
+    async getAppointmentReason(): Promise<any> {
         try {
             const customerData = {
                 'PracticeName': GlobalParams.PRACTICE_NAME,
@@ -351,13 +360,15 @@ export class AppointmentService {
                         setTimeout(async () => {
                             await this.getAppointmentReason();
                         }, 1000);
-                    }
-                } else {
-                    this.response_Status_Code_API_6 = response.status;
+                    };
                 }
-            }
+            else {
+                this.response_Status_Code_API_6 = response.status;
+                return response;
+            }}
         } catch (e) {
             console.error('caught error ::', e);
+            throw e;
         }
     }
 

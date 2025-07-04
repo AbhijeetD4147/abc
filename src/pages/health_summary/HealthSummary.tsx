@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from '../../components/ui/Navbar';
 import { CustomDateRangePicker } from '../../components/ui/CustomDateRangePicker';
 import { HealthSummaryService } from '../../services/healthSummary/HealthSummaryService';
-import { HealthSummaryListModel } from '../../model/health_summary/HealthSummaryModel';
+import { HealthSummaryListModel, HealthSummaryThreadModel } from '../../model/health_summary/HealthSummaryModel';
 import { Button, Icon, Input, Loader, TextArea } from '@ketan_nimase/ui';
+import { GlobalParams } from '../../utils/GlobalParameters';
 
 interface HealthSummaryProps {
 };
@@ -27,42 +28,32 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
 
   const healthSummaryService = new HealthSummaryService();
 
+  // Add a state for health summary details
+  const [healthSummaryDetails, setHealthSummaryDetails] = useState<HealthSummaryThreadModel | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
   // Fetch health summary data
   const fetchHealthSummaryData = async () => {
     if (!startDate || !endDate) return;
-
     setLoading(true);
     try {
       const fromDate = startDate.toISOString().split('T')[0];
       const toDate = endDate.toISOString().split('T')[0];
-
-      await healthSummaryService.getHealthSummaryList(currentPage, fromDate, toDate);
-      // For demo purposes, creating sample data since service doesn't expose results
-      const sampleData: HealthSummaryListModel[] = [
-        {
-          healthSummaryId: 1,
-          healthTitle: 'Annual Eye Exam Results',
-          examDate: '2024-01-15',
-          sentFrom: 'Dr. Smith',
-          sentDate: '2024-01-16',
-          isSeen: false,
-          toJson: function (): { [key: string]: any; } {
-            throw new Error('Function not implemented.');
-          }
-        },
-        {
-          healthSummaryId: 2,
-          healthTitle: 'Contact Lens Fitting',
-          examDate: '2024-01-10',
-          sentFrom: 'Dr. Johnson',
-          sentDate: '2024-01-11',
-          isSeen: true,
-          toJson: function (): { [key: string]: any; } {
-            throw new Error('Function not implemented.');
-          }
-        }
-      ];
-      setHealthSummaryData(sampleData);
+     
+      
+      // Use the actual API
+      const response = await healthSummaryService.getHealthSummaryList(currentPage, fromDate, toDate);
+      console.log('API Response:', response); // Add this for debugging
+      
+      if (response && response.length > 0) {
+        setHealthSummaryData(response);
+        // Automatically select the first item and fetch its details
+        handleSummarySelect(response[0]);
+      } else {
+        setHealthSummaryData([]);
+        setSelectedSummary(null);
+        setHealthSummaryDetails(null);
+      }
     } catch (error) {
       console.error('Error fetching health summary data:', error);
       setHealthSummaryData([]);
@@ -71,15 +62,27 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
     }
   };
 
-  // Fetch data when dates change
-  useEffect(() => {
-    if (startDate && endDate) {
-      fetchHealthSummaryData();
+  // Fetch health summary details
+  const fetchHealthSummaryDetails = async (summaryId: number) => {
+    if (!summaryId) return;
+    setDetailsLoading(true);
+    try {
+      const details = await healthSummaryService.getHealthSummaryThread(summaryId);
+      setHealthSummaryDetails(details);
+    } catch (error) {
+      console.error('Error fetching health summary details:', error);
+      setHealthSummaryDetails(null);
+    } finally {
+      setDetailsLoading(false);
     }
-  }, [startDate, endDate, currentPage]);
+  };
 
   const handleSummarySelect = (summary: HealthSummaryListModel) => {
     setSelectedSummary(summary);
+    // Fetch details for the selected summary
+    if (summary.healthSummaryId) {
+      fetchHealthSummaryDetails(summary.healthSummaryId);
+    }
     // Mark as seen
     setHealthSummaryData(prev =>
       prev.map(item =>
@@ -89,6 +92,14 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
       )
     );
   };
+
+  // Fetch data when dates change
+  useEffect(() => {
+    if (startDate && endDate) {
+      fetchHealthSummaryData();
+    }
+  }, [startDate, endDate, currentPage]);
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -121,11 +132,47 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
   };
 
   // Handle send action
-  const handleSend = () => {
-    // Implement send logic here
-    console.log('Sending health summary:', sendFormData);
-    // Reset form and exit transmit mode
-    handleBackFromTransmit();
+  const handleSend = async () => {
+    if (!selectedSummary) return;
+    
+    // Basic validation
+    if (!sendFormData.to || !sendFormData.subject) {
+      console.error('Missing required fields');
+      return;
+    }
+    
+    try {
+      // Create the transmit model based on the sample.txt implementation
+      const transmitModel = {
+        ptcustomerId: GlobalParams.USER_ID,
+        isActive: true,
+        toEmail: sendFormData.to,
+        messageSubject: sendFormData.subject,
+        messageText: sendFormData.message,
+        messageDateTime: new Date().toISOString(),
+        messageStatus: "Sent",
+        isDirectMessage: false,
+        kno2Id: "",
+        isCustomer: true,
+        isIncoming: false,
+        isFavourite: true,
+        isReplied: false,
+        parentMessageId: 0,
+        ptPracticePersonId: selectedSummary.practicePersonId,
+        userId: GlobalParams.USER_ID,
+        switchUserId: GlobalParams.SWITCH_USER_ID
+      };
+      
+      await healthSummaryService.transmitHealthSummary(transmitModel);
+      
+      // Reset form and exit transmit mode
+      handleBackFromTransmit();
+      
+      // Show success message
+      console.log('Health summary transmitted successfully');
+    } catch (error) {
+      console.error('Error transmitting health summary:', error);
+    }
   };
 
   // Print functionality
@@ -490,25 +537,24 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
                   <div
                     key={summary.healthSummaryId}
                     onClick={() => handleSummarySelect(summary)}
-                    className={`p-1 cursor-pointer hover:bg-gray-100 bg-green-100 transition-colors duration-200 ${selectedSummary?.healthSummaryId === summary.healthSummaryId
-                      ? 'bg-blue-100 border-r-2 border-blue-500'
-                      : ''
-                      }`}
+                    className={`p-1 cursor-pointer hover:bg-gray-100 transition-colors duration-200 ${
+                      selectedSummary?.healthSummaryId === summary.healthSummaryId
+                        ? 'bg-blue-100 border-r-2 border-blue-500'
+                        : summary.isSeen ? 'bg-white' : 'bg-green-100'
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-gray-700">
                         {summary.healthTitle ? summary.healthTitle : 'N/A'}
                       </p>
                       <p className="text-xs text-gray-700">
-                        {summary.sentDate ? formatDate(summary.sentDate) : 'N/A'}
+                        {summary.examDate ? new Date(summary.examDate).toLocaleDateString() : 'N/A'}
                       </p>
                     </div>
                   </div>
                 ))}
-
               </div>
             )}
-
           </div>
           <span className="fixed bottom-4 left-4 text-xs text-gray-400">
             Version 1.0
@@ -590,37 +636,53 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
                     <div className="bg-white rounded-lg border border-gray-200 p-6">
                       <h3 className="text-lg font-medium text-gray-900 mb-4">Summary Details</h3>
 
-                      {/* Sample content - replace with actual health summary data */}
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-medium text-gray-800">Visual Acuity</h4>
-                          <p className="text-gray-600 mt-1">Right Eye: 20/20, Left Eye: 20/25</p>
+                      {loading || detailsLoading ? (
+                        <div className="flex justify-center items-center py-8">
+                          <Loader loaderType="spin" />
                         </div>
+                      ) : selectedSummary ? (
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-medium text-gray-800">Health Summary</h4>
+                            <p className="text-gray-600 mt-1">
+                              {selectedSummary.healthTitle || 'No title available'}
+                            </p>
+                          </div>
 
-                        <div>
-                          <h4 className="font-medium text-gray-800">Prescription</h4>
-                          <p className="text-gray-600 mt-1">
-                            OD: -1.25 -0.50 x 180<br />
-                            OS: -1.00 -0.25 x 175
-                          </p>
-                        </div>
+                          <div>
+                            <h4 className="font-medium text-gray-800">Exam Date</h4>
+                            <p className="text-gray-600 mt-1">
+                              {selectedSummary.examDate ? new Date(selectedSummary.examDate).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
 
-                        <div>
-                          <h4 className="font-medium text-gray-800">Recommendations</h4>
-                          <p className="text-gray-600 mt-1">
-                            Continue current prescription. Schedule follow-up in 12 months.
-                            Consider blue light filtering lenses for computer use.
-                          </p>
-                        </div>
+                          <div>
+                            <h4 className="font-medium text-gray-800">Provider</h4>
+                            <p className="text-gray-600 mt-1">
+                              {selectedSummary.sentFrom || 'N/A'}
+                            </p>
+                          </div>
 
-                        <div>
-                          <h4 className="font-medium text-gray-800">Notes</h4>
-                          <p className="text-gray-600 mt-1">
-                            Patient reports occasional eye strain. Recommended 20-20-20 rule
-                            and proper lighting when using digital devices.
-                          </p>
+                          <div>
+                            <h4 className="font-medium text-gray-800">Date Received</h4>
+                            <p className="text-gray-600 mt-1">
+                              {selectedSummary.sentDate || 'N/A'}
+                            </p>
+                          </div>
+
+                          {healthSummaryDetails && healthSummaryDetails.summaryData && (
+                            <div>
+                              <h4 className="font-medium text-gray-800">Summary Data</h4>
+                              <div 
+                                className="prose prose-sm max-w-none mt-1" // Add prose classes here
+                                dangerouslySetInnerHTML={{ __html: healthSummaryDetails.summaryData }}
+                              />
+                            </div>
+                          )}
                         </div>
-                      </div>
+                      ) : (
+                        <p className="text-gray-500">Select a health summary to view details</p>
+                      )}
                     </div>
                   </div>
                 </>

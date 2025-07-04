@@ -24,6 +24,7 @@ export interface Location {
     days?: Day[];
     address?: Address;
     maximeyesLocationId?: number;
+    showLocationOnline?: boolean; // Add this line
 }
 
 export interface Day {
@@ -477,7 +478,8 @@ export class LocationModel {
             name: json.name,
             days: json.days ? json.days.map((d: any) => DayModel.fromJson(d)) : undefined,
             address: json.address ? AddressModel.fromJson(json.address) : undefined,
-            maximeyesLocationId: json.maximeyesLocationId
+            maximeyesLocationId: json.maximeyesLocationId,
+            showLocationOnline: json.showLocationOnline 
         };
     }
 
@@ -539,19 +541,19 @@ export class AddressModel {
 export class AppointmentPracticePersonModel {
     static fromJson(json: any): AppointmentPracticePerson {
         return {
-            firstName: json.firsT_NAME || "",
-            lastName: json.lasT_NAME || "",
-            middleName: json.middlE_NAME || "",
-            practicePersonId: json.practicE_PERSON_ID || ""
+            firstName: json.firstName || "",
+            lastName: json.lastName || "",
+            middleName: json.middleName || "",
+            practicePersonId: json.practicePersonId || ""
         };
     }
 
     static toJson(person: AppointmentPracticePerson): Record<string, any> {
         return {
-            firsT_NAME: person.firstName || "",
-            lasT_NAME: person.lastName || "",
-            middlE_NAME: person.middleName || "",
-            practicE_PERSON_ID: person.practicePersonId || ""
+            firstName: person.firstName || "",
+            lastName: person.lastName || "",
+            middleName: person.middleName || "",
+            practicePersonId: person.practicePersonId || ""
         };
     }
 }

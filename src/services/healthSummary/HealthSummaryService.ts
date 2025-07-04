@@ -17,15 +17,29 @@ export class HealthSummaryService {
     private response_Status_Code_API_3: number | null = null;
 
     parseHealthSummaryList(responseBody: string): HealthSummaryListModel[] {
-        const parsed = JSON.parse(responseBody);
-        return parsed.map((json: any) => new HealthSummaryListModel(json));
+        try {
+            // Log the response for debugging
+            console.log('Response body:', responseBody);
+            
+            // Handle both string and object responses
+            const parsed = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
+            
+            // Ensure we're working with an array
+            const dataArray = Array.isArray(parsed) ? parsed : [parsed];
+            
+            // Map to model objects
+            return dataArray.map((json: any) => new HealthSummaryListModel(json));
+        } catch (error) {
+            console.error('Error parsing health summary list:', error);
+            return [];
+        }
     }
 
     async getHealthSummaryList(
         pageNo: number,
         fromDate: string,
         endDate: string
-    ): Promise<void> {
+    ): Promise<HealthSummaryListModel[] | null> {
         try {
             this.data = {
                 'PracticeName': GlobalParams.PRACTICE_NAME,
@@ -38,11 +52,11 @@ export class HealthSummaryService {
                 'UserId': GlobalParams.USER_ID,
                 'SwitchUserId': GlobalParams.SWITCH_USER_ID,
             };
-            
             this.url = ApiPath.baseApi + 'api/PatientPortal/GetPatientHealthSummaryList';
-            
             const queryString = new URLSearchParams(this.data).toString();
             const requestUrl = this.url + '?' + queryString;
+            
+            console.log('Requesting URL:', requestUrl); // Add for debugging
             
             const response = await baseWebService.getWebAPI({
                 requestUrl: requestUrl,
@@ -50,32 +64,39 @@ export class HealthSummaryService {
                 practiceName: GlobalParams.PRACTICE_NAME
             });
             
+            console.log('Response status:', response.status); // Add for debugging
+            console.log('Response data:', response.data); // Add for debugging
+            
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_1 = 205;
+                return null;
             } else if (response.status === 200) {
-                this.healthSummaryListModel = this.parseHealthSummaryList(response.data);
+                const list = this.parseHealthSummaryList(response.data);
+                this.healthSummaryListModel = list;
                 this.response_Status_Code_API_1 = response.status;
+                return list;
             } else {
                 this.maximum_Calling_API_1 = this.maximum_Calling_API_1 + 1;
                 if (this.maximum_Calling_API_1 < ApiPath.MaxAPICalling) {
                     if (response.status === 401) {
                         await AuthenticationService.generateToken();
-                        await this.getHealthSummaryList(pageNo, fromDate, endDate);
+                        return await this.getHealthSummaryList(pageNo, fromDate, endDate);
                     } else {
-                        setTimeout(async () => {
-                            await this.getHealthSummaryList(pageNo, fromDate, endDate);
-                        }, 1000);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        return await this.getHealthSummaryList(pageNo, fromDate, endDate);
                     }
                 } else {
                     this.response_Status_Code_API_1 = response.status;
+                    return null;
                 }
             }
         } catch (e) {
             console.error('caught error :', e);
+            return null;
         }
     }
 
-    async getHealthSummaryThread(id: number): Promise<void> {
+    async getHealthSummaryThread(id: number): Promise<HealthSummaryThreadModel | null> {
         try {
             this.data = {
                 'PracticeName': GlobalParams.PRACTICE_NAME,
@@ -91,30 +112,35 @@ export class HealthSummaryService {
             
             const response = await baseWebService.getWebAPI({
                 requestUrl: requestUrl,
+                token: GlobalParams.TOKEN,
+                practiceName: GlobalParams.PRACTICE_NAME
             });
             
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_2 = 205;
+                return null;
             } else if (response.status === 200) {
                 this.healthSummaryThreadModel = new HealthSummaryThreadModel(JSON.parse(response.data));
                 this.response_Status_Code_API_2 = response.status;
+                return this.healthSummaryThreadModel;
             } else {
                 this.maximum_Calling_API_2 = this.maximum_Calling_API_2 + 1;
                 if (this.maximum_Calling_API_2 < ApiPath.MaxAPICalling) {
                     if (response.status === 401) {
                         await AuthenticationService.generateToken();
-                        await this.getHealthSummaryThread(id);
+                        return await this.getHealthSummaryThread(id);
                     } else {
-                        setTimeout(async () => {
-                            await this.getHealthSummaryThread(id);
-                        }, 1000);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        return await this.getHealthSummaryThread(id);
                     }
                 } else {
                     this.response_Status_Code_API_2 = response.status;
+                    return null;
                 }
             }
         } catch (e) {
             console.error('caught error :', e);
+            return null;
         }
     }
 
