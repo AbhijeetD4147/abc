@@ -233,7 +233,7 @@ const PtHomePage: React.FC = () => {
           <RdsFeatureList
             columns={1}
             iconName="tick_circle"
-            className=" border-none text-gray-600"
+            className="border-0 text-gray-600"
             itemList={homePageData?.features || []}
             heading={''}
           />
@@ -267,13 +267,13 @@ const PtHomePage: React.FC = () => {
         {/* Buttons - Side by side on all screens, smaller on mobile */}
         <div className="d-flex flex-row gap-2 gap-md-3 w-100" style={{ maxWidth: '400px' }}>
           <Button
-            className="btn flex-fill px-2 px-md-3 py-2 py-md-3 border rounded"
+            className="btn flex-fill px-2 px-md-3 py-2 py-md-3 text-white border rounded"
             onClick={() => handleNavigation('/signup')}
           >
             Create New Account
           </Button>
           <Button
-            className="btn flex-fill px-2 px-md-3 py-2 py-md-3 border rounded"
+            className="btn flex-fill px-2 px-md-3 py-2 py-md-3 text-white border rounded"
             onClick={() => handleNavigation('/login')}
           >
             Sign In
@@ -284,7 +284,7 @@ const PtHomePage: React.FC = () => {
         <div className="text-center mt-3 mt-md-4 px-2" style={{ color: theme?.secondaryTextColor }}>
           <p className="h5 fw-medium mb-2">Questions?</p>
           <p className="mb-0">
-            Call our office at <strong>{homePageData?.phoneNumber}</strong>
+            Call our office at <strong>{homePageData?.phoneNumber || '(000) 000-0000'}</strong>
           </p>
         </div>
       </div>
