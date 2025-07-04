@@ -1,86 +1,169 @@
-import 'package:first_insight/model/authentication/add_authorized_individual_request_model.dart';
-import 'package:first_insight/model/authentication/insert_auth_individual_model.dart';
-import 'package:first_insight/model/patient_portal/ValidatePatientForAddIndividualResponse.dart';
-import 'package:first_insight/screens/authentication/authorized_individual/auth_access_granted.dart';
-import 'package:first_insight/screens/dashboard/dashboard_detail_screen.dart';
+// ignore_for_file: must_be_immutable
+
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:first_insight/model/health_summary/health_summary_model.dart';
 import 'package:first_insight/screens/dashboard/dashboard_screen.dart';
-import 'package:first_insight/services/authentication/user_service.dart';
+import 'package:first_insight/screens/settings/profile/profile.dart';
+import 'package:first_insight/services/health_summary/health_summary_service.dart';
+import 'package:first_insight/services/settings/activity_log_service.dart';
 import 'package:first_insight/utils/theme_selection_service.dart';
-import 'package:first_insight/utils/appBar.dart';
-import 'package:first_insight/utils/base_textstyle.dart';
-import 'package:first_insight/utils/base_widget.dart';
 import 'package:first_insight/utils/constants.dart';
 import 'package:first_insight/utils/popup_menu.dart';
+import 'package:first_insight/utils/validators.dart';
+import 'package:first_insight/utils/base_textstyle.dart';
+import 'package:first_insight/utils/base_widget.dart';
+import 'package:first_insight/utils/global_params.dart';
 import 'package:first_insight/utils/responsive.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:get/get_utils/src/extensions/dynamic_extensions.dart';
+import 'package:flutter_date_range_picker/flutter_date_range_picker.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:printing/printing.dart';
 import 'package:sizer/sizer.dart';
 import 'package:toastification/toastification.dart';
+import 'package:universal_html/html.dart' as html;
 
 import '../../utils/idle_wrapper.dart';
 
-// ignore: must_be_immutable
-class RecordMatchFoundScreen extends StatefulWidget {
-  String alertMsg;
-  String userMatchType;
+class HealthSummaryScreen extends StatefulWidget {
+  final GlobalKey<ScaffoldState>? drawerScaffoldKey;
 
-  RecordMatchFoundScreen(
-      {super.key, required this.alertMsg, required this.userMatchType});
+  const HealthSummaryScreen({super.key, this.drawerScaffoldKey});
 
   @override
-  State<RecordMatchFoundScreen> createState() =>
-      _PatientRecordMatchFoundScreenState();
+  State<HealthSummaryScreen> createState() => _HealthSummaryScreenState();
 }
 
-class _PatientRecordMatchFoundScreenState extends State<RecordMatchFoundScreen>
-    with TickerProviderStateMixin {
-  double height = 0.0;
-  double width = 0.0;
+class _HealthSummaryScreenState extends State<HealthSummaryScreen> {
+  double height = 0;
+  double width = 0;
+  final DateFormat dateFormat = DateFormat('MM/dd/yyyy');
+  List<HealthSummaryListModel> healthSummaryListModel = [];
+  List<HealthSummaryThreadAttachment> healthSummaryThreadAttachmentList = [];
+  int currentPage = 1;
+  int? lastPage = 0;
+  int totalPages = 0;
+  int selectedHealthSummaryIndex = 0;
+  int selectedHealthSummaryId = 0;
+  DateTime currentDate = DateTime.now();
+  DateRange? selectedDateRange;
+  DateRange? pickedDateRange;
+  List<int> year = [];
+  int? selectedYear;
+  HealthSummaryThreadModel? healthSummaryThreadModel;
+  String? healthSummarySubject;
+  DateTimeRange? dateTimeRange;
+  String? healthSummaryData = "";
+  bool healthSummaryListLoading = true,
+      healthSummaryDataLoading = false,
+      isHealthSummaryScreenVisibile = false,
+      healthSummaryForShareLoading = false,
+      healthSummaryActionPopupVisible = false,
+      isMessageSentScreenVisible = false,
+      isHealthSummaryForwardScreen = false,
+      validateToEmail = false,
+      validateSubject = false;
+  TextEditingController toController = TextEditingController();
+  TextEditingController dateController = TextEditingController(),
+      subjectController = TextEditingController(),
+      messageController = TextEditingController();
+  String invalidEmailMessage = 'Email is required';
+  HealthSummaryService healthSummaryService = new HealthSummaryService();
+  ActivityLogService activityLogService = new ActivityLogService();
+  DateTimeRange? pickedDateTimeRange = DateTimeRange(
+    start: DateTime(
+        DateTime.now().year - 1, DateTime.now().month, DateTime.now().day),
+    end:
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+  );
 
-  var isSent = "0";
-  ValidatePatientForAddIndividualResponse? userData;
-  AddAuthorizedIndividualRequestModel? addAuthorizedIndividualRequestModel;
-  dynamic argumentData;
-  GlobalKey<ScaffoldState> drawerScaffoldKey = GlobalKey<ScaffoldState>();
+  bool emailIdRequiredInPayloadForAuditLog = false;
+  int selectionIndex = 6;
+
+  InAppWebViewController? webViewController;
+  bool isDatePickerOpen = false;
 
   @override
   void initState() {
-    argumentData = Get.arguments;
-    userData = argumentData[0]['responseData'];
-    addAuthorizedIndividualRequestModel = argumentData[1]['accessData'];
     super.initState();
-  }
+    dateTimeRange = pickedDateTimeRange;
 
-  InsertAuthorizedIndividualModel? insertAuthorizedIndividualModel;
-  AuthenticationService authenticationService = new AuthenticationService();
+    ApiPath.isSettingIconPopupVisible = false;
+    ApiPath.isSettingIconPopupOpen.value = false;
 
-  sendCredential() async {
+    for (int i = 0; i < 10; i++) {
+      year.add(currentDate.year - i);
+    }
+
+    selectedYear = year[0];
+    selectedDateRange = CustomFormattedDateRange(
+      DateTime(
+          DateTime.now().year - 1, DateTime.now().month, DateTime.now().day),
+      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+    );
+    // selectedDateRange = DateRange(
+    //   DateTime(
+    //       DateTime.now().year - 1, DateTime.now().month, DateTime.now().day),
+    //   DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+    // );
+
     setState(() {
-      isSent = "1";
+      dateController.text = dateFormat.format(selectedDateRange!.start) +
+          " - " +
+          dateFormat.format(selectedDateRange!.end);
     });
 
-    await authenticationService.addAuthPatient(
-        addAuthorizedIndividualRequestModel!.toMap(), widget.userMatchType);
-    if (authenticationService.response_Status_Code_API_14 == 200) {
+    getHealthSummaryList(selectedDateRange);
+  }
+
+  Future<void> getHealthSummaryList(DateRange? dateRange) async {
+    setState(() {
+      selectedHealthSummaryId = 0;
+      healthSummaryListLoading = true;
+      healthSummaryListModel.clear();
+    });
+    await healthSummaryService.getHealthSummaryList(
+      currentPage,
+      dateFormat.format(dateRange!.start),
+      dateFormat.format(dateRange.end),
+    );
+
+    if (healthSummaryService.response_Status_Code_API_1 == 200) {
       setState(() {
-        insertAuthorizedIndividualModel =
-            authenticationService.insertAuthorizedIndividualModel;
-        if (insertAuthorizedIndividualModel!.insertStatus!) {
-          Get.to(
-              AuthAccessGranted(
-                  locationPhone:
-                      insertAuthorizedIndividualModel!.locationPhone),
-              arguments: userData);
-          isSent = "2";
+        healthSummaryListModel = healthSummaryService.healthSummaryListModel!;
+        if (healthSummaryListModel.length > 0) {
+          var totalRecords = healthSummaryListModel[0].totalRecords;
+          totalPages = (totalRecords! / 10).ceil();
+          lastPage = totalPages;
+          healthSummaryListModel[0].isSeen = true;
+          selectedHealthSummaryId = healthSummaryListModel[0].healthSummaryId!;
+          selectedHealthSummaryIndex = 0;
+          if (Responsive.isMobile(context)) {
+            healthSummaryListLoading = false;
+          } else {
+            isHealthSummaryScreenVisibile = true;
+            getHealthSummaryDetails(selectedHealthSummaryId);
+          }
+        } else {
+          if (currentPage > 1) {
+            currentPage--;
+            getHealthSummaryList(selectedDateRange);
+          } else {
+            selectedHealthSummaryId = 0;
+            healthSummaryDataLoading = false;
+            healthSummaryListLoading = false;
+          }
         }
       });
     } else {
-      if (authenticationService.response_Status_Code_API_14 != 205) {
+      if (healthSummaryService.response_Status_Code_API_1 != 205) {
         setState(() {
-          isSent = "2";
+          healthSummaryListLoading = false;
         });
         showToast(
           context,
@@ -92,37 +175,175 @@ class _PatientRecordMatchFoundScreenState extends State<RecordMatchFoundScreen>
     }
   }
 
+  Future<void> updateHealthSummaryAuditLog(String action) async {
+    await activityLogService.updateAuditLogForHealthSummary(
+        action,
+        selectedHealthSummaryId,
+        emailIdRequiredInPayloadForAuditLog ? toController.text.trim() : "");
+    if (activityLogService.response_Status_Code_API_3 == 200) {
+      toController.clear();
+    } else if (activityLogService.response_Status_Code_API_3 != 200 &&
+        activityLogService.response_Status_Code_API_3 != 205) {
+      showToast(
+        context,
+        message:
+            'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
+        type: ToastificationType.error,
+      );
+    }
+  }
+
+  Future<void> getHealthSummaryDetails(int id) async {
+    setState(() {
+      healthSummaryDataLoading = true;
+    });
+    await healthSummaryService.getHealthSummaryThread(id);
+    if (healthSummaryService.response_Status_Code_API_2 == 200) {
+      setState(() {
+        healthSummaryThreadModel =
+            healthSummaryService.healthSummaryThreadModel;
+        healthSummarySubject = healthSummaryThreadModel!.summaryTitle;
+        healthSummaryData = healthSummaryThreadModel!.summaryData;
+        healthSummaryThreadAttachmentList =
+            healthSummaryThreadModel!.healthSummaryAttachment ?? [];
+        healthSummaryDataLoading = false;
+        healthSummaryListLoading = false;
+      });
+    } else {
+      if (healthSummaryService.response_Status_Code_API_2 != 205) {
+        setState(() {
+          healthSummaryDataLoading = false;
+        });
+        showToast(
+          context,
+          message:
+              'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
+          type: ToastificationType.error,
+        );
+      }
+    }
+  }
+
+  Future<void> sendMessage() async {
+    if (subjectController.text.isNotEmpty &&
+        toController.text.isNotEmpty &&
+        !validateSubject &&
+        !validateToEmail) {
+      setState(() {
+        healthSummaryForShareLoading = true;
+      });
+
+      DateFormat dateFormat = DateFormat("yyyy-MM-dd hh:mm");
+
+      HealthSummaryTransmitModel healthSummaryTransmitModel =
+          HealthSummaryTransmitModel();
+      healthSummaryTransmitModel.ptcustomerId =
+          int.parse(GlobalParams.PT_CUSTOMER_ID);
+      healthSummaryTransmitModel.isActive = true;
+      healthSummaryTransmitModel.toEmail = toController.text.trim();
+      healthSummaryTransmitModel.messageSubject = subjectController.text.trim();
+      healthSummaryTransmitModel.messageText = messageController.text.trim();
+      healthSummaryTransmitModel.messageDateTime =
+          dateFormat.format(currentDate);
+      healthSummaryTransmitModel.messageStatus = "Sent";
+      healthSummaryTransmitModel.isDirectMessage = false;
+      healthSummaryTransmitModel.kno2Id = "";
+      healthSummaryTransmitModel.isCustomer = true;
+      healthSummaryTransmitModel.isIncoming = false;
+      healthSummaryTransmitModel.isFavourite = true;
+      healthSummaryThreadAttachmentList.removeAt(1);
+      healthSummaryTransmitModel.ptMessageAttachment =
+          healthSummaryThreadAttachmentList;
+      healthSummaryTransmitModel.isReplied = false;
+      healthSummaryTransmitModel.parentMessageId = 0;
+      healthSummaryTransmitModel.ptPracticePersonId = 118;
+      healthSummaryTransmitModel.userId = int.parse(GlobalParams.USER_ID);
+      healthSummaryTransmitModel.switchUserId =
+          int.parse(GlobalParams.SWITCH_USER_ID);
+
+      await healthSummaryService
+          .transmitHealthSummary(healthSummaryTransmitModel);
+      if (healthSummaryService.response_Status_Code_API_3 == 200) {
+        setState(() {
+          emailIdRequiredInPayloadForAuditLog = true;
+          isHealthSummaryForwardScreen = false;
+          isMessageSentScreenVisible = true;
+          healthSummaryForShareLoading = false;
+          messageController.clear();
+          subjectController.clear();
+        });
+        await updateHealthSummaryAuditLog("Transmit CCDA");
+      } else {
+        if (healthSummaryService.response_Status_Code_API_3 != 205) {
+          setState(() {
+            healthSummaryListLoading = false;
+          });
+          showToast(
+            context,
+            message:
+                'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
+            type: ToastificationType.error,
+          );
+        }
+      }
+    }
+    if (subjectController.text.isEmpty) {
+      setState(() {
+        validateSubject = true;
+      });
+    }
+    if (toController.text.isEmpty) {
+      setState(() {
+        validateToEmail = true;
+        invalidEmailMessage = 'Email is required';
+      });
+    }
+  }
+
+  downloadFile(String? base64File, String? fileName) {
+    final blob = html.Blob([base64Decode(base64File!)]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.document.createElement('a') as html.AnchorElement
+      ..href = url
+      ..style.display = 'none'
+      ..download = fileName;
+    html.document.body!.children.add(anchor);
+
+    anchor.click();
+
+    html.document.body!.children.remove(anchor);
+    html.Url.revokeObjectUrl(url);
+  }
+
   @override
   Widget build(BuildContext context) {
-    height = MediaQuery.of(context).size.height;
-    width = MediaQuery.of(context).size.width;
-
     return IdleWrapper(
-      child: SafeArea(
-        child: GestureDetector(
-          onTap: () {
-            setState(() {
-              ApiPath.isSettingIconPopupVisible = false;
-              ApiPath.isSettingIconPopupOpen.value = false;
-            });
-          },
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            healthSummaryActionPopupVisible = false;
+            ApiPath.isSettingIconPopupVisible = false;
+            ApiPath.isSettingIconPopupOpen.value = false;
+          });
+        },
+        child: SafeArea(
           child: Scaffold(
-            appBar: !Responsive.isMobile(context)
-                ? CommonAppBar(
-                    context,
-                    TabController(length: 6, vsync: this, initialIndex: 0),
-                    setState,
-                    null,
-                    "")
-                : PreferredSize(
-                    preferredSize: Size(0, 0),
-                    child: SizedBox(),
+            body: Stack(
+              children: [
+                Responsive(
+                  mobile: mobileView(),
+                  tablet: webView(),
+                  desktop: webView(),
+                  k4Desktop: webView(),
+                ),
+                Visibility(
+                  visible: ApiPath.isSettingIconPopupVisible,
+                  child: Positioned(
+                    right: 0.5.w,
+                    child: MenuOptions(context, setState, false),
                   ),
-            body: Responsive(
-              mobile: mobileView(),
-              tablet: webView(),
-              desktop: webView(),
-              k4Desktop: webView(),
+                ),
+              ],
             ),
           ),
         ),
@@ -130,20 +351,92 @@ class _PatientRecordMatchFoundScreenState extends State<RecordMatchFoundScreen>
     );
   }
 
-  Widget mobileView() {
-    return Column(
+  Widget webView() {
+    return Row(
       children: [
-        topBarMobile(),
         Expanded(
           flex: 1,
-          child: Container(
-            color: ThemeSelection.BGColor,
-            child: Center(
-              child: widget.userMatchType == 'ExistingPatientPartialMatch' ||
-                      widget.userMatchType == 'ExistingAuthPartialMatch'
-                  ? recordMatchFoundSectionOfExistingPatientPartial()
-                  : recordMatchFoundSection(),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.0),
+                color: ThemeSelection.ButtonPressed,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 2.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 1.h),
+                        child: Text(
+                          "Health Summary",
+                          style: CommonTextStyle.of(context).H16_SUR(
+                            ThemeSelection.secondaryTextColor,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 1.h),
+                        child: DateRangeField(
+                          decoration: InputDecoration(
+                            fillColor: ThemeSelection.textfieldFilledColor,
+                            filled: true,
+                            isDense: true,
+                            suffixIcon: Icon(
+                              Symbols.calendar_month,
+                              color: ThemeSelection.iconDefaultQuaternaryColor,
+                            ),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(5)),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(5),
+                              borderSide: BorderSide(
+                                  color: ThemeSelection
+                                      .textfieldFocusedBorderColor,
+                                  width: 1),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(5),
+                              borderSide: BorderSide(
+                                  color: ThemeSelection
+                                      .textfieldDefaultBorderColor,
+                                  width: 1),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(5),
+                              borderSide: BorderSide(
+                                  color:
+                                      ThemeSelection.textfieldErrorBorderColor,
+                                  width: 1),
+                            ),
+                          ),
+                          onDateRangeSelected: (DateRange? value) {
+                            if (value != null) {
+                              final customRange = CustomFormattedDateRange(
+                                  value.start, value.end);
+
+                              setState(() {
+                                selectedDateRange = customRange;
+                                getHealthSummaryList(selectedDateRange);
+                              });
+                            }
+                          },
+                          selectedDateRange: selectedDateRange,
+                          pickerBuilder: (context, onDateRangeChanged) {
+                            return datePickerBuilder(
+                              context,
+                              onDateRangeChanged,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(child: healthSummaryList())
+            ],
           ),
         ),
         Container(
@@ -151,505 +444,1762 @@ class _PatientRecordMatchFoundScreenState extends State<RecordMatchFoundScreen>
           width: 1.0,
         ),
         Expanded(
-          flex: 1,
+          flex: 3,
+          child: isMessageSentScreenVisible
+              ? messagSentScreen()
+              : isHealthSummaryForwardScreen
+                  ? forwardMessageScreen()
+                  : (selectedHealthSummaryId == 0 ||
+                          ApiPath.isSettingIconPopupVisible)
+                      ? SizedBox()
+                      : isDatePickerOpen
+                          ? SizedBox()
+                          : healthSummaryDetailScreen(),
+        )
+      ],
+    );
+  }
+
+  Widget mobileView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Visibility(
+          visible: !isMessageSentScreenVisible &&
+              !isHealthSummaryForwardScreen &&
+              !isHealthSummaryScreenVisibile,
           child: Container(
-            width: width,
-            color: ThemeSelection.textfieldFilledColor,
-            child: widget.userMatchType == 'ExistingPatientPartialMatch' ||
-                    widget.userMatchType == 'ExistingAuthPartialMatch'
-                ? sendCredentialSectionOfExistingPatientPartial()
-                : sendCredentialSection(),
+            padding: EdgeInsets.all(5.0),
+            color: ThemeSelection.mobileAppBarColor,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Material(
+                      type: MaterialType.transparency,
+                      child: customIconButton(
+                        context,
+                        onPressed: () {
+                          widget.drawerScaffoldKey!.currentState!.openDrawer();
+                        },
+                        hoverColor: ThemeSelection.iconHoverPrimaryColor,
+                        splashColor: ThemeSelection.iconPressedPrimaryColor,
+                        iconData: Symbols.menu,
+                        iconColor: ThemeSelection.iconDefaultTertiaryColor,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 1.w,
+                    ),
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 1,
+                        ),
+                      ),
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => Profile(),
+                            ),
+                          );
+                        },
+                        child: GlobalParams.USER_PROFILE_PHOTO_BASE64 == null
+                            ? Center(
+                                child: Text(
+                                  GlobalParams.USER_INITIAL,
+                                  style: CommonTextStyle.of(context).H24_SUR(
+                                    ThemeSelection.secondaryTextColor,
+                                  ),
+                                ),
+                              )
+                            : CircleAvatar(
+                                backgroundImage: MemoryImage(
+                                  GlobalParams.USER_PROFILE_PHOTO_BASE64!,
+                                  scale: Responsive.isMobile(context)
+                                      ? 2
+                                      : Responsive.isTablet(context)
+                                          ? 2
+                                          : 1,
+                                ),
+                              ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 1.w,
+                    ),
+                    Text(
+                      "Health Summary",
+                      style: CommonTextStyle.of(context).H16_SUR(
+                        ThemeSelection.secondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 12,
+                  ),
+                  child: customTextFormField(
+                    context,
+                    readOnly: true,
+                    validate: pickedDateTimeRange.isBlank,
+                    inlineError: true,
+                    errorText: 'Please Select Date Range',
+                    hintText: "Select Date Range",
+                    textEditingController: dateController,
+                    suffixIcon: GestureDetector(
+                      onTap: () => showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) {
+                          return SizedBox(
+                            width: 70.w,
+                            height: 50.h,
+                            child:
+                                StatefulBuilder(builder: (context, setState) {
+                              return AlertDialog(
+                                title: Text('Please choose date range'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectionIndex = 0;
+                                          pickedDateRange = DateRange(
+                                            currentDate,
+                                            currentDate,
+                                          );
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: selectionIndex == 0
+                                                ? Colors.blue
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          width: double.maxFinite,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 1.h, horizontal: 1.w),
+                                            child: Text(
+                                              "Today",
+                                              style: TextStyle(
+                                                  color: selectionIndex == 0
+                                                      ? ThemeSelection
+                                                          .secondaryTextColor
+                                                      : ThemeSelection
+                                                          .primaryTextColor),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectionIndex = 1;
+                                          pickedDateRange = DateRange(
+                                            currentDate.subtract(
+                                                const Duration(days: 1)),
+                                            currentDate.subtract(
+                                                const Duration(days: 1)),
+                                          );
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: selectionIndex == 1
+                                                ? Colors.blue
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          width: double.maxFinite,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 1.h, horizontal: 1.w),
+                                            child: Text(
+                                              "Yesterday",
+                                              style: TextStyle(
+                                                  color: selectionIndex == 1
+                                                      ? ThemeSelection
+                                                          .secondaryTextColor
+                                                      : ThemeSelection
+                                                          .primaryTextColor),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectionIndex = 2;
+                                          pickedDateRange = DateRange(
+                                            currentDate.subtract(
+                                                const Duration(days: 6)),
+                                            currentDate,
+                                          );
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: selectionIndex == 2
+                                                ? Colors.blue
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          width: double.maxFinite,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 1.h, horizontal: 1.w),
+                                            child: Text(
+                                              "Last 7 days",
+                                              style: TextStyle(
+                                                  color: selectionIndex == 2
+                                                      ? ThemeSelection
+                                                          .secondaryTextColor
+                                                      : ThemeSelection
+                                                          .primaryTextColor),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectionIndex = 3;
+                                          pickedDateRange = DateRange(
+                                            currentDate.subtract(
+                                                const Duration(days: 29)),
+                                            currentDate,
+                                          );
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: selectionIndex == 3
+                                                ? Colors.blue
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          width: double.maxFinite,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 1.h, horizontal: 1.w),
+                                            child: Text(
+                                              "Last 30 days",
+                                              style: TextStyle(
+                                                  color: selectionIndex == 3
+                                                      ? ThemeSelection
+                                                          .secondaryTextColor
+                                                      : ThemeSelection
+                                                          .primaryTextColor),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectionIndex = 4;
+                                          pickedDateRange = DateRange(
+                                            DateTime(currentDate.year,
+                                                currentDate.month, 1),
+                                            currentDate,
+                                          );
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: selectionIndex == 4
+                                                ? Colors.blue
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          width: double.maxFinite,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 1.h, horizontal: 1.w),
+                                            child: Text(
+                                              "This Month",
+                                              style: TextStyle(
+                                                  color: selectionIndex == 4
+                                                      ? ThemeSelection
+                                                          .secondaryTextColor
+                                                      : ThemeSelection
+                                                          .primaryTextColor),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectionIndex = 5;
+                                          pickedDateRange = DateRange(
+                                            DateTime(currentDate.year,
+                                                currentDate.month - 1, 1),
+                                            DateTime(currentDate.year,
+                                                currentDate.month, 0),
+                                          );
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: selectionIndex == 5
+                                                ? Colors.blue
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          width: double.maxFinite,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 1.h, horizontal: 1.w),
+                                            child: Text(
+                                              "Last Month",
+                                              style: TextStyle(
+                                                  color: selectionIndex == 5
+                                                      ? ThemeSelection
+                                                          .secondaryTextColor
+                                                      : ThemeSelection
+                                                          .primaryTextColor),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        selectionIndex = 6;
+                                        setState(() {
+                                          pickedDateRange = DateRange(
+                                            DateTime(currentDate.year, 1, 1),
+                                            currentDate,
+                                          );
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: selectionIndex == 6
+                                                ? Colors.blue
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          width: double.maxFinite,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 1.h, horizontal: 1.w),
+                                            child: Text(
+                                              "This Year",
+                                              style: TextStyle(
+                                                  color: selectionIndex == 6
+                                                      ? ThemeSelection
+                                                          .secondaryTextColor
+                                                      : ThemeSelection
+                                                          .primaryTextColor),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).pop();
+                                        setState(() {
+                                          selectionIndex = 7;
+                                        });
+                                        _pickDateRange(context);
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 0.5.h),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: selectionIndex == 7
+                                                ? Colors.blue
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          width: double.maxFinite,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 1.h, horizontal: 1.w),
+                                            child: Text(
+                                              "Custom",
+                                              style: TextStyle(
+                                                  color: selectionIndex == 7
+                                                      ? ThemeSelection
+                                                          .secondaryTextColor
+                                                      : ThemeSelection
+                                                          .primaryTextColor),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                actionsAlignment: MainAxisAlignment.center,
+                                actions: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      setState(() {
+                                        selectionIndex = 6;
+                                      });
+                                    },
+                                    child: Text(
+                                      "Cancel",
+                                      style: TextStyle(
+                                          color:
+                                              ThemeSelection.octonaryTextColor),
+                                    ),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      if (selectionIndex == 7) {
+                                        Navigator.of(context).pop();
+                                        setState(() {
+                                          selectionIndex = 7;
+                                        });
+                                        _pickDateRange(context);
+                                      } else {
+                                        setState(() {
+                                          selectedDateRange = pickedDateRange;
+                                          dateController.text =
+                                              '${dateFormat.format(selectedDateRange!.start)}' +
+                                                  " - " +
+                                                  '${dateFormat.format(selectedDateRange!.end)}';
+                                        });
+                                        Navigator.of(context).pop();
+                                        getHealthSummaryList(selectedDateRange);
+                                      }
+                                    },
+                                    child: Text(
+                                      "Confirm",
+                                      style: TextStyle(
+                                          color:
+                                              ThemeSelection.octonaryTextColor),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }),
+                          );
+                        },
+                      ),
+                      child: Icon(
+                        Symbols.calendar_month,
+                        color: ThemeSelection.iconDefaultQuaternaryColor,
+                      ),
+                    ),
+                    onChanged: (val) {},
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: isMessageSentScreenVisible
+              ? messagSentScreen()
+              : isHealthSummaryForwardScreen
+                  ? forwardMessageScreen()
+                  : isHealthSummaryScreenVisibile
+                      ? selectedHealthSummaryId == 0
+                          ? SizedBox()
+                          : healthSummaryDetailScreen()
+                      : healthSummaryList(),
+        ),
+      ],
+    );
+  }
+
+  Future _pickDateRange(BuildContext context) async {
+    pickedDateTimeRange = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+      initialDateRange: dateTimeRange,
+      saveText: 'OK',
+      cancelText: 'CANCEL',
+      initialEntryMode: DatePickerEntryMode.calendar,
+      currentDate: DateTime.now(),
+      fieldStartLabelText: 'From',
+      fieldEndLabelText: 'To',
+      fieldEndHintText: 'MM/DD/YYYY',
+      fieldStartHintText: 'MM/DD/YYYY',
+      keyboardType: TextInputType.number,
+      builder: (context, child) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.light(
+                  primary: ThemeSelection.BGColor, // header background color
+                  onPrimary: Colors.white, // header text color
+                  onSurface: Colors.black, // body text color
+                ),
+                textButtonTheme: TextButtonThemeData(
+                  style: ButtonStyle(
+                    foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                        (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.hovered))
+                        return ThemeSelection
+                            .primaryPressedBackgroundButtonColor;
+                      if (states.contains(WidgetState.focused))
+                        return ThemeSelection.whiteButtonHover;
+                      return ThemeSelection.BGColor;
+                    }),
+                  ),
+                ),
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: Responsive.isMobile(context)
+                      ? 90.w
+                      : Responsive.isTablet(context)
+                          ? 45.w
+                          : 23.w,
+                  maxHeight: Responsive.isMobile(context)
+                      ? 70.h
+                      : Responsive.isTablet(context)
+                          ? 70.h
+                          : 60.h,
+                ),
+                child: child,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (pickedDateTimeRange != null) {
+      setState(() {
+        dateTimeRange = pickedDateTimeRange;
+        DateRange dateRange =
+            DateRange(dateTimeRange!.start, dateTimeRange!.end);
+        dateController.text = '${dateFormat.format(dateRange.start)}' +
+            " - " +
+            '${dateFormat.format(dateRange.end)}';
+        currentPage = 1;
+        getHealthSummaryList(dateRange);
+      });
+    }
+  }
+
+  Widget healthSummaryItem(int index, healthSummaryData) {
+    return ListTile(
+      hoverColor: ThemeSelection.listTileHoverColor,
+      selectedTileColor: ThemeSelection.listTileSelectedColor,
+      selected: selectedHealthSummaryIndex == index ? true : false,
+      tileColor: ThemeSelection.listTileDefaultColor,
+      onTap: () {
+        setState(() {
+          healthSummaryData.isSeen = true;
+          selectedHealthSummaryIndex = index;
+          selectedHealthSummaryId = healthSummaryData.healthSummaryId;
+          isHealthSummaryForwardScreen = false;
+          isMessageSentScreenVisible = false;
+          isDatePickerOpen = false;
+          getHealthSummaryDetails(selectedHealthSummaryId);
+          if (Responsive.isMobile(context)) {
+            isHealthSummaryScreenVisibile = true;
+          }
+        });
+      },
+      contentPadding: EdgeInsets.only(left: 5.0, right: 10.0),
+      title: Text(
+        healthSummaryData.healthTitle,
+        style: healthSummaryData.isSeen
+            ? CommonTextStyle.of(context)
+                .H24_SUR(ThemeSelection.primaryTextColor)
+            : CommonTextStyle.of(context)
+                .H24_SUB(ThemeSelection.primaryTextColor),
+      ),
+      trailing: Text(
+        healthSummaryData.sentDate,
+        style: healthSummaryData.isSeen
+            ? CommonTextStyle.of(context)
+                .H25_SUR(ThemeSelection.primaryTextColor)
+            : CommonTextStyle.of(context)
+                .H25_SUB(ThemeSelection.primaryTextColor),
+      ),
+    );
+  }
+
+  Widget healthSummaryList() {
+    return healthSummaryListLoading
+        ? Center(
+            child: CircularProgressIndicator(),
+          )
+        : Column(
+            children: [
+              Visibility(
+                visible: healthSummaryListModel.isEmpty,
+                child: Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(30.0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: ThemeSelection.iconDefaultQuinaryColor,
+                              width: 2,
+                            ),
+                          ),
+                          child: Container(
+                            margin: EdgeInsets.only(right: 17),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(50.0),
+                              color: Colors.transparent,
+                            ),
+                            child: Icon(
+                              const IconData(0xE115, fontFamily: 'metro'),
+                              color: ThemeSelection.iconDefaultQuinaryColor,
+                              size: 50,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 30.0,
+                        ),
+                        Text(
+                          "No Data Found",
+                          style: CommonTextStyle.of(context).H18_SUR(
+                            ThemeSelection.nonaryTextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Visibility(
+                visible: healthSummaryListModel.isNotEmpty,
+                child: Expanded(
+                  child: ListView.separated(
+                    itemCount: healthSummaryListModel.length,
+                    separatorBuilder: (context, index) {
+                      return Container(
+                        height: 0.5,
+                        color: ThemeSelection.greyBorderColor,
+                      );
+                    },
+                    itemBuilder: (context, index) {
+                      return healthSummaryItem(
+                        index,
+                        healthSummaryListModel[index],
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Visibility(
+                visible: healthSummaryListModel.isNotEmpty,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Align(
+                    alignment: Responsive.isMobile(context)
+                        ? Alignment.center
+                        : Alignment.bottomRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Responsive.isMobile(context) ? SizedBox() : Spacer(),
+                        SizedBox(
+                          key: ValueKey("Start"),
+                          child: customIconButtonWithTooltip(
+                            context,
+                            onPressed:
+                                currentPage <= totalPages && currentPage > 1
+                                    ? () {
+                                        setState(() {
+                                          currentPage = 1;
+                                          healthSummaryListModel.clear();
+                                        });
+                                        getHealthSummaryList(selectedDateRange);
+                                      }
+                                    : null,
+                            toolTipMessage: 'Start',
+                            iconData: Symbols.keyboard_double_arrow_left,
+                            iconColor: currentPage == 1
+                                ? ThemeSelection.iconDefaultQuinaryColor
+                                : ThemeSelection.pageIconDefaultColor,
+                            hoverColor: currentPage == 1
+                                ? Colors.transparent
+                                : ThemeSelection.iconHoverSecondaryColor,
+                          ),
+                        ),
+                        SizedBox(
+                          key: ValueKey("Previous"),
+                          child: customIconButtonWithTooltip(
+                            context,
+                            onPressed:
+                                currentPage <= totalPages && currentPage > 1
+                                    ? () {
+                                        setState(() {
+                                          currentPage--;
+                                          healthSummaryListModel = [];
+                                        });
+                                        getHealthSummaryList(selectedDateRange);
+                                      }
+                                    : null,
+                            toolTipMessage: 'Previous',
+                            iconData: Symbols.keyboard_arrow_left,
+                            iconColor: currentPage == 1
+                                ? ThemeSelection.iconDefaultQuinaryColor
+                                : ThemeSelection.pageIconDefaultColor,
+                            hoverColor: currentPage == 1
+                                ? Colors.transparent
+                                : ThemeSelection.iconHoverSecondaryColor,
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.only(left: 5, right: 5),
+                          decoration: BoxDecoration(
+                            color: ThemeSelection.pageNumberBackgroundColor,
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(5),
+                            ),
+                          ),
+                          child: Text(
+                            currentPage.toString(),
+                            style: CommonTextStyle.of(context)
+                                .H22_SUR(ThemeSelection.primaryTextColor),
+                          ),
+                        ),
+                        SizedBox(
+                          key: ValueKey("Next"),
+                          child: customIconButtonWithTooltip(
+                            context,
+                            onPressed: currentPage < totalPages
+                                ? () {
+                                    setState(() {
+                                      currentPage++;
+                                      healthSummaryListModel = [];
+                                    });
+                                    getHealthSummaryList(selectedDateRange);
+                                  }
+                                : null,
+                            toolTipMessage: 'Next',
+                            iconData: Symbols.keyboard_arrow_right,
+                            iconColor: currentPage == lastPage
+                                ? ThemeSelection.iconDefaultQuinaryColor
+                                : ThemeSelection.pageIconDefaultColor,
+                            hoverColor: currentPage == lastPage
+                                ? Colors.transparent
+                                : ThemeSelection.iconHoverSecondaryColor,
+                          ),
+                        ),
+                        SizedBox(
+                          key: ValueKey("Last"),
+                          child: customIconButtonWithTooltip(
+                            context,
+                            onPressed: currentPage < totalPages
+                                ? () {
+                                    setState(() {
+                                      currentPage = lastPage!;
+                                      healthSummaryListModel = [];
+                                    });
+                                    getHealthSummaryList(selectedDateRange);
+                                  }
+                                : null,
+                            toolTipMessage: 'Last',
+                            iconData: Symbols.keyboard_double_arrow_right,
+                            iconColor: currentPage == lastPage
+                                ? ThemeSelection.iconDefaultQuinaryColor
+                                : ThemeSelection.pageIconDefaultColor,
+                            hoverColor: currentPage == lastPage
+                                ? Colors.transparent
+                                : ThemeSelection.iconHoverSecondaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+  }
+
+  Widget healthSummaryDetailScreen() {
+    return healthSummaryDataLoading
+        ? Center(child: CircularProgressIndicator())
+        : Stack(
+            children: [
+              selectedHealthSummaryId == 0
+                  ? SizedBox()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          color: Responsive.isMobile(context)
+                              ? ThemeSelection.mobileAppBarColor
+                              : Colors.transparent,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 1.w, vertical: 1.h),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Row(
+                                  children: [
+                                    Visibility(
+                                      visible: Responsive.isMobile(context),
+                                      child: customIconButton(
+                                        context,
+                                        hoverColor: ThemeSelection
+                                            .iconHoverPrimaryColor,
+                                        onPressed: () {
+                                          setState(() {
+                                            isHealthSummaryScreenVisibile =
+                                                false;
+                                          });
+                                        },
+                                        splashColor: ThemeSelection
+                                            .iconPressedPrimaryColor,
+                                        iconData: Symbols.arrow_back,
+                                        iconColor: ThemeSelection
+                                            .iconDefaultTertiaryColor,
+                                      ),
+                                    ),
+                                    Flexible(
+                                      child: Text(
+                                        healthSummarySubject ?? "",
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style:
+                                            CommonTextStyle.of(context).H20_SUR(
+                                          Responsive.isMobile(context)
+                                              ? ThemeSelection
+                                                  .secondaryTextColor
+                                              : ThemeSelection.primaryTextColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: Responsive.isMobile(context)
+                                    ? Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          customIconButtonWithTooltip(
+                                            context,
+                                            toolTipMessage: 'Show more options',
+                                            onPressed: () {
+                                              setState(() {
+                                                healthSummaryActionPopupVisible =
+                                                    !healthSummaryActionPopupVisible;
+                                              });
+                                            },
+                                            hoverColor: ThemeSelection
+                                                .iconHoverPrimaryColor,
+                                            iconData: Symbols.more_vert,
+                                            iconColor: ThemeSelection
+                                                .iconDefaultTertiaryColor,
+                                            splashColor: ThemeSelection
+                                                .iconPressedPrimaryColor,
+                                          ),
+                                        ],
+                                      )
+                                    : Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          customIconButtonWithTooltip(
+                                            context,
+                                            toolTipMessage:
+                                                'Transmit/Send to another provider',
+                                            hoverColor: GlobalParams
+                                                    .isHealthSummaryForTransmit
+                                                ? ThemeSelection
+                                                    .iconHoverSecondaryColor
+                                                : Colors.transparent,
+                                            iconColor: GlobalParams
+                                                    .isHealthSummaryForTransmit
+                                                ? ThemeSelection
+                                                    .iconDefaultQuaternaryColor
+                                                : ThemeSelection
+                                                    .iconDefaultQuinaryColor,
+                                            splashColor: GlobalParams
+                                                    .isHealthSummaryForTransmit
+                                                ? ThemeSelection
+                                                    .iconPressedSecondaryColor
+                                                : Colors.transparent,
+                                            iconData: Symbols.share_windows,
+                                            onPressed: GlobalParams
+                                                    .isHealthSummaryForTransmit
+                                                ? () {
+                                                    setState(() {
+                                                      isHealthSummaryForwardScreen =
+                                                          true;
+                                                      validateToEmail = false;
+                                                      validateSubject = false;
+                                                      toController.clear();
+                                                      subjectController.clear();
+                                                      messageController.clear();
+                                                    });
+                                                  }
+                                                : null,
+                                          ),
+                                          SizedBox(
+                                            width: 1.w,
+                                          ),
+                                          customIconButtonWithTooltip(
+                                            context,
+                                            toolTipMessage: 'Print',
+                                            splashColor: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? ThemeSelection
+                                                    .iconPressedSecondaryColor
+                                                : Colors.transparent,
+                                            hoverColor: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? ThemeSelection
+                                                    .iconHoverSecondaryColor
+                                                : Colors.transparent,
+                                            iconColor: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? ThemeSelection
+                                                    .iconDefaultQuaternaryColor
+                                                : ThemeSelection
+                                                    .iconDefaultQuinaryColor,
+                                            iconData: Symbols.print,
+                                            onPressed: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? () async {
+                                                    Uint8List pdf = base64.decode(
+                                                        healthSummaryThreadAttachmentList[
+                                                                1]
+                                                            .attachmentBase64FileContent!);
+
+                                                    var response =
+                                                        await Printing
+                                                            .layoutPdf(
+                                                                onLayout:
+                                                                    (format) =>
+                                                                        pdf);
+
+                                                    if (response) {
+                                                      updateHealthSummaryAuditLog(
+                                                          "Print");
+                                                    }
+                                                  }
+                                                : null,
+                                          ),
+                                          SizedBox(
+                                            width: 1.w,
+                                          ),
+                                          customIconButtonWithTooltip(
+                                            context,
+                                            toolTipMessage:
+                                                'Download CCDA File',
+                                            splashColor: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? ThemeSelection
+                                                    .iconPressedSecondaryColor
+                                                : Colors.transparent,
+                                            hoverColor: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? ThemeSelection
+                                                    .iconHoverSecondaryColor
+                                                : Colors.transparent,
+                                            iconColor: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? ThemeSelection
+                                                    .iconDefaultQuaternaryColor
+                                                : ThemeSelection
+                                                    .iconDefaultQuinaryColor,
+                                            iconData: Symbols.download,
+                                            onPressed: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? () {
+                                                    downloadFile(
+                                                      healthSummaryThreadAttachmentList[
+                                                              0]
+                                                          .attachmentBase64FileContent,
+                                                      healthSummaryThreadAttachmentList[
+                                                              0]
+                                                          .attachmentFileName,
+                                                    );
+                                                    updateHealthSummaryAuditLog(
+                                                        "Download CCDA");
+                                                  }
+                                                : null,
+                                          ),
+                                          SizedBox(
+                                            width: 1.w,
+                                          ),
+                                          customIconButtonWithTooltip(
+                                            context,
+                                            toolTipMessage: 'Download PDF',
+                                            splashColor: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? ThemeSelection
+                                                    .iconPressedSecondaryColor
+                                                : Colors.transparent,
+                                            hoverColor: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? ThemeSelection
+                                                    .iconHoverSecondaryColor
+                                                : Colors.transparent,
+                                            iconColor: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? ThemeSelection
+                                                    .iconDefaultQuaternaryColor
+                                                : ThemeSelection
+                                                    .iconDefaultQuinaryColor,
+                                            iconData: Symbols.picture_as_pdf,
+                                            onPressed: GlobalParams
+                                                    .isHealthSummaryForDownload
+                                                ? () {
+                                                    downloadFile(
+                                                      healthSummaryThreadAttachmentList[
+                                                              1]
+                                                          .attachmentBase64FileContent,
+                                                      healthSummaryThreadAttachmentList[
+                                                              1]
+                                                          .attachmentFileName,
+                                                    );
+                                                    updateHealthSummaryAuditLog(
+                                                        "Download PDF");
+                                                  }
+                                                : null,
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Divider(
+                          height: 1,
+                          color: ThemeSelection.greyBorderColor,
+                        ),
+                        Flexible(
+                          child: GlobalParams.isHealthSummaryForView
+                              ? Padding(
+                                  padding: Responsive.isMobile(context)
+                                      ? EdgeInsets.only(right: 12)
+                                      : EdgeInsets.only(left: 20),
+                                  child: healthSummaryActionPopupVisible
+                                      ? SizedBox()
+                                      : SingleChildScrollView(
+                                          child: SizedBox(
+                                            height: 90.h,
+                                            child: InAppWebView(
+                                              initialData:
+                                                  InAppWebViewInitialData(
+                                                      data: healthSummaryData!),
+                                              onWebViewCreated: (controller) {
+                                                webViewController = controller;
+                                              },
+                                              initialSettings: InAppWebViewSettings(
+                                                  javaScriptEnabled: true,
+                                                  supportMultipleWindows: true,
+                                                  allowsBackForwardNavigationGestures:
+                                                      true,
+                                                  transparentBackground: true,
+                                                  supportZoom: false),
+                                            ),
+                                          ),
+                                        ),
+                                )
+                              : Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        const IconData(0xE117,
+                                            fontFamily: 'metro'),
+                                        color: ThemeSelection
+                                            .iconDefaultQuinaryColor,
+                                        size: Responsive.isMobile(context)
+                                            ? 60.sp
+                                            : 30.sp,
+                                      ),
+                                      SizedBox(
+                                        height: Responsive.isMobile(context)
+                                            ? 20.sp
+                                            : 05.sp,
+                                      ),
+                                      Text(
+                                        "You do not have access to view Health Summary!",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontFamily: 'SegoeUi',
+                                          fontSize: 25.0,
+                                          color: ThemeSelection
+                                              .iconDefaultQuinaryColor,
+                                        ),
+                                      ),
+                                      Visibility(
+                                        visible: GlobalParams
+                                                .isHealthSummaryForDownload ||
+                                            GlobalParams
+                                                .isHealthSummaryForTransmit,
+                                        child: Text(
+                                          "You can${GlobalParams.isHealthSummaryForDownload ? " Print, Download" : ''}${GlobalParams.isHealthSummaryForTransmit && GlobalParams.isHealthSummaryForDownload ? "," : ""}${GlobalParams.isHealthSummaryForTransmit ? " Transmit" : ''} by clicking icons on the top right.",
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontFamily: 'SegoeUi',
+                                            fontSize: 18.0,
+                                            color: ThemeSelection
+                                                .iconDefaultQuinaryColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+              Positioned(
+                top: 50.0,
+                right: 0.0,
+                child: Visibility(
+                  visible: healthSummaryActionPopupVisible,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors
+                            .white, // Set a solid, fully opaque background color
+                        borderRadius: BorderRadius.circular(
+                            5), // Optional: add some border radius
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: GlobalParams.isHealthSummaryForDownload
+                                ? () async {
+                                    setState(() {
+                                      healthSummaryActionPopupVisible = false;
+                                    });
+                                    Uint8List pdf = base64.decode(
+                                        healthSummaryThreadAttachmentList[1]
+                                            .attachmentBase64FileContent!);
+
+                                    var response = await Printing.layoutPdf(
+                                      onLayout: (format) async {
+                                        return pdf;
+                                      },
+                                    );
+                                    if (response) {
+                                      updateHealthSummaryAuditLog("Print");
+                                    }
+                                  }
+                                : null,
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              color: ThemeSelection.secondaryTextColor,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              child: Text(
+                                "Print",
+                                style: CommonTextStyle.of(context).H18_SUR(
+                                    GlobalParams.isHealthSummaryForDownload
+                                        ? ThemeSelection.quinaryTextColor
+                                        : ThemeSelection.greyBorderColor),
+                              ),
+                            ),
+                          ),
+                          Divider(
+                            color: ThemeSelection.tableBorderColor,
+                            height: 0.1,
+                          ),
+                          GestureDetector(
+                            onTap: GlobalParams.isHealthSummaryForDownload
+                                ? () {
+                                    setState(() {
+                                      healthSummaryActionPopupVisible = false;
+                                    });
+                                    downloadFile(
+                                      healthSummaryThreadAttachmentList[0]
+                                          .attachmentBase64FileContent,
+                                      healthSummaryThreadAttachmentList[0]
+                                          .attachmentFileName,
+                                    );
+                                    updateHealthSummaryAuditLog(
+                                        "Download CCDA");
+                                  }
+                                : null,
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              color: ThemeSelection.secondaryTextColor,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              child: Text(
+                                "Download CCDA File",
+                                style: CommonTextStyle.of(context).H18_SUR(
+                                    GlobalParams.isHealthSummaryForDownload
+                                        ? ThemeSelection.quinaryTextColor
+                                        : ThemeSelection.greyBorderColor),
+                              ),
+                            ),
+                          ),
+                          Divider(
+                            color: ThemeSelection.tableBorderColor,
+                            height: 0.1,
+                          ),
+                          GestureDetector(
+                            onTap: GlobalParams.isHealthSummaryForDownload
+                                ? () {
+                                    setState(() {
+                                      healthSummaryActionPopupVisible = false;
+                                    });
+                                    downloadFile(
+                                      healthSummaryThreadAttachmentList[1]
+                                          .attachmentBase64FileContent,
+                                      healthSummaryThreadAttachmentList[1]
+                                          .attachmentFileName,
+                                    );
+                                    updateHealthSummaryAuditLog("Download PDF");
+                                  }
+                                : null,
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              color: ThemeSelection.secondaryTextColor,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              child: Text(
+                                "Download PDF",
+                                style: CommonTextStyle.of(context).H18_SUR(
+                                    GlobalParams.isHealthSummaryForDownload
+                                        ? ThemeSelection.quinaryTextColor
+                                        : ThemeSelection.greyBorderColor),
+                              ),
+                            ),
+                          ),
+                          Divider(
+                            color: ThemeSelection.tableBorderColor,
+                            height: 0.1,
+                          ),
+                          GestureDetector(
+                            onTap: GlobalParams.isHealthSummaryForTransmit
+                                ? () {
+                                    setState(() {
+                                      healthSummaryActionPopupVisible = false;
+                                      isHealthSummaryForwardScreen = true;
+                                      validateToEmail = false;
+                                      validateSubject = false;
+                                      toController.clear();
+                                      subjectController.clear();
+                                      messageController.clear();
+                                    });
+                                  }
+                                : null,
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              color: ThemeSelection.secondaryTextColor,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              child: Text(
+                                "Transmit",
+                                style: CommonTextStyle.of(context).H18_SUR(
+                                    GlobalParams.isHealthSummaryForTransmit
+                                        ? ThemeSelection.quinaryTextColor
+                                        : ThemeSelection.greyBorderColor),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+  }
+
+  Widget messagSentScreen() {
+    return Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Icon(
+                const IconData(0xE172, fontFamily: 'metro'),
+                color: ThemeSelection.messageSentColor,
+                size: Responsive.isMobile(context) ? 40.sp : 25.sp,
+              ),
+              SizedBox(
+                height: 1.h,
+              ),
+              Text(
+                "Message Sent",
+                style: CommonTextStyle.of(context)
+                    .H4_SUR(ThemeSelection.primaryTextColor),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          bottom: 2.h,
+          child: Visibility(
+            visible: Responsive.isMobile(context) ? true : false,
+            child: primaryButton(
+              context,
+              () {
+                Get.offAll(DashboardScreen());
+              },
+              "Home",
+              ThemeSelection.secondaryTextColor,
+            ),
+          ),
+        ),
+        Positioned(
+          left: 2.w,
+          top: 2.h,
+          child: Visibility(
+            visible: Responsive.isMobile(context) ? true : false,
+            child: customIconButton(
+              context,
+              onPressed: () {
+                widget.drawerScaffoldKey!.currentState!.openDrawer();
+              },
+              hoverColor: ThemeSelection.iconHoverPrimaryColor,
+              splashColor: ThemeSelection.iconPressedPrimaryColor,
+              iconData: Symbols.menu,
+              iconColor: ThemeSelection.iconDefaultSecondaryColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget forwardMessageScreen() {
+    return Stack(
+      children: [
+        IgnorePointer(
+          ignoring: healthSummaryForShareLoading,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                color: Responsive.isMobile(context)
+                    ? ThemeSelection.BGColor
+                    : Colors.transparent,
+                padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 1.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        customIconButton(
+                          context,
+                          onPressed: () {
+                            setState(() {
+                              isHealthSummaryForwardScreen = false;
+                            });
+                          },
+                          splashColor: ThemeSelection.iconPressedSecondaryColor,
+                          hoverColor: ThemeSelection.iconHoverSecondaryColor,
+                          iconColor: Responsive.isMobile(context)
+                              ? ThemeSelection.iconDefaultTertiaryColor
+                              : ThemeSelection.iconDefaultSecondaryColor,
+                          iconData: Symbols.arrow_back_ios_new,
+                        ),
+                        Text(
+                          "Send Summary",
+                          style: CommonTextStyle.of(context).H16_SUR(
+                            Responsive.isMobile(context)
+                                ? ThemeSelection.secondaryTextColor
+                                : ThemeSelection.primaryTextColor,
+                          ),
+                        ),
+                        Visibility(
+                          visible: Responsive.isMobile(context) ? false : true,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: customHoverTooltip(
+                              context,
+                              toolTipMessage: ApiPath.transmitInfoMessage,
+                              iconColor: Responsive.isMobile(context)
+                                  ? ThemeSelection.iconDefaultTertiaryColor
+                                  : ThemeSelection.iconDefaultSecondaryColor,
+                              hoverColor:
+                                  ThemeSelection.iconHoverSecondaryColor,
+                              iconData: Symbols.info,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Visibility(
+                          visible: Responsive.isMobile(context) ? true : false,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: customHoverTooltip(
+                              context,
+                              toolTipMessage: ApiPath.transmitInfoMessage,
+                              iconColor: Responsive.isMobile(context)
+                                  ? ThemeSelection.iconDefaultTertiaryColor
+                                  : ThemeSelection.iconDefaultSecondaryColor,
+                              hoverColor:
+                                  ThemeSelection.iconHoverSecondaryColor,
+                              iconData: Symbols.info,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Divider(
+                height: 1,
+                color: ThemeSelection.greyBorderColor,
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: Responsive.isMobile(context)
+                        ? EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h)
+                        : EdgeInsets.symmetric(horizontal: 2.w, vertical: 2.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "To",
+                          style: CommonTextStyle.of(context)
+                              .H20_SUR(ThemeSelection.quaternaryTextColor),
+                        ),
+                        SizedBox(
+                          height: 0.5.h,
+                        ),
+                        customTextFormField(
+                          context,
+                          textEditingController: toController,
+                          onChanged: (val) {
+                            setState(() {
+                              if (toController.text.isNotEmpty) {
+                                if (toController.text.emailValidate) {
+                                  validateToEmail = false;
+                                  invalidEmailMessage = '';
+                                } else {
+                                  validateToEmail = true;
+                                  invalidEmailMessage =
+                                      'Please enter valid Email';
+                                }
+                              } else {
+                                validateToEmail = true;
+                                invalidEmailMessage = 'Email is required';
+                              }
+                            });
+                          },
+                          inlineError: true,
+                          readOnly: false,
+                          hintText: "Direct Email",
+                          validate: validateToEmail,
+                          errorText: invalidEmailMessage,
+                        ),
+                        SizedBox(
+                          height: 1.h,
+                        ),
+                        Text(
+                          "Subject",
+                          style: CommonTextStyle.of(context)
+                              .H20_SUR(ThemeSelection.quaternaryTextColor),
+                        ),
+                        SizedBox(
+                          height: 0.5.h,
+                        ),
+                        customTextFormField(
+                          context,
+                          textEditingController: subjectController,
+                          onChanged: (val) {
+                            setState(() {
+                              if (val.length > 0) {
+                                validateSubject = false;
+                              } else {
+                                validateSubject = true;
+                              }
+                            });
+                          },
+                          inlineError: true,
+                          readOnly: false,
+                          validate: validateSubject,
+                          errorText: "Subject is required",
+                        ),
+                        SizedBox(
+                          height: 1.h,
+                        ),
+                        Text(
+                          "Message for Doctor",
+                          style: CommonTextStyle.of(context)
+                              .H20_SUR(ThemeSelection.quaternaryTextColor),
+                        ),
+                        SizedBox(
+                          height: 0.5.h,
+                        ),
+                        customTextFormField(
+                          context,
+                          textEditingController: messageController,
+                          maxLines: 15,
+                          readOnly: false,
+                          inlineError: false,
+                          validate: false,
+                          textInputAction: TextInputAction
+                              .newline, // Action for the Enter key
+                          onFieldSubmitted: (value) {
+                            // Prevent the Enter key from submitting the form
+                            // Do nothing or handle as needed
+                          },
+                        ),
+                        SizedBox(
+                          height: 2.h,
+                        ),
+                        Text(
+                          "Attachments",
+                          style: CommonTextStyle.of(context)
+                              .H20_SUR(ThemeSelection.quaternaryTextColor),
+                        ),
+                        SizedBox(
+                          height: 0.5.h,
+                        ),
+                        Visibility(
+                          visible: Responsive.isMobile(context) ? false : true,
+                          child: Container(
+                            height: 0.1.h,
+                            color: ThemeSelection.dividerSecondaryColor,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 1.h,
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 0.5.w, vertical: 0.5.h),
+                          decoration: BoxDecoration(
+                            color: ThemeSelection.attachmentBackgroundColor,
+                            border: Border.all(
+                              width: 1,
+                              color: ThemeSelection.attachmentBorderColor,
+                            ),
+                            borderRadius: BorderRadius.circular(6.0),
+                          ),
+                          child: Text(
+                            healthSummaryThreadModel!
+                                .healthSummaryAttachment![0]
+                                .attachmentFileName!,
+                            style: CommonTextStyle.of(context)
+                                .H18_SUR(ThemeSelection.primaryTextColor),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 1.h,
+                        ),
+                        Visibility(
+                          visible: Responsive.isMobile(context) ? false : true,
+                          child: Container(
+                            height: 0.1.h,
+                            color: ThemeSelection.dividerSecondaryColor,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 2.h,
+                        ),
+                        Center(
+                          child: healthSummaryForShareLoading
+                              ? CircularProgressIndicator()
+                              : primaryButton(
+                                  context,
+                                  () {
+                                    sendMessage();
+                                  },
+                                  "Send",
+                                  ThemeSelection.secondaryTextColor,
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Visibility(
+          visible: healthSummaryForShareLoading,
+          child: Center(
+            child: CircularProgressIndicator(),
           ),
         )
       ],
     );
   }
 
-  Widget webView() {
-    return Stack(
-      children: [
-        Column(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            topBarWeb(),
-            Expanded(
-              flex: 2,
-              child: Container(
-                color: ThemeSelection.BGColor,
-                child: widget.userMatchType == 'ExistingPatientPartialMatch' ||
-                        widget.userMatchType == 'ExistingAuthPartialMatch'
-                    ? recordMatchFoundSectionOfExistingPatientPartial()
-                    : recordMatchFoundSection(),
-              ),
-            ),
-            Container(
-              color: ThemeSelection.greyBorderColor,
-              width: 1.0,
-            ),
-            Expanded(
-              flex: 1,
-              child: Container(
-                color: ThemeSelection.secondaryTextColor,
-                child: widget.userMatchType == 'ExistingPatientPartialMatch' ||
-                        widget.userMatchType == 'ExistingAuthPartialMatch'
-                    ? sendCredentialSectionOfExistingPatientPartial()
-                    : sendCredentialSection(),
-              ),
-            )
-          ],
-        ),
-        Visibility(
-          visible: ApiPath.isSettingIconPopupVisible,
-          child: Positioned(
-            right: 0.5.w,
-            child: MenuOptions(context, setState, false),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget sendCredentialSection() {
-    return Container(
-      margin: Responsive.isMobile(context)
-          ? EdgeInsets.only(left: 20.0, right: 20.0)
-          : EdgeInsets.all(0.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Do you want to grant access to ${userData?.patientName ?? ""}?',
-            style: TextStyle(
-                fontFamily: 'SegoeUi',
-                fontSize: Responsive.isMobile(context) ? 20.0 : width * 0.015,
-                fontWeight: FontWeight.normal,
-                color: ThemeSelection.primaryTextColor),
-            key: ValueKey("Patient Name"),
-          ),
-          SizedBox(
-            height: 30.0,
-          ),
-          isSent == "1"
-              ? CircularProgressIndicator()
-              : Container(
-                  key: ValueKey("Grant Access"),
-                  child: primaryButton(
-                    context,
-                    () {
-                      sendCredential();
-                    },
-                    "Grant Access",
-                    ThemeSelection.secondaryTextColor,
-                  ),
-                )
-        ],
+  Widget datePickerBuilder(
+      BuildContext context, dynamic Function(DateRange?) onDateRangeChanged,
+      [bool doubleMonth = true]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          isDatePickerOpen = true;
+        });
+      }
+    });
+    return DateRangePickerWidget(
+      height: 50.h,
+      theme: CalendarTheme(
+        selectedColor: Colors.blue,
+        dayNameTextStyle: TextStyle(color: Colors.black45, fontSize: 10),
+        inRangeColor: Color(0xFFD9EDFA),
+        inRangeTextStyle: TextStyle(color: Colors.blue),
+        selectedTextStyle: TextStyle(color: Colors.white),
+        todayTextStyle: TextStyle(fontWeight: FontWeight.bold),
+        defaultTextStyle: TextStyle(color: Colors.black, fontSize: 12),
+        radius: 10,
+        tileSize: 40,
+        disabledTextStyle: TextStyle(color: Colors.grey),
       ),
-    );
-  }
-
-  Widget sendCredentialSectionOfExistingPatientPartial() {
-    return Container(
-      margin: Responsive.isMobile(context)
-          ? EdgeInsets.only(left: 20.0, right: 20.0)
-          : EdgeInsets.all(0.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            "QUESTIONS?",
-            style: TextStyle(
-                fontFamily: 'SegoeUi',
-                fontSize: Responsive.isMobile(context) ? 15.0 : width * 0.024,
-                fontWeight: FontWeight.normal,
-                color: ThemeSelection.primaryTextColor),
+      doubleMonth: doubleMonth,
+      quickDateRanges: [
+        QuickDateRange(
+          dateRange: DateRange(
+            currentDate,
+            currentDate,
           ),
-          InkWell(
-            key: ValueKey("Send Message"),
-            onTap: () {
-              Get.to(() =>
-                  DashboardDetailsScreen(index: 0, isComposeScreen: true));
-            },
-            child: Text(
-              "Send us Message",
-              style: TextStyle(
-                  fontFamily: 'SegoeUi',
-                  fontSize: Responsive.isMobile(context) ? 15.0 : width * 0.014,
-                  decoration: TextDecoration.underline,
-                  color: ThemeSelection.primaryTextColor),
-            ),
-          ),
-          SizedBox(
-            height: height * 0.06,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                key: ValueKey("Home"),
-                child: primaryButton(
-                  context,
-                  () {
-                    Get.offAll(() => DashboardScreen());
-                  },
-                  "Home",
-                  ThemeSelection.secondaryTextColor,
-                ),
-              ),
-              SizedBox(
-                width: 20,
-              ),
-              Container(
-                key: ValueKey("Try Again"),
-                child: primaryButton(
-                  context,
-                  () {
-                    Navigator.pop(context);
-                  },
-                  "Try Again",
-                  ThemeSelection.secondaryTextColor,
-                ),
-              )
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget recordMatchFoundSection() {
-    return Column(
-      mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          height: 30,
+          label: "Today",
         ),
-        Container(
-          child: Icon(
-            const IconData(0xE166, fontFamily: 'metro'),
-            color: ThemeSelection.secondaryTextColor,
-            size: 100.0,
+        QuickDateRange(
+          label: 'Yesterday',
+          dateRange: DateRange(
+            currentDate.subtract(const Duration(days: 1)),
+            currentDate.subtract(const Duration(days: 1)),
           ),
         ),
-        SizedBox(
-          height: 20.0,
+        QuickDateRange(
+          label: 'Last 7 days',
+          dateRange: DateRange(
+            currentDate.subtract(const Duration(days: 6)),
+            currentDate,
+          ),
         ),
-        Text(
-          "Record Match Found",
-          style: TextStyle(
-              fontFamily: 'SegoeUi',
-              fontSize: Responsive.isMobile(context) ? 20.0 : width * 0.017,
-              fontWeight: FontWeight.normal,
-              color: ThemeSelection.secondaryTextColor),
+        QuickDateRange(
+          label: 'Last 30 days',
+          dateRange: DateRange(
+            currentDate.subtract(const Duration(days: 29)),
+            currentDate,
+          ),
         ),
-        SizedBox(
-          height: Responsive.isMobile(context) ? 10.0 : 25.0,
+        QuickDateRange(
+          label: 'This Month',
+          dateRange: DateRange(
+            DateTime(currentDate.year, currentDate.month, 1),
+            currentDate,
+          ),
         ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              widget.alertMsg,
-              style: TextStyle(
-                  fontFamily: 'SegoeUi',
-                  fontSize: Responsive.isMobile(context) ? 15.0 : width * 0.012,
-                  fontWeight: FontWeight.normal,
-                  color: ThemeSelection.secondaryTextColor),
-              key: ValueKey("Alert Message"),
-            ),
-            SizedBox(
-              height: Responsive.isMobile(context) ? 10.0 : width * 0.01,
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Name: ",
-                      style: TextStyle(
-                          fontFamily: 'SegoeUi',
-                          fontSize: Responsive.isMobile(context)
-                              ? 15.0
-                              : width * 0.012,
-                          fontWeight: FontWeight.normal,
-                          color: ThemeSelection.secondaryTextColor),
-                    ),
-                    Text(
-                      userData?.patientName ?? '',
-                      style: TextStyle(
-                          fontFamily: 'SegoeUi',
-                          fontSize: Responsive.isMobile(context)
-                              ? 15.0
-                              : width * 0.012,
-                          fontWeight: FontWeight.bold,
-                          color: ThemeSelection.secondaryTextColor),
-                      key: ValueKey("Patient Name"),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
-                ),
-                Visibility(
-                  visible: !userData!.dob.isBlank!,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "DOB: ",
-                        style: TextStyle(
-                            fontFamily: 'SegoeUi',
-                            fontSize: Responsive.isMobile(context)
-                                ? 15.0
-                                : width * 0.012,
-                            fontWeight: FontWeight.normal,
-                            color: ThemeSelection.secondaryTextColor),
-                      ),
-                      !userData!.dob.isBlank!
-                          ? Text(
-                              userData?.dob
-                                      .toString()
-                                      .replaceRange(0, 5, "*****") ??
-                                  "",
-                              style: TextStyle(
-                                  fontFamily: 'SegoeUi',
-                                  fontSize: Responsive.isMobile(context)
-                                      ? 15.0
-                                      : width * 0.012,
-                                  fontWeight: FontWeight.bold,
-                                  color: ThemeSelection.secondaryTextColor),
-                              key: ValueKey("DOB"),
-                            )
-                          : SizedBox(),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Phone: ",
-                      style: TextStyle(
-                          fontFamily: 'SegoeUi',
-                          fontSize: Responsive.isMobile(context)
-                              ? 15.0
-                              : width * 0.012,
-                          fontWeight: FontWeight.normal,
-                          color: ThemeSelection.secondaryTextColor),
-                    ),
-                    Text(
-                      userData!.mobileNo
-                              ?.toString()
-                              .replaceRange(2, 10, "*******") ??
-                          "",
-                      style: TextStyle(
-                          fontFamily: 'SegoeUi',
-                          fontSize: Responsive.isMobile(context)
-                              ? 15.0
-                              : width * 0.012,
-                          fontWeight: FontWeight.bold,
-                          color: ThemeSelection.secondaryTextColor),
-                      key: ValueKey("Phone"),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Email: ",
-                      style: TextStyle(
-                          fontFamily: 'SegoeUi',
-                          fontSize: Responsive.isMobile(context)
-                              ? 15.0
-                              : width * 0.012,
-                          fontWeight: FontWeight.normal,
-                          color: ThemeSelection.secondaryTextColor),
-                    ),
-                    Text(
-                      userData?.emailId
-                              .toString()
-                              .replaceRange(0, 10, "*******") ??
-                          "",
-                      style: TextStyle(
-                          fontFamily: 'SegoeUi',
-                          fontSize: Responsive.isMobile(context)
-                              ? 15.0
-                              : width * 0.012,
-                          fontWeight: FontWeight.bold,
-                          color: ThemeSelection.secondaryTextColor),
-                      key: ValueKey("Email"),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+        QuickDateRange(
+          label: 'Last Month',
+          dateRange: DateRange(
+            DateTime(currentDate.year, currentDate.month - 1, 1),
+            DateTime(currentDate.year, currentDate.month, 0),
+          ),
+        ),
+        QuickDateRange(
+          label: 'This Year',
+          dateRange: DateRange(
+            DateTime(currentDate.year, 1, 1),
+            currentDate,
+          ),
         ),
       ],
+      initialDateRange: selectedDateRange,
+      initialDisplayedDate: selectedDateRange?.start ?? DateTime.now(),
+      onDateRangeChanged: (value) {
+        if (value != null) {
+          setState(() {
+            isDatePickerOpen = false;
+          });
+        }
+        onDateRangeChanged(value);
+      },
+      maxDate: DateTime.now(),
     );
   }
+}
 
-  Widget recordMatchFoundSectionOfExistingPatientPartial() {
-    return Column(
-      mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          height: 30,
-        ),
-        Container(
-          child: Icon(
-            const IconData(0xE167, fontFamily: 'metro'),
-            color: ThemeSelection.secondaryTextColor,
-            size: 100.0,
-          ),
-        ),
-        SizedBox(
-          height: 20.0,
-        ),
-        Text(
-          "Record Match Found",
-          style: TextStyle(
-              fontFamily: 'SegoeUi',
-              fontSize: Responsive.isMobile(context) ? 20.0 : width * 0.017,
-              fontWeight: FontWeight.normal,
-              color: ThemeSelection.secondaryTextColor),
-        ),
-        SizedBox(
-          height: Responsive.isMobile(context) ? 10.0 : 25.0,
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              widget.alertMsg,
-              style: TextStyle(
-                  fontFamily: 'SegoeUi',
-                  fontSize: Responsive.isMobile(context) ? 15.0 : width * 0.012,
-                  fontWeight: FontWeight.normal,
-                  color: ThemeSelection.secondaryTextColor),
-              key: ValueKey("Alert Message"),
-            ),
-            SizedBox(
-              height: Responsive.isMobile(context) ? 10.0 : width * 0.01,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+class CustomFormattedDateRange extends DateRange {
+  CustomFormattedDateRange(DateTime start, DateTime end) : super(start, end);
 
-  Widget topBarMobile() {
-    return Container(
-      height: 6.h,
-      padding:
-          EdgeInsets.only(left: 10.0, right: 10.0, top: 15.0, bottom: 15.0),
-      color: ThemeSelection.BGColor,
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              customIconButton(
-                context,
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                hoverColor: ThemeSelection.iconHoverPrimaryColor,
-                splashColor: ThemeSelection.iconPressedPrimaryColor,
-                iconData: Symbols.arrow_back,
-                iconColor: ThemeSelection.iconDefaultTertiaryColor,
-              ),
-              SizedBox(
-                width: 15.0,
-              ),
-              Text(
-                "Add New Individual",
-                style: CommonTextStyle.of(context)
-                    .H8_SUR(ThemeSelection.secondaryTextColor),
-              )
-            ],
-          ),
-          customHoverTooltip(
-            context,
-            toolTipMessage:
-                'Add an authorized individual who can access your patient portal account.',
-            iconData: Symbols.info,
-            hoverColor: ThemeSelection.iconHoverSecondaryColor,
-            iconColor: ThemeSelection.iconDefaultSecondaryColor,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget topBarWeb() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        SizedBox(
-          height: 5.0,
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Text(
-            //   "Add New Individual",
-            //   style: TextStyle(
-            //       fontFamily: 'SegoeUi',
-            //       fontWeight: FontWeight.normal,
-            //       color: ThemeSelection.primaryTextColor,
-            //       fontSize: width * 0.020),
-            // ),
-            Text(
-              "Add New Individual",
-              style: TextStyle(
-                fontFamily: 'SegoeUi',
-                color: ThemeSelection.primaryTextColor,
-                fontSize: 6.sp,
-              ),
-            ),
-            SizedBox(
-              width: 25.0,
-            ),
-            customHoverTooltip(
-              context,
-              toolTipMessage:
-                  'Add an authorized individual who can access your patient portal account.',
-              iconData: Symbols.info,
-              hoverColor: ThemeSelection.iconHoverSecondaryColor,
-              iconColor: ThemeSelection.iconDefaultSecondaryColor,
-            ),
-          ],
-        ),
-        SizedBox(
-          height: 5.0,
-        ),
-        Container(
-          height: 2.0,
-          color: ThemeSelection.textfieldFilledColor,
-        ),
-      ],
-    );
+  @override
+  String toString() {
+    final DateFormat formatter = DateFormat('MM/dd/yyyy');
+    return '${formatter.format(start)} - ${formatter.format(end)}';
   }
 }

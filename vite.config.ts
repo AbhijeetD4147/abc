@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
-
+import react from '@vitejs/plugin-react'
 export default defineConfig({
+  plugins: [
+    // Add the plugin here
+    react(),
+  ],
   resolve: {
     alias: {
       // We can remove the manual buffer alias as the plugin handles it.
