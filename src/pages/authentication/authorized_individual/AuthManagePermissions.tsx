@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthenticationAuthUserService } from '../../../services/authentication/AuthUserService';
 import { AuthorizedIndividualPermissionModel } from '../../../model/authentication/AuthorizedIndividualPermissionModel';
 import { GlobalParams } from '../../../utils/GlobalParameters';
+import { DateFormatter } from '../../../utils/DateFormatter';
 
 interface AuthorizedIndividual {
     name: string;
@@ -22,6 +23,7 @@ const AuthManagePermissions: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [saveLoading, setSaveLoading] = useState<boolean>(false);
     const [expiryDate, setExpiryDate] = useState<string>('');
+    const [isMobile, setIsMobile] = useState<boolean>(false);
     
     const [individual, setIndividual] = useState<AuthorizedIndividual>({
         name: '',
@@ -35,13 +37,22 @@ const AuthManagePermissions: React.FC = () => {
     
     const authUserService = new AuthenticationAuthUserService();
 
+    // Check if mobile view
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     useEffect(() => {
         if (authId) {
             fetchAuthPermissions();
         } else {
             setLoading(false);
-            // Handle case when no authId is provided
-            // Could redirect back or show an error
             navigate('/auth-patient-list');
         }
     }, [authId]);
@@ -54,7 +65,13 @@ const AuthManagePermissions: React.FC = () => {
                 const permissionData = authUserService.authorizedIndividualPermissionResponse;
                 if (permissionData) {
                     setPermissions(permissionData);
-                    setExpiryDate(permissionData.expiryDate || '');
+                    if (permissionData.expiryDate) {
+                        const dateObj = new Date(permissionData.expiryDate);
+                        const formattedDate = DateFormatter.formatDate(dateObj);
+                        setExpiryDate(formattedDate);
+                    } else {
+                        setExpiryDate('');
+                    }
                     setIndividual({
                         name: permissionData.authName || '',
                         dob: permissionData.authDOB || '',
@@ -64,7 +81,6 @@ const AuthManagePermissions: React.FC = () => {
                     });
                 }
             } else {
-                // Handle error
                 console.error('Error fetching permissions');
             }
         } catch (error) {
@@ -87,11 +103,6 @@ const AuthManagePermissions: React.FC = () => {
                     break;
                 case 'view':
                     updated.isView = !updated.isView;
-                    // If view is disabled, disable download and transmit as well
-                    if (!updated.isView) {
-                        updated.isDownload = false;
-                        updated.isTransmit = false;
-                    }
                     break;
                 case 'download':
                     updated.isDownload = !updated.isDownload;
@@ -107,13 +118,15 @@ const AuthManagePermissions: React.FC = () => {
         });
     };
 
-    const handleDateChange = (date: string) => {
-        setExpiryDate(date);
+    const handleDateChange = (date: Date) => {
+        const formattedDate = DateFormatter.formatDate(date);
+        setExpiryDate(formattedDate);
+        
         if (permissions) {
             setPermissions(prev => {
                 if (!prev) return prev;
                 const updated = new AuthorizedIndividualPermissionModel({...prev});
-                updated.expiryDate = date;
+                updated.expiryDate = date.toISOString();
                 return updated;
             });
         }
@@ -124,17 +137,14 @@ const AuthManagePermissions: React.FC = () => {
         
         setSaveLoading(true);
         try {
-            // Create a new permissions object with authId and userId explicitly set
             const updatedPermissions = new AuthorizedIndividualPermissionModel({...permissions});
             updatedPermissions.authId = authId;
             updatedPermissions.userId = GlobalParams.USER_ID;
             
             await authUserService.saveAuthUserPermission(updatedPermissions.toJson());
             if (authUserService.response_Status_Code_API_4 === 200) {
-                // Success, navigate back to list
                 navigate('/authorized-individual');
             } else {
-                // Handle error
                 console.error('Error saving permissions');
             }
         } catch (error) {
@@ -151,13 +161,160 @@ const AuthManagePermissions: React.FC = () => {
     if (loading) {
         return (
             <div className="min-h-screen flex flex-col w-screen items-center justify-center">
-                <Navbar />
                 <Loader size="medium" />
             </div>
         );
     }
 
-    return (
+    // Mobile View Component
+    const MobileView = () => (
+        <div className="min-h-screen flex flex-col w-screen bg-gray-50">
+            <Navbar />
+            <div className="flex items-center justify-center py-3 bg-white border-b">
+                <button 
+                    onClick={handleCancel}
+                    className="absolute left-4 text-lg font-medium text-gray-600"
+                >
+                    ←
+                </button>
+                <Header
+                    className="text-lg font-semibold"
+                    colorVariant="dark"
+                    headerText="Permissions"
+                    size="h2"
+                />
+            </div>
+            
+            <div className="flex-1 px-4 py-4 space-y-4">
+                {/* Authorized Individual Info */}
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <Header
+                        className="text-base font-semibold mb-3"
+                        colorVariant="dark"
+                        headerText="Authorized Individual"
+                        size="h3"
+                    />
+                    <div className="space-y-2 text-sm">
+                        <div className="flex flex-col">
+                            <span className="font-medium text-gray-700">Name:</span>
+                            <span className="text-gray-900">{individual.name}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-medium text-gray-700">DOB:</span>
+                            <span className="text-gray-900">{individual.dob}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-medium text-gray-700">Phone:</span>
+                            <span className="text-gray-900">{individual.phone}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-medium text-gray-700">Email:</span>
+                            <span className="text-gray-900">{individual.email}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-medium text-gray-700">Date Added:</span>
+                            <span className="text-red-500 font-medium">{individual.dateAdded}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Portal Access */}
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <Header
+                        className="text-base font-semibold mb-3"
+                        colorVariant="dark"
+                        headerText="Portal Access"
+                        size="h3"
+                    />
+                    <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                checked={permissions?.isPortalAccess || false}
+                                onChange={() => handlePermissionChange('portalAccess')}
+                            />
+                            <label className="text-sm font-medium">Enable Access</label>
+                        </div>
+                        <div className="space-y-2">
+                            <span className="text-sm font-medium text-gray-700">Expiration Date</span>
+                            <DatePicker 
+                                value={expiryDate}
+                                onChange={handleDateChange}
+                                className="w-full"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Health Summary Permissions */}
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <Header
+                        className="text-base font-semibold mb-3"
+                        colorVariant="dark"
+                        headerText="Permissions for Health Summary"
+                        size="h3"
+                    />
+                    <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                checked={permissions?.isView || false}
+                                onChange={() => handlePermissionChange('view')}
+                            />
+                            <label className="text-sm font-medium">View</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                checked={permissions?.isDownload || false}
+                                onChange={() => handlePermissionChange('download')}
+                                isDisabled={!(permissions?.isView || false)}
+                            />
+                            <label className="text-sm font-medium">Download</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                checked={permissions?.isTransmit || false}
+                                onChange={() => handlePermissionChange('transmit')}
+                                isDisabled={!(permissions?.isView || false)}
+                            />
+                            <label className="text-sm font-medium">Transmit/Share</label>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Activity Log Permission */}
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <Header
+                        className="text-base font-semibold mb-3"
+                        colorVariant="dark"
+                        headerText="Permission for Activity Log"
+                        size="h3"
+                    />
+                    <div className="flex items-center space-x-2">
+                        <Checkbox
+                            checked={permissions?.isActivityLogAccess || false}
+                            onChange={() => handlePermissionChange('activityLog')}
+                        />
+                        <label className="text-sm font-medium">View Patient Activity Log</label>
+                    </div>
+                </div>
+            </div>
+
+            {/* Action Buttons - Fixed at bottom */}
+            <div className="bg-white border-t p-4 space-y-3">
+                <Button 
+                    className="w-full py-3 text-sm font-medium" 
+                    style="filled" 
+                    colorVariant="primary"
+                    onClick={handleSave}
+                    isDisabled={saveLoading}
+                >
+                    {saveLoading ? 'Saving...' : 'Save'}
+                </Button>
+            </div>
+        </div>
+    );
+
+    // Desktop View Component
+    const DesktopView = () => (
         <div className="min-h-screen flex flex-col w-screen">
             <Navbar />
             <div className="d-flex justify-content-center text-center py-2 border-bottom m-0">
@@ -237,7 +394,7 @@ const AuthManagePermissions: React.FC = () => {
                                     <Checkbox
                                         checked={permissions?.isDownload || false}
                                         onChange={() => handlePermissionChange('download')}
-                                        disabled={!(permissions?.isView || false)}
+                                        isDisabled={!(permissions?.isView || false)}
                                     />
                                     <label>Download</label>
                                 </div>
@@ -245,7 +402,7 @@ const AuthManagePermissions: React.FC = () => {
                                     <Checkbox
                                         checked={permissions?.isTransmit || false}
                                         onChange={() => handlePermissionChange('transmit')}
-                                        disabled={!(permissions?.isView || false)}
+                                        isDisabled={!(permissions?.isView || false)}
                                     />
                                     <label>Transmit/Share</label>
                                 </div>
@@ -278,7 +435,7 @@ const AuthManagePermissions: React.FC = () => {
                         style="outline" 
                         colorVariant="dark"
                         onClick={handleCancel}
-                        disabled={saveLoading}
+                        isDisabled={saveLoading}
                     >
                         Cancel
                     </Button>
@@ -287,7 +444,7 @@ const AuthManagePermissions: React.FC = () => {
                         style="filled" 
                         colorVariant="primary"
                         onClick={handleSave}
-                        disabled={saveLoading}
+                        isDisabled={saveLoading}
                     >
                         {saveLoading ? 'Saving...' : 'Save'}
                     </Button>
@@ -295,6 +452,8 @@ const AuthManagePermissions: React.FC = () => {
             </div>
         </div>
     );
+
+    return isMobile ? <MobileView /> : <DesktopView />;
 };
 
 export default AuthManagePermissions;
