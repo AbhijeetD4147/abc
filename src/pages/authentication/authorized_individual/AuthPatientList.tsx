@@ -129,7 +129,12 @@ const AuthPatientList: React.FC = () => {
                                     {authPatients.length > 0 ? (
                                         authPatients.map((patient) => (
                                             <tr key={patient.authId} className={`even:bg-white odd:bg-gray-100 ${patient.isExpired ? 'text-red-500' : ''}`}>
-                                                <td className="border px-4 py-2">{patient.authName}</td>
+                                                <td 
+                                                    className="border px-4 py-2 cursor-pointer hover:text-blue-500"
+                                                    onClick={() => navigate('/auth-manage-permissions', { state: { authId: patient.authId } })}
+                                                >
+                                                    {patient.authName}
+                                                </td>
                                                 <td className="border px-4 py-2">{patient.expiryDate}</td>
                                                 <td className="border px-2 py-2 flex justify-center items-center">
                                                     <Icon

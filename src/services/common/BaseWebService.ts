@@ -35,7 +35,9 @@ class BaseWebService {
   }: { requestUrl: string; dataModel?: any; token?: string; practiceName?: string }): Promise<AxiosResponse> {
     let response: AxiosResponse;
     try {
-      response = await axios.post(requestUrl, JSON.stringify(dataModel),
+      // Don't stringify if dataModel is already a string
+      const data = typeof dataModel === 'string' ? dataModel : JSON.stringify(dataModel);
+      response = await axios.post(requestUrl, data,
         {
           headers: {
             'Content-Type': 'application/json',

@@ -125,22 +125,24 @@ export class AuthenticationAuthUserService {
                 'Userid': GlobalParams.USER_ID,
                 'AuthId': authId
             };
-
+    
             const queryString = new URLSearchParams(customerData).toString();
             const url = `${ApiPath.baseApi}api/PatientPortal/GetAuthorizedIndividualPermission`;
             const requestUrl = `${url}?${queryString}`;
-
+    
             const response = await baseWebService.getWebAPI({
                 requestUrl: requestUrl,
                 token: GlobalParams.TOKEN,
                 practiceName: GlobalParams.PRACTICE_NAME
             });
-
+    
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_3 = 205;
             } else if (response.status === 200) {
+                // Fix: Check if response.data is already an object
+                const responseData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
                 this.authorizedIndividualPermissionResponse =
-                    await AuthorizedIndividualPermissionModel.fromJson(JSON.parse(response.data));
+                    await AuthorizedIndividualPermissionModel.fromJson(responseData);
                 this.response_Status_Code_API_3 = response.status;
             } else {
                 this.maximum_Calling_API_3 = this.maximum_Calling_API_3 + 1;
@@ -154,7 +156,19 @@ export class AuthenticationAuthUserService {
                         }, 1000);
                     }
                 } else {
-                    this.response_Status_Code_API_3 = response.status;
+                    this.maximum_Calling_API_3 = this.maximum_Calling_API_3 + 1;
+                    if (this.maximum_Calling_API_3 < ApiPath.MaxAPICalling) {
+                        if (response.status === 401) {
+                            await AuthenticationService.generateToken();
+                            await this.getAuthPermissionPatientInfo(authId);
+                        } else {
+                            setTimeout(async () => {
+                                await this.getAuthPermissionPatientInfo(authId);
+                            }, 1000);
+                        }
+                    } else {
+                        this.response_Status_Code_API_3 = response.status;
+                    }
                 }
             }
         } catch (e) {

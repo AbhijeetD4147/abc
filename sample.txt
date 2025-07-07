@@ -1,0 +1,1246 @@
+// ignore_for_file: must_be_immutable
+import 'dart:math';
+
+import 'package:first_insight/model/authentication/authorized_individual_permission_model.dart';
+import 'package:first_insight/screens/authentication/authorized_individual/auth_patient_list.dart';
+import 'package:first_insight/services/authentication/auth_user_service.dart';
+import 'package:first_insight/services/authentication/user_service.dart';
+import 'package:first_insight/utils/theme_selection_service.dart';
+import 'package:first_insight/utils/appBar.dart';
+import 'package:first_insight/utils/base_textstyle.dart';
+import 'package:first_insight/utils/base_widget.dart';
+import 'package:first_insight/utils/constants.dart';
+import 'package:first_insight/utils/global_params.dart';
+import 'package:first_insight/utils/popup_menu.dart';
+import 'package:first_insight/utils/responsive.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:sizer/sizer.dart';
+import 'package:toastification/toastification.dart';
+
+import '../../../utils/idle_wrapper.dart';
+
+class AuthManagePermission extends StatefulWidget {
+  final String? authId;
+  final bool? isUserComingFromAuthPatientListScreen;
+
+  const AuthManagePermission(
+      {super.key, this.authId, this.isUserComingFromAuthPatientListScreen});
+
+  @override
+  State<AuthManagePermission> createState() => AuthManagePermissionState();
+}
+
+class AuthManagePermissionState extends State<AuthManagePermission>
+    with TickerProviderStateMixin {
+  String authName = '',
+      authEmail = '',
+      authMobile = '',
+      authDob = '',
+      authUserCreatedDate = '';
+  bool isPortalAccessGiven = false,
+      isTempPortalAccessGiven = false,
+      isHealthSummaryForViewGiven = false,
+      isTempHealthSummaryForViewGiven = false,
+      isHealthSummaryForDownloadGiven = false,
+      isTempHealthSummaryForDownloadGiven = false,
+      isHealthSummaryForTransmitGiven = false,
+      isTempHealthSummaryForTransmitGiven = false,
+      IsActivityLogAccesGiven = false, //MBT 35561 9
+      isTempActivityLogAccessGiven = false, //MBT 35561 9
+      isExpired = false,
+      loading = true,
+      isDateChange = false;
+  final TextEditingController expiryDate = TextEditingController();
+  AuthorizedIndividualPermissionModel? authorizedIndividualPermissionResponse;
+  List<DateFormatData> DateValue = [];
+  DateFormat dateFormat = DateFormat("MM/dd/yyyy");
+  DateTime currentDate = DateTime.now();
+
+  AuthenticationAuthUserService authenticationAuthUserService =
+      new AuthenticationAuthUserService();
+  AuthenticationService authenticationService = new AuthenticationService();
+
+  bool isButtonClicked = false, isStatusUpdated = false;
+  var tempExpiryDateVariable;
+  var inputFormat = DateFormat('MM/dd/yyyy');
+  bool _validateExpiryDate = false;
+  bool dateFieldValidate = true;
+  var maskFormatterExpiryDate = new MaskTextInputFormatter(mask: '##/##/####');
+
+  bool isDownloadDisabled = false;
+  bool isTransmitDisabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    getAuthPermissionData();
+  }
+
+  Future<void> getAuthPermissionData() async {
+    await authenticationAuthUserService
+        .getAuthPermissionPatientInfo(widget.authId);
+    if (authenticationAuthUserService.response_Status_Code_API_3 == 200) {
+      setState(() {
+        authorizedIndividualPermissionResponse = authenticationAuthUserService
+            .authorizedIndividualPermissionResponse;
+        isHealthSummaryForViewGiven =
+            authorizedIndividualPermissionResponse!.isView!;
+        isTempHealthSummaryForViewGiven = isHealthSummaryForViewGiven;
+
+        isPortalAccessGiven =
+            authorizedIndividualPermissionResponse!.isPortalAccess!;
+        isTempPortalAccessGiven = isPortalAccessGiven;
+
+        isHealthSummaryForDownloadGiven =
+            authorizedIndividualPermissionResponse!.isDownload!;
+        isTempHealthSummaryForDownloadGiven = isHealthSummaryForDownloadGiven;
+
+        isDownloadDisabled = !isHealthSummaryForViewGiven;
+        isTransmitDisabled = !isHealthSummaryForViewGiven;
+
+        isHealthSummaryForTransmitGiven =
+            authorizedIndividualPermissionResponse!.isTransmit!;
+        isTempHealthSummaryForTransmitGiven = isHealthSummaryForTransmitGiven;
+
+        isExpired = authorizedIndividualPermissionResponse!.isExpired!;
+        authName = authorizedIndividualPermissionResponse!.authName!;
+        authEmail = authorizedIndividualPermissionResponse!.authEmail!;
+        authMobile = authorizedIndividualPermissionResponse!.authMobile!;
+        authDob = authorizedIndividualPermissionResponse!.authDOB!;
+        authUserCreatedDate =
+            authorizedIndividualPermissionResponse!.authUserCreatedDate!;
+        expiryDate.text = authorizedIndividualPermissionResponse!.expiryDate!;
+
+        if (expiryDate.text.isNotEmpty) {
+          if (expiryDate.text.trim().length == 10) {
+            validateManualDob(expiryDate.text);
+          } else {
+            _validateExpiryDate = true;
+          }
+        }
+        tempExpiryDateVariable =
+            authorizedIndividualPermissionResponse!.expiryDate;
+        loading = false;
+
+        IsActivityLogAccesGiven =
+            authorizedIndividualPermissionResponse!.isActivityLogAccess!;
+        isTempActivityLogAccessGiven = IsActivityLogAccesGiven; //MBT 35561 9
+      });
+    } else {
+      if (authenticationAuthUserService.response_Status_Code_API_3 != 205) {
+        setState(() {
+          loading = false;
+        });
+        showToast(
+          context,
+          message:
+              'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
+          type: ToastificationType.error,
+        );
+      }
+    }
+  }
+
+  Future _selectDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+        context: context,
+        initialDate: DateTime.now(),
+        initialEntryMode: DatePickerEntryMode.calendarOnly,
+        cancelText: "CLOSE",
+        confirmText: "SAVE",
+        firstDate: DateTime.now(),
+        lastDate: DateTime(2300),
+        builder: (context, child) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: ColorScheme.light(
+                    primary: ThemeSelection.BGColor, // header background color
+                    onPrimary: Colors.white, // header text color
+                    onSurface: Colors.black, // body text color
+                  ),
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: Responsive.isMobile(context)
+                        ? 100.w
+                        : Responsive.isTablet(context)
+                            ? 45.w
+                            : 23.w,
+                    minHeight: Responsive.isMobile(context)
+                        ? 70.h
+                        : Responsive.isTablet(context)
+                            ? 70.h
+                            : 60.h,
+                  ),
+                  child: child,
+                ),
+              ),
+            ],
+          );
+        });
+    if (pickedDate != null) {
+      setState(() {
+        isExpired = false;
+        dateFieldValidate = true;
+        _validateExpiryDate = false;
+        expiryDate.text = dateFormat.format(pickedDate);
+      });
+    }
+  }
+
+  Future<void> resendSignUpEmail() async {
+    await authenticationService.getResendSignUpEmailForAuthUser(widget.authId!);
+    if (authenticationService.response_Status_Code_API_20 == 200) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => AuthPatientList(),
+        ),
+      );
+    } else {
+      if (authenticationService.response_Status_Code_API_20 != 205) {
+        showToast(
+          context,
+          message:
+              'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
+          type: ToastificationType.error,
+        );
+      }
+    }
+  }
+
+  Future<void> updateAuthPermission() async {
+    setState(() {
+      isButtonClicked = true;
+      isStatusUpdated = false;
+    });
+
+    authorizedIndividualPermissionResponse =
+        new AuthorizedIndividualPermissionModel(
+      authDOB: authDob,
+      authEmail: authEmail,
+      authMobile: authMobile,
+      authName: authName,
+      authUserCreatedDate: authUserCreatedDate,
+      isPortalAccess: isPortalAccessGiven,
+      expiryDate: expiryDate.text,
+      isView: isHealthSummaryForViewGiven,
+      isDownload: isHealthSummaryForDownloadGiven,
+      isTransmit: isHealthSummaryForTransmitGiven,
+      authId: widget.authId,
+      userId: GlobalParams.USER_ID,
+      isActivityLogAccess: IsActivityLogAccesGiven,
+    );
+
+    await authenticationAuthUserService.saveAuthUserPermission(
+        authorizedIndividualPermissionResponse!.toMap());
+    if (authenticationAuthUserService.response_Status_Code_API_4 == 200) {
+      setState(() {
+        var response = authenticationAuthUserService.isAuthUserPermissionUpdate;
+        if (response == "true") {
+          isStatusUpdated = true;
+          Future.delayed(Duration(seconds: 1), () {
+            if (widget.isUserComingFromAuthPatientListScreen!) {
+              if (tempExpiryDateVariable != expiryDate.text ||
+                  isTempPortalAccessGiven != isPortalAccessGiven ||
+                  isTempHealthSummaryForDownloadGiven !=
+                      isHealthSummaryForDownloadGiven ||
+                  isTempHealthSummaryForTransmitGiven !=
+                      isHealthSummaryForTransmitGiven ||
+                  isTempHealthSummaryForViewGiven !=
+                      isHealthSummaryForViewGiven ||
+                  isTempActivityLogAccessGiven != IsActivityLogAccesGiven) {
+                Navigator.of(context).pop("0");
+              } else {
+                Navigator.of(context).pop("1");
+              }
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => AuthPatientList(),
+                ),
+              );
+            }
+          });
+        }
+        setState(() {
+          isButtonClicked = false;
+        });
+      });
+    } else {
+      if (authenticationAuthUserService.response_Status_Code_API_4 != 205) {
+        setState(() {
+          isButtonClicked = false;
+        });
+        showToast(
+          context,
+          message:
+              'An unexpected error has occurred. Please try again later. If the problem persists, call our office.',
+          type: ToastificationType.error,
+        );
+      }
+    }
+  }
+
+  void validateManualDob(String authExpireDate) {
+    // MM/DD/YYYY
+    // 02/26/2023
+    int month = int.parse(authExpireDate.substring(0, 2));
+    int date = int.parse(authExpireDate.substring(3, 5));
+    int year = int.parse(authExpireDate.substring(6, 10));
+
+    DateTime checkDate = DateFormat("MM/dd/yyyy").parse(authExpireDate);
+    DateTime today = DateTime.now();
+    DateTime todayWithoutTime = DateTime(today.year, today.month, today.day);
+
+    bool isNotLeapYear =
+        ((year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0));
+
+    setState(() {
+      if (month < 1 || month > 12) {
+        _validateExpiryDate = true;
+      } else if (date < 1 || date > 31) {
+        _validateExpiryDate = true;
+      } else if (year > 2300) {
+        _validateExpiryDate = true;
+      } else if (date > 29 && month == 2) {
+        _validateExpiryDate = true;
+      } else if (date == 31 &&
+          (month == 2 ||
+              month == 4 ||
+              month == 6 ||
+              month == 9 ||
+              month == 11)) {
+        _validateExpiryDate = true;
+      } else if (checkDate.isBefore(todayWithoutTime)) {
+        _validateExpiryDate = true;
+      } else if (!isNotLeapYear && month == 2 && date == 29) {
+        _validateExpiryDate = true;
+      } else {
+        _validateExpiryDate = false;
+      }
+      if (_validateExpiryDate) {
+        dateFieldValidate = false;
+      } else {
+        dateFieldValidate = true;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IdleWrapper(
+      child: SafeArea(
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              ApiPath.isSettingIconPopupVisible = false;
+            });
+          },
+          child: Scaffold(
+            bottomNavigationBar: Visibility(
+              visible: Responsive.isMobile(context) && !loading,
+              child: BottomAppBar(
+                elevation: 0,
+                child: Container(
+                  alignment: Alignment.bottomCenter,
+                  height: height / 5,
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  child: ButtonUIMobileWidget(),
+                ),
+              ),
+            ),
+            appBar: !Responsive.isMobile(context)
+                ? CommonAppBar(
+                    context,
+                    TabController(length: 6, vsync: this, initialIndex: 0),
+                    setState,
+                    null,
+                    "")
+                : PreferredSize(
+                    preferredSize: Size(0, 0),
+                    child: SizedBox(),
+                  ),
+            body: loading
+                ? Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : Responsive(
+                    mobile: mobileView(),
+                    tablet: webView(),
+                    desktop: webView(),
+                    k4Desktop: webView(),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget mobileView() {
+    return Column(
+      children: [
+        topBarMobile(),
+        Expanded(
+          child: Scrollbar(
+            thumbVisibility: true,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 33, horizontal: 30),
+                    child: userDetails(),
+                  ),
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 30),
+                    child: portalAccessDetails(),
+                  ),
+                  Divider()
+                ],
+              ),
+            ),
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget webView() {
+    return Stack(
+      children: [
+        Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              height: 8.h,
+              color: ThemeSelection.secondaryTextColor,
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 1.h),
+                  child: Text(
+                    "Permissions",
+                    style: CommonTextStyle.of(context)
+                        .H8_SUR(ThemeSelection.primaryTextColor),
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              height: 0.1.h,
+              color: ThemeSelection.dividerPrimaryColor,
+            ),
+            SizedBox(
+              height: 2.h * 0.5,
+            ),
+            bottomWebDesigns(),
+            SizedBox(
+              height: height * 0.2,
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: width * 0.07, right: width * 0.07),
+              child: Container(
+                height: 2,
+                color: ThemeSelection.textfieldFilledColor,
+              ),
+            ),
+            SizedBox(
+              height: height * 0.03,
+            ),
+            isButtonClicked == true
+                ? CircularProgressIndicator()
+                : ButtonUIWebWidget(),
+            SizedBox(
+              height: height * 0.05,
+            ),
+          ],
+        ),
+        Visibility(
+          visible: ApiPath.isSettingIconPopupVisible,
+          child: Positioned(
+            right: 0.5.w,
+            child: MenuOptions(context, setState, false),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget topBarMobile() {
+    return Container(
+      width: width,
+      height: 6.h,
+      color: ThemeSelection.BGColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          SizedBox(
+            height: 6.0,
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 15.0,
+              ),
+              customIconButton(
+                context,
+                onPressed: widget.isUserComingFromAuthPatientListScreen!
+                    ? () {
+                        Navigator.of(context).pop("");
+                      }
+                    : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AuthPatientList(),
+                          ),
+                        );
+                      },
+                hoverColor: ThemeSelection.iconHoverPrimaryColor,
+                splashColor: ThemeSelection.iconPressedPrimaryColor,
+                iconData: Symbols.arrow_back,
+                iconColor: ThemeSelection.iconDefaultTertiaryColor,
+              ),
+              SizedBox(
+                width: 15.0,
+              ),
+              Text(
+                "Permissions",
+                style: CommonTextStyle.of(context)
+                    .H8_SUR(ThemeSelection.secondaryTextColor),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 6.0,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget bottomWebDesigns() {
+    return Row(
+      children: [
+        Expanded(child: userDetails()),
+        Expanded(child: portalAccessDetails()),
+      ],
+    );
+  }
+
+  String generateRandomChar() {
+    final random = Random();
+    // Generate a random number between 0 and 1
+    final randomNumber = random.nextInt(2);
+    // If the random number is 0, return an asterisk, otherwise, return a random digit
+    return randomNumber == 0 ? '*' : random.nextInt(10).toString();
+  }
+
+  Widget userDetails() {
+    final authDOBSpans = List<InlineSpan>.generate(
+      authDob.length,
+      (index) {
+        final character = authDob[index];
+        final shouldBeHidden = [1, 4, 8].contains(index);
+
+        if (shouldBeHidden) {
+          // Replace characters at the specified indices with asterisks
+          return TextSpan(
+            text: "*",
+            style: CommonTextStyle.of(context)
+                .H20_SUB(ThemeSelection.primaryTextColor),
+          );
+        } else {
+          // Keep the rest of the characters as they are
+          return TextSpan(
+            text: character,
+            style: CommonTextStyle.of(context)
+                .H20_SUB(ThemeSelection.primaryTextColor),
+          );
+        }
+      },
+    );
+
+    final mobileNumberWithoutHyphens = authMobile.replaceAll('-', '');
+    final authMobileSpans = List<InlineSpan>.generate(
+      mobileNumberWithoutHyphens.length,
+      (index) {
+        final character = mobileNumberWithoutHyphens[index];
+
+        // Check if the current index is the 3rd, 6th, or 8th digit
+        if (index == 2 || index == 5 || index == 7) {
+          return TextSpan(
+            text: '*',
+            style: CommonTextStyle.of(context)
+                .H20_SUB(ThemeSelection.primaryTextColor),
+          );
+        } else {
+          return TextSpan(
+            text: character,
+            style: CommonTextStyle.of(context)
+                .H20_SUB(ThemeSelection.primaryTextColor),
+          );
+        }
+      },
+    );
+
+    final emailLength = authEmail.length;
+
+    final seed =
+        emailLength; // Use the email length as the seed for consistent character hiding
+
+    final rng = Random(seed);
+
+// Determine the number of characters to hide
+    final minCharactersToHide = max(emailLength ~/ 2, 1);
+
+    final hiddenIndices = Set<int>();
+
+    while (hiddenIndices.length < minCharactersToHide) {
+      final randomIndex = rng.nextInt(emailLength);
+      if (authEmail[randomIndex] != '@' &&
+          !authEmail
+              .substring(
+                  max(randomIndex - 3, 0), min(randomIndex + 4, emailLength))
+              .contains(".com") &&
+          !hiddenIndices.contains(randomIndex)) {
+        hiddenIndices.add(randomIndex);
+      }
+    }
+
+    final authEmailSpans = List<InlineSpan>.generate(
+      emailLength,
+      (index) {
+        final character = authEmail[index];
+
+        if (authEmail[index] == '@' ||
+            authEmail
+                .substring(max(index - 3, 0), min(index + 4, emailLength))
+                .contains(".com")) {
+          // Keep "@" and ".com" characters as they are
+          return TextSpan(
+            text: character,
+            style: CommonTextStyle.of(context)
+                .H20_SUB(ThemeSelection.primaryTextColor),
+          );
+        } else if (hiddenIndices.contains(index)) {
+          // Replace characters at the chosen indices with asterisks
+          return TextSpan(
+            text: "*",
+            style: CommonTextStyle.of(context)
+                .H20_SUB(ThemeSelection.primaryTextColor),
+          );
+        } else {
+          // Keep the rest of the characters as they are
+          return TextSpan(
+            text: character,
+            style: CommonTextStyle.of(context)
+                .H20_SUB(ThemeSelection.primaryTextColor),
+          );
+        }
+      },
+    );
+
+    return Align(
+      alignment: Responsive.isMobile(context)
+          ? Alignment.centerLeft
+          : Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Authorized Individual',
+            style: CommonTextStyle.of(context)
+                .H18_SUB(ThemeSelection.primaryTextColor),
+          ),
+          SizedBox(
+            height: Responsive.isMobile(context) ? 5.0 : height * 0.025,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Name: ",
+                style: CommonTextStyle.of(context)
+                    .H20_SUR(ThemeSelection.primaryTextColor),
+              ),
+              Text(
+                authName,
+                style: CommonTextStyle.of(context)
+                    .H20_SUB(ThemeSelection.primaryTextColor),
+                key: ValueKey("AuthName"),
+              ),
+            ],
+          ),
+          Visibility(
+            visible: authDob.isBlank! ? false : true,
+            child: SizedBox(
+              height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
+            ),
+          ),
+          Visibility(
+            visible: authDob.isBlank! ? false : true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "DOB: ",
+                  style: CommonTextStyle.of(context)
+                      .H20_SUR(ThemeSelection.primaryTextColor),
+                ),
+                RichText(
+                  text: TextSpan(
+                    children: authDOBSpans,
+                  ),
+                  key: ValueKey("DOB"),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Phone: ",
+                style: CommonTextStyle.of(context)
+                    .H20_SUR(ThemeSelection.primaryTextColor),
+              ),
+              RichText(
+                text: TextSpan(
+                  children: authMobileSpans,
+                ),
+                key: ValueKey("Mobile"),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Email: ",
+                style: CommonTextStyle.of(context)
+                    .H20_SUR(ThemeSelection.primaryTextColor),
+              ),
+              RichText(
+                text: TextSpan(
+                  children: authEmailSpans,
+                ),
+                key: ValueKey("Email"),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: Responsive.isMobile(context) ? 5.0 : width * 0.002,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Date Added: ",
+                style: CommonTextStyle.of(context)
+                    .H20_SUR(ThemeSelection.primaryTextColor),
+              ),
+              Text(
+                authUserCreatedDate,
+                style: CommonTextStyle.of(context).H20_SUB(
+                  authUserCreatedDate == "Pending"
+                      ? ThemeSelection.tertiaryTextColor
+                      : ThemeSelection.primaryTextColor,
+                ),
+                key: ValueKey("Auth Created Date"),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget portalAccessDetails() {
+    return Align(
+      alignment: Responsive.isMobile(context)
+          ? Alignment.centerLeft
+          : Alignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Portal Access',
+            style: CommonTextStyle.of(context)
+                .H18_SUB(ThemeSelection.primaryTextColor),
+          ),
+          SizedBox(
+            height: 1.h,
+          ),
+          Responsive.isMobile(context)
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          key: ValueKey("Enable Access Checkbox"),
+                          activeColor: Colors.green,
+                          value: isPortalAccessGiven,
+                          onChanged: (s) {
+                            setState(() {
+                              isPortalAccessGiven = !isPortalAccessGiven;
+                            });
+                          },
+                        ),
+                        Text(
+                          'Enable Access',
+                          style: CommonTextStyle.of(context)
+                              .H20_SUR(ThemeSelection.primaryTextColor),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 2.h,
+                    ),
+                    Text(
+                      "Expiration Date",
+                      style: CommonTextStyle.of(context)
+                          .H20_SUR(ThemeSelection.primaryTextColor),
+                    ),
+                    SizedBox(
+                      height: 1.h,
+                    ),
+                    SizedBox(width: 80.w, child: buildDateField()),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Checkbox(
+                          key: ValueKey("Enable Access Checkbox"),
+                          activeColor: Colors.green,
+                          value: isPortalAccessGiven,
+                          onChanged: (s) {
+                            setState(() {
+                              isPortalAccessGiven = !isPortalAccessGiven;
+                            });
+                          },
+                        ),
+                        Text(
+                          'Enable Access',
+                          style: CommonTextStyle.of(context)
+                              .H20_SUR(ThemeSelection.primaryTextColor),
+                        ),
+                        SizedBox(width: 1.w),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment:
+                              _validateExpiryDate && isDateChange
+                                  ? CrossAxisAlignment.start
+                                  : CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Expiration Date",
+                              style: CommonTextStyle.of(context)
+                                  .H20_SUR(ThemeSelection.primaryTextColor),
+                            ),
+                            SizedBox(
+                              width: 1.w,
+                            ),
+                            buildDateField(),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+          SizedBox(
+            height: 4.h,
+          ),
+          Text(
+            'Permissions for Health Summary',
+            style: CommonTextStyle.of(context)
+                .H18_SUB(ThemeSelection.primaryTextColor),
+          ),
+          SizedBox(
+            height: 1.h,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Checkbox(
+                key: ValueKey("View Checkbox"),
+                activeColor: Colors.green,
+                value: isHealthSummaryForViewGiven,
+                onChanged: (s) {
+                  setState(() {
+                    isHealthSummaryForViewGiven = !isHealthSummaryForViewGiven;
+                    !isHealthSummaryForViewGiven
+                        ? {
+                            isHealthSummaryForDownloadGiven = false,
+                            isHealthSummaryForTransmitGiven = false,
+                            isDownloadDisabled = true,
+                            isTransmitDisabled = true,
+                          }
+                        : {
+                            isDownloadDisabled = false,
+                            isTransmitDisabled = false
+                          };
+                  });
+                },
+              ),
+              Text(
+                'View',
+                style: CommonTextStyle.of(context)
+                    .H20_SUR(ThemeSelection.primaryTextColor),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 1.h,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IgnorePointer(
+                ignoring: isDownloadDisabled,
+                child: !isDownloadDisabled
+                    ? Checkbox(
+                        key: ValueKey("Download/Print Checkbox"),
+                        activeColor: Colors.green,
+                        value: isDownloadDisabled
+                            ? false
+                            : isHealthSummaryForDownloadGiven,
+                        onChanged: (s) {
+                          setState(() {
+                            isHealthSummaryForDownloadGiven =
+                                !isHealthSummaryForDownloadGiven;
+                          });
+                        },
+                      )
+                    : Padding(
+                        padding: Responsive.isMobile(context)
+                            ? const EdgeInsets.all(14.0)
+                            : const EdgeInsets.all(7.0),
+                        child: Container(
+                          width: 18,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(1),
+                            color: ThemeSelection.ButtonDisable,
+                          ),
+                        ),
+                      ),
+              ),
+              Text(
+                'Download/Print',
+                style: isDownloadDisabled
+                    ? CommonTextStyle.of(context)
+                        .H20_SUR(ThemeSelection.nonaryTextColor)
+                    : CommonTextStyle.of(context)
+                        .H20_SUR(ThemeSelection.primaryTextColor),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 1.h,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IgnorePointer(
+                ignoring: isTransmitDisabled,
+                child: !isTransmitDisabled
+                    ? Checkbox(
+                        key: ValueKey("Transmit/Share Checkbox"),
+                        activeColor: Colors.green,
+                        value: isTransmitDisabled
+                            ? false
+                            : isHealthSummaryForTransmitGiven,
+                        onChanged: (s) {
+                          setState(() {
+                            isHealthSummaryForTransmitGiven =
+                                !isHealthSummaryForTransmitGiven;
+                          });
+                        },
+                      )
+                    : Padding(
+                        padding: Responsive.isMobile(context)
+                            ? const EdgeInsets.all(14.0)
+                            : const EdgeInsets.all(7.0),
+                        child: Container(
+                          width: 18,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(1),
+                            color: ThemeSelection.ButtonDisable,
+                            // border: Border.all(color: ThemeSelection.disabledSecondaryBackGroundButtonColor)
+                          ),
+                        ),
+                      ),
+              ),
+              Text(
+                'Transmit/Share',
+                style: isTransmitDisabled
+                    ? CommonTextStyle.of(context)
+                        .H20_SUR(ThemeSelection.nonaryTextColor)
+                    : CommonTextStyle.of(context)
+                        .H20_SUR(ThemeSelection.primaryTextColor),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 4.h,
+          ),
+          Text(
+            'Permission for Activity Log',
+            style: CommonTextStyle.of(context)
+                .H18_SUB(ThemeSelection.primaryTextColor),
+          ),
+          SizedBox(
+            height: 1.h,
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Checkbox(
+                key: ValueKey("View Activity Log Checkbox"),
+                activeColor: Colors.green,
+                value: IsActivityLogAccesGiven,
+                onChanged: (s) {
+                  setState(() {
+                    IsActivityLogAccesGiven = !IsActivityLogAccesGiven;
+                  });
+                },
+              ),
+              Text(
+                'View Patient Activity Log',
+                style: CommonTextStyle.of(context)
+                    .H20_SUR(ThemeSelection.primaryTextColor),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildDateField() {
+    return Container(
+      key: ValueKey("Expiration Date"),
+      alignment: Alignment.center,
+      width: Responsive.isTablet(context) ? width * 0.15 : width * 0.1,
+      child: customTextFormField(
+        context,
+        errorText: isDateChange ? "Invalid Expiry Date" : "",
+        keyBoardType: TextInputType.phone,
+        inputFormatters: [maskFormatterExpiryDate],
+        hintText: "MM/DD/YYYY",
+        inlineError: true,
+        onChanged: (val) {
+          setState(() {
+            isExpired = false;
+            isDateChange = true;
+          });
+          if (expiryDate.text.trim().isNotEmpty) {
+            setState(() {
+              _validateExpiryDate = true;
+            });
+            if (expiryDate.text.trim().length == 10) {
+              validateManualDob(val);
+            }
+          } else {
+            setState(() {
+              _validateExpiryDate = false;
+            });
+          }
+        },
+        suffixIcon: InkWell(
+          key: ValueKey("Date Picker"),
+          onTap: () => _selectDate(context),
+          child: Padding(
+            padding: Responsive.isMobile(context)
+                ? EdgeInsets.fromLTRB(10, 4, 7, 6)
+                // .copyWith(top: 7)
+                : Responsive.isTablet(context)
+                    ? EdgeInsets.symmetric(horizontal: 11, vertical: 3)
+                    : EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Icon(
+              // const IconData(
+              //   0xE101,
+              //   fontFamily: 'metro',
+              // ),
+              Symbols.calendar_month,
+              //size: Responsive.isMobile(context) ? 25.0 : height * 0.03,
+              size: Responsive.isTablet(context)
+                  ? height * 0.032
+                  : Responsive.isMobile(context)
+                      ? 25.0
+                      : (MediaQuery.of(context).size.height >= 2560 &&
+                              MediaQuery.of(context).size.width >= 1440)
+                          ? height * 0.03 * 0.85
+                          : height * 0.03,
+              color: ThemeSelection.iconDefaultQuaternaryColor,
+            ),
+          ),
+        ),
+        textEditingController: expiryDate,
+        validate: isExpired ? isExpired : _validateExpiryDate,
+        validator: (value) {
+          if (_validateExpiryDate) {
+            return '';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget ButtonUIMobileWidget() {
+    return Center(
+      child: Column(
+        children: [
+          Visibility(
+            key: ValueKey("Resend SignUp Email"),
+            visible: authUserCreatedDate == "Pending",
+            child: primaryButton(
+              context,
+              () {
+                resendSignUpEmail();
+              },
+              'Resend Signup Email',
+              ThemeSelection.secondaryTextColor,
+            ),
+          ),
+          SizedBox(
+            height: height * 0.02,
+          ),
+          primaryButton(
+            context,
+            () {
+              fieldValidation();
+            },
+            'Save',
+            ThemeSelection.secondaryTextColor,
+          )
+        ],
+      ),
+    );
+  }
+
+  void fieldValidation() {
+    if (expiryDate.text.trim().isEmpty ||
+        (expiryDate.text.trim().isNotEmpty &&
+            dateFieldValidate &&
+            !isExpired &&
+            !_validateExpiryDate)) {
+      showCustomDialog(
+        context,
+        title: "Do you want to update access permissions for the ${authName}?",
+        firstButtonText: "Yes",
+        secondButtonText: "No",
+        iconData: Symbols.warning,
+        firstButtonFunction: () {
+          updateAuthPermission();
+          Navigator.pop(context);
+        },
+        secondButtonFunction: () {
+          Get.back();
+          if (widget.isUserComingFromAuthPatientListScreen!) {
+            Navigator.of(context).pop("");
+          } else {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => AuthPatientList(),
+              ),
+            );
+          }
+        },
+      );
+    } else {
+      setState(() {
+        isExpired = false;
+        _validateExpiryDate = true;
+      });
+      showToast(
+        context,
+        message: 'Expiration Date is Invalid',
+        type: ToastificationType.warning,
+      );
+    }
+  }
+
+  Widget ButtonUIWebWidget() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Visibility(
+          key: ValueKey("Resend Signup Email"),
+          visible: authUserCreatedDate == "Pending",
+          child: primaryButton(
+            context,
+            () {
+              resendSignUpEmail();
+            },
+            'Resend Signup Email',
+            ThemeSelection.secondaryTextColor,
+          ),
+        ),
+        SizedBox(
+          width: width * 0.040,
+        ),
+        Container(
+          key: ValueKey("Cancel"),
+          child: secondaryButton(
+            context,
+            "Cancel",
+            () {
+              if (widget.isUserComingFromAuthPatientListScreen!) {
+                Navigator.of(context).pop("");
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => AuthPatientList(),
+                  ),
+                );
+              }
+            },
+          ),
+        ),
+        SizedBox(
+          width: width * 0.010,
+        ),
+        Container(
+          key: ValueKey("Save"),
+          child: primaryButton(
+            context,
+            () {
+              fieldValidation();
+            },
+            'Save',
+            ThemeSelection.secondaryTextColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class DateFormatData {
+  int? Year, Month, Day;
+
+  DateFormatData({this.Year, this.Month, this.Day});
+}
