@@ -53,7 +53,7 @@ import { AddAuthorizedIndividualRequestModel } from '../../../model/authenticati
 import { ValidatePatientForAddIndividualResponse } from '../../../model/patient_portal/ValidatePatientForAddIndividualResponse';
 
 const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
-    const [value, ] = useState('');
+    const [value,] = useState('');
     const navigate = useNavigate();
     const [theme, setTheme] = useState<any>({});
     const [isLoading, setIsLoading] = useState(false);
@@ -161,12 +161,16 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                         });
                     }
                 }
-                else if (!validateResponse.isExist) {             
+                else if (!validateResponse.isExist) {
                     await userService.addAuthPatient(addIndividualRequest, validateResponse.matchType);
                     const insertResponse = userService.insertAuthorizedIndividualModel;
                     if (insertResponse?.insertStatus) {
                         navigate('/auth-access-granted', {
-                            state: { locationPhone: insertResponse.locationPhone }
+                            state: {
+                                locationPhone: insertResponse.locationPhone,
+                                firstName: data.First.trim(),
+                                lastName: data.Last.trim()
+                            }
                         });
                     } else {
                         console.error('An unexpected error occurred. Please try again later.');
@@ -175,8 +179,8 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                 else if (userService.response_Status_Code_API_14 !== 205) {
                     console.error('An unexpected error occurred. Please try again later.');
                 }
-            } 
-        }catch (error: any) {
+            }
+        } catch (error: any) {
             console.error('Error:', error);
         } finally {
             setIsLoading(false);
@@ -212,13 +216,13 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} 
-             onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault(); // Prevent Enter from submitting the form
-                            }
-                        }}
-            className="bg-white w-full max-w-lg md:p-8 sm:p-6 p-4">
+            <form onSubmit={handleSubmit(onSubmit)}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault(); // Prevent Enter from submitting the form
+                    }
+                }}
+                className="bg-white w-full max-w-lg md:p-8 sm:p-6 p-4">
                 {/* First Name */}
                 <div className="mb-0">
                     <Input
@@ -305,7 +309,7 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                         onChangeRaw={(value: string) => dobController.field.onChange(value)}
                         error={!!errors.dob}
                         enhancedInput={true}
-                       
+
                     />
                     {errors.dob && <p className="text-red-500 text-xs mt-1">{errors.dob.message}</p>}
                 </div>

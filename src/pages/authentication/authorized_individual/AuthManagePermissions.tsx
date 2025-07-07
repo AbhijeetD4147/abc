@@ -7,6 +7,7 @@ import { AuthenticationAuthUserService } from '../../../services/authentication/
 import { AuthorizedIndividualPermissionModel } from '../../../model/authentication/AuthorizedIndividualPermissionModel';
 import { GlobalParams } from '../../../utils/GlobalParameters';
 import { DateFormatter } from '../../../utils/DateFormatter';
+import { AuthenticationService } from '../../../services/authentication/UserService';
 
 interface AuthorizedIndividual {
     name: string;
@@ -24,7 +25,7 @@ const AuthManagePermissions: React.FC = () => {
     const [saveLoading, setSaveLoading] = useState<boolean>(false);
     const [expiryDate, setExpiryDate] = useState<string>('');
     const [isMobile, setIsMobile] = useState<boolean>(false);
-    
+
     const [individual, setIndividual] = useState<AuthorizedIndividual>({
         name: '',
         dob: '',
@@ -34,15 +35,18 @@ const AuthManagePermissions: React.FC = () => {
     });
 
     const [permissions, setPermissions] = useState<AuthorizedIndividualPermissionModel | null>(null);
-    
+    const [resendLoading, setResendLoading] = useState(false);
+
+
     const authUserService = new AuthenticationAuthUserService();
+    const authService = new AuthenticationService();
 
     // Check if mobile view
     useEffect(() => {
         const checkMobile = () => {
             setIsMobile(window.innerWidth < 768);
         };
-        
+
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
@@ -92,12 +96,12 @@ const AuthManagePermissions: React.FC = () => {
 
     const handlePermissionChange = (key: string) => {
         if (!permissions) return;
-        
+
         setPermissions(prev => {
             if (!prev) return prev;
-            
-            const updated = new AuthorizedIndividualPermissionModel({...prev});
-            switch(key) {
+
+            const updated = new AuthorizedIndividualPermissionModel({ ...prev });
+            switch (key) {
                 case 'portalAccess':
                     updated.isPortalAccess = !updated.isPortalAccess;
                     break;
@@ -121,11 +125,11 @@ const AuthManagePermissions: React.FC = () => {
     const handleDateChange = (date: Date) => {
         const formattedDate = DateFormatter.formatDate(date);
         setExpiryDate(formattedDate);
-        
+
         if (permissions) {
             setPermissions(prev => {
                 if (!prev) return prev;
-                const updated = new AuthorizedIndividualPermissionModel({...prev});
+                const updated = new AuthorizedIndividualPermissionModel({ ...prev });
                 updated.expiryDate = date.toISOString();
                 return updated;
             });
@@ -134,13 +138,13 @@ const AuthManagePermissions: React.FC = () => {
 
     const handleSave = async () => {
         if (!permissions) return;
-        
+
         setSaveLoading(true);
         try {
-            const updatedPermissions = new AuthorizedIndividualPermissionModel({...permissions});
+            const updatedPermissions = new AuthorizedIndividualPermissionModel({ ...permissions });
             updatedPermissions.authId = authId;
             updatedPermissions.userId = GlobalParams.USER_ID;
-            
+
             await authUserService.saveAuthUserPermission(updatedPermissions.toJson());
             if (authUserService.response_Status_Code_API_4 === 200) {
                 navigate('/authorized-individual');
@@ -165,13 +169,30 @@ const AuthManagePermissions: React.FC = () => {
             </div>
         );
     }
+    const handleResendSignupEmail = async () => {
+    if (!authId) return;
+
+    setResendLoading(true);
+    try {
+        await authService.getResendSignUpEmailForAuthUser(authId);
+        if (authService.response_Status_Code_API_20 === 200) {
+            // navigate('/authorized-individual');
+        } else {
+            console.error('Error resending signup email');
+        }
+    } catch (error) {
+        console.error('Error resending signup email:', error);
+    } finally {
+        setResendLoading(false);
+    }
+};
 
     // Mobile View Component
     const MobileView = () => (
         <div className="min-h-screen flex flex-col w-screen bg-gray-50">
             <Navbar />
             <div className="flex items-center justify-center py-3 bg-white border-b">
-                <button 
+                <button
                     onClick={handleCancel}
                     className="absolute left-4 text-lg font-medium text-gray-600"
                 >
@@ -184,7 +205,7 @@ const AuthManagePermissions: React.FC = () => {
                     size="h2"
                 />
             </div>
-            
+
             <div className="flex-1 px-4 py-4 space-y-4">
                 {/* Authorized Individual Info */}
                 <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -236,7 +257,7 @@ const AuthManagePermissions: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                             <span className="text-sm font-medium text-gray-700">Expiration Date</span>
-                            <DatePicker 
+                            <DatePicker
                                 value={expiryDate}
                                 onChange={handleDateChange}
                                 className="w-full"
@@ -300,9 +321,20 @@ const AuthManagePermissions: React.FC = () => {
 
             {/* Action Buttons - Fixed at bottom */}
             <div className="bg-white border-t p-4 space-y-3">
-                <Button 
-                    className="w-full py-3 text-sm font-medium" 
-                    style="filled" 
+                {individual.dateAdded === "Pending" && (
+                    <Button
+                        className="w-full py-3 text-sm font-medium"
+                        style="outline"
+                        colorVariant="primary"
+                        onClick={handleResendSignupEmail}
+                        isDisabled={resendLoading} // Enable this to prevent multiple clicks
+                    >
+                        {resendLoading ? 'Resending...' : 'Resend Signup Email'}
+                    </Button>
+                )}
+                <Button
+                    className="w-full py-3 text-sm font-medium"
+                    style="filled"
                     colorVariant="primary"
                     onClick={handleSave}
                     isDisabled={saveLoading}
@@ -367,7 +399,7 @@ const AuthManagePermissions: React.FC = () => {
                                     </div>
                                 </div>
                                 <span className="font-medium">Expiration Date</span>
-                                <DatePicker 
+                                <DatePicker
                                     value={expiryDate}
                                     onChange={handleDateChange}
                                 />
@@ -430,21 +462,32 @@ const AuthManagePermissions: React.FC = () => {
 
                 {/* Action Buttons - Centered at the bottom */}
                 <div className="flex justify-center space-x-4 border-t-2 pt-4">
-                    <Button 
-                        className="px-5" 
-                        style="outline" 
+                    {individual.dateAdded === "Pending" && (
+                        <Button
+                            className="px-5"
+                            style="outline"
+                            colorVariant="primary"
+                            onClick={handleResendSignupEmail}
+                            isDisabled={resendLoading}
+                        >
+                            {resendLoading ? 'Sending...' : 'Resend Signup Email'}
+                        </Button>
+                    )}
+                    <Button
+                        className="px-5"
+                        style="outline"
                         colorVariant="dark"
                         onClick={handleCancel}
-                        isDisabled={saveLoading}
+                        isDisabled={saveLoading || resendLoading}
                     >
                         Cancel
                     </Button>
-                    <Button 
-                        className="px-5" 
-                        style="filled" 
+                    <Button
+                        className="px-5"
+                        style="filled"
                         colorVariant="primary"
                         onClick={handleSave}
-                        isDisabled={saveLoading}
+                        isDisabled={saveLoading || resendLoading}
                     >
                         {saveLoading ? 'Saving...' : 'Save'}
                     </Button>
@@ -457,3 +500,4 @@ const AuthManagePermissions: React.FC = () => {
 };
 
 export default AuthManagePermissions;
+

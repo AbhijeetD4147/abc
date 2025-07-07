@@ -1,8 +1,11 @@
 import React from 'react';
 import { Header, Icon } from '@ketan_nimase/ui';
 import { Navbar } from '../../../components/ui/Navbar';
+import { useLocation } from 'react-router-dom';
 
 const AuthAccessGranted: React.FC = () => {
+     const location = useLocation();
+    const { firstName, lastName, locationPhone } = location.state || {};
     return (
         <div className="min-h-screen flex flex-col w-screen">
             <Navbar />
@@ -56,7 +59,7 @@ const AuthAccessGranted: React.FC = () => {
 
                 {/* Right Panel */}
                 <div className="w-2/3 bg-white p-8 flex flex-col items-center justify-center text-center">
-                    <p className="text-3xl mb-12 text-center">Anna Stevenson can now access your records!</p>
+                    <p className="text-3xl mb-12 text-center"> {firstName} {lastName} can now access your records!</p>
 
                     <div className="text-center">
                         <Header
@@ -65,7 +68,7 @@ const AuthAccessGranted: React.FC = () => {
                             headerText="QUESTIONS?"
                             size="h2"
                         />
-                        <p className="text-xl mt-2">700.120.1510</p>
+                        <p className="text-xl mt-2">{locationPhone}</p>
                     </div>
                 </div>
             </div>

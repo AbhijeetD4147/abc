@@ -41,7 +41,7 @@ const RequestAppointment: React.FC = () => {
       const response = await appointmentService.getAppointmentLocation();
       if (response?.data) {
         const locationData = response as LocationResponse;
-        setLocations(locationData.locations.filter(loc => loc.name));
+        // setLocations(locationData.locations.filter(loc => loc.name));
         setCustomerNote(locationData.customerNote);
         setIsCustomerHours(locationData.isCustomerHours);
       } else {
@@ -56,22 +56,22 @@ const RequestAppointment: React.FC = () => {
   };
 
   // Fetch practitioners for selected location
-  const getPracticePersonData = async (locationId: number) => {
-    try {
-      const response = await appointmentService.getPracticePerson(locationId);
-      if (response.status === 200) {
-        const sortedPractitioners = response.data.sort((a, b) =>
-          a.firstName.localeCompare(b.firstName)
-        );
-        setPractitioners(sortedPractitioners);
-      } else {
-        throw new Error('Failed to fetch practitioners');
-      }
-    } catch (error) {
-      console.error('Error fetching practitioners:', error);
-      // Show error toast
-    }
-  };
+  // const getPracticePersonData = async (locationId: number) => {
+  //   try {
+  //     const response = await appointmentService.getPracticePerson(locationId);
+  //     if (response.status === 200) {
+  //       const sortedPractitioners = response.data.sort((a, b) =>
+  //         a.firstName.localeCompare(b.firstName)
+  //       );
+  //       setPractitioners(sortedPractitioners);
+  //     } else {
+  //       throw new Error('Failed to fetch practitioners');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching practitioners:', error);
+  //     // Show error toast
+  //   }
+  // };
 
   // Fetch appointment reasons
   const getReasonData = async () => {
@@ -100,7 +100,7 @@ const RequestAppointment: React.FC = () => {
   // Update practitioners when location changes
   useEffect(() => {
     if (selectedLocation?.maximeyesLocationId) {
-      getPracticePersonData(selectedLocation.maximeyesLocationId);
+      // getPracticePersonData(selectedLocation.maximeyesLocationId);
     } else {
       setPractitioners([]);
     }
@@ -108,8 +108,8 @@ const RequestAppointment: React.FC = () => {
 
   // Handle location change
   const handleLocationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const location = locations.find(loc => loc.maximeyesLocationId === Number(e.target.value));
-    setSelectedLocation(location || null);
+    // const location = locations.find(loc => loc.maximeyesLocationId === Number(e.target.value));
+    // setSelectedLocation(location || null);
     setSelectedProvider(null); // Reset provider when location changes
   };
 
@@ -154,14 +154,14 @@ const RequestAppointment: React.FC = () => {
                 onChange={handleLocationChange}
               >
                 <option value="">Select Location</option>
-                {locations.map(location => (
+                {/* {locations.map(location => (
                   <option
                     key={location.maximeyesLocationId}
                     value={location.maximeyesLocationId}
                   >
                     {location.name} - {location.address?.city ? `${location.address.city}, ${location.address.state}` : ''}
                   </option>
-                ))}
+                ))} */}
               </select>
             </div>
 
@@ -172,22 +172,22 @@ const RequestAppointment: React.FC = () => {
               </label>
               <select
                 className="w-full px-4 py-2 bg-gray-200 border-1 border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-grey-500 focus:border-transparent"
-                value={selectedProvider?.practicePersonId || ''}
+                // value={selectedProvider?.practicePersonId || ''}
                 onChange={(e) => {
-                  const provider = practitioners.find(p => p.practicePersonId === Number(e.target.value));
-                  setSelectedProvider(provider || null);
+                  // const provider = practitioners.find(p => p.practicePersonId === Number(e.target.value));
+                  // setSelectedProvider(provider || null);
                 }}
                 disabled={!selectedLocation}
               >
                 <option value="">Select Provider</option>
-                {practitioners.map(provider => (
+                {/* {practitioners.map(provider => (
                   <option
                     key={provider.practicePersonId}
                     value={provider.practicePersonId}
                   >
                     {`${provider.firstName} ${provider.lastName}`}
                   </option>
-                ))}
+                ))} */}
               </select>
             </div>
           </div>
@@ -201,19 +201,19 @@ const RequestAppointment: React.FC = () => {
             </label>
             <select
               className="w-full px-4 py-2 bg-gray-200 border-1 border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-grey-500 focus:border-transparent"
-              value={selectedReason?.reasonId || ''}
+              // value={selectedReason?.reasonId || ''}
               onChange={(e) => {
-                const reason = reasons.find(r => r.reasonId === Number(e.target.value));
-                setSelectedReason(reason || null);
+                // const reason = reasons.find(r => r.reasonId === Number(e.target.value));
+                // setSelectedReason(reason || null);
               }}
             >
               <option value="">Select Reason</option>
               {reasons.map(reason => (
                 <option
-                  key={reason.reasonId}
-                  value={reason.reasonId}
+                  // key={reason.reasonId}
+                  // value={reason.reasonId}
                 >
-                  {reason.reason}
+                  {/* {reason.reason} */}
                 </option>
               ))}
             </select>
