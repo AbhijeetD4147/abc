@@ -5,6 +5,8 @@ import { HealthSummaryService } from '../../services/healthSummary/HealthSummary
 import { HealthSummaryListModel, HealthSummaryThreadModel } from '../../model/health_summary/HealthSummaryModel';
 import { Button, Icon, Input, Loader, TextArea } from '@ketan_nimase/ui';
 import { GlobalParams } from '../../utils/GlobalParameters';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface HealthSummaryProps {
 };
@@ -39,12 +41,12 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
     try {
       const fromDate = startDate.toISOString().split('T')[0];
       const toDate = endDate.toISOString().split('T')[0];
-     
-      
+
+
       // Use the actual API
       const response = await healthSummaryService.getHealthSummaryList(currentPage, fromDate, toDate);
       console.log('API Response:', response); // Add this for debugging
-      
+
       if (response && response.length > 0) {
         setHealthSummaryData(response);
         // Automatically select the first item and fetch its details
@@ -134,13 +136,13 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
   // Handle send action
   const handleSend = async () => {
     if (!selectedSummary) return;
-    
+
     // Basic validation
     if (!sendFormData.to || !sendFormData.subject) {
       console.error('Missing required fields');
       return;
     }
-    
+
     try {
       // Create the transmit model based on the sample.txt implementation
       const transmitModel = {
@@ -162,12 +164,12 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
         userId: GlobalParams.USER_ID,
         switchUserId: GlobalParams.SWITCH_USER_ID
       };
-      
+
       await healthSummaryService.transmitHealthSummary(transmitModel);
-      
+
       // Reset form and exit transmit mode
       handleBackFromTransmit();
-      
+
       // Show success message
       console.log('Health summary transmitted successfully');
     } catch (error) {
@@ -175,54 +177,25 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
     }
   };
 
-  // Print functionality
+  // Clean Print functionality - only summaryData
   const handlePrint = () => {
-    if (selectedSummary) {
+    if (healthSummaryDetails?.summaryData) {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
         const printContent = `
           <!DOCTYPE html>
           <html>
           <head>
-            <title>Health Summary - ${selectedSummary.healthTitle}</title>
+            <title>Health Summary</title>
             <style>
               body { font-family: Arial, sans-serif; margin: 20px; }
-              .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-              .title { font-size: 24px; font-weight: bold; }
-              .date { color: #666; margin-top: 5px; }
-              .content { line-height: 1.6; }
-              .section { margin-bottom: 20px; }
-              .section-title { font-weight: bold; font-size: 18px; margin-bottom: 10px; }
               @media print {
                 body { margin: 0; }
-                .no-print { display: none; }
               }
             </style>
           </head>
           <body>
-            <div class="header">
-              <div class="title">${selectedSummary.healthTitle || 'Health Summary'}</div>
-              <div class="date">Exam Date: ${selectedSummary.examDate || 'N/A'}</div>
-              <div class="date">From: ${selectedSummary.sentFrom || 'N/A'}</div>
-            </div>
-            <div class="content">
-              <div class="section">
-                <div class="section-title">Visual Acuity</div>
-                <p>Right Eye: 20/20, Left Eye: 20/25</p>
-              </div>
-              <div class="section">
-                <div class="section-title">Prescription</div>
-                <p>OD: -1.25 -0.50 x 180<br>OS: -1.00 -0.25 x 175</p>
-              </div>
-              <div class="section">
-                <div class="section-title">Recommendations</div>
-                <p>Continue current prescription. Schedule follow-up in 12 months. Consider blue light filtering lenses for computer use.</p>
-              </div>
-              <div class="section">
-                <div class="section-title">Notes</div>
-                <p>Patient reports occasional eye strain. Recommended 20-20-20 rule and proper lighting when using digital devices.</p>
-              </div>
-            </div>
+            ${healthSummaryDetails.summaryData}
             <script>
               window.onload = function() {
                 window.print();
@@ -240,57 +213,15 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
     }
   };
 
-  // Download CCDA format
+  // Clean Download CCDA - only summaryData
   const handleDownloadCCDA = () => {
-    if (selectedSummary) {
-      const ccdaContent = `<?xml version="1.0" encoding="UTF-8"?>
-<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <realmCode code="US"/>
-  <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
-  <templateId root="2.16.840.1.113883.10.20.22.1.1" extension="2015-08-01"/>
-  <templateId root="2.16.840.1.113883.10.20.22.1.2" extension="2015-08-01"/>
-  <id extension="${selectedSummary.healthSummaryId}" root="2.16.840.1.113883.19.5"/>
-  <code code="34133-9" displayName="Summarization of Episode Note" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
-  <title>${selectedSummary.healthTitle || 'Health Summary'}</title>
-  <effectiveTime value="${selectedSummary.examDate?.replace(/-/g, '') || new Date().toISOString().split('T')[0].replace(/-/g, '')}"/>
-  <confidentialityCode code="N" displayName="normal" codeSystem="2.16.840.1.113883.5.25" codeSystemName="Confidentiality"/>
-  <languageCode code="en-US"/>
-  <component>
-    <structuredBody>
-      <component>
-        <section>
-          <templateId root="2.16.840.1.113883.10.20.22.2.17" extension="2015-08-01"/>
-          <code code="29762-2" displayName="Social History" codeSystem="2.16.840.1.113883.6.1"/>
-          <title>Social History</title>
-          <text>
-            <table>
-              <thead>
-                <tr>
-                  <th>Exam Type</th>
-                  <th>Date</th>
-                  <th>Provider</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>${selectedSummary.healthTitle || 'N/A'}</td>
-                  <td>${selectedSummary.examDate || 'N/A'}</td>
-                  <td>${selectedSummary.sentFrom || 'N/A'}</td>
-                </tr>
-              </tbody>
-            </table>
-          </text>
-        </section>
-      </component>
-    </structuredBody>
-  </component>
-</ClinicalDocument>`;
-
-      const blob = new Blob([ccdaContent], { type: 'application/xml' });
+    if (healthSummaryDetails?.summaryData) {
+      // Since summaryData is HTML content, save it as HTML file
+      const blob = new Blob([healthSummaryDetails.summaryData], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `HealthSummary_CCDA_${selectedSummary.healthSummaryId || 'unknown'}_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.xml`;
+      link.download = `HealthSummary_CCDA_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.html`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -298,203 +229,73 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
     }
   };
 
-  // Download PDF format - Auto download without print dialog
+
+  // PDF Download using base64 content from API only
+
   const handleDownloadPDF = () => {
-    if (selectedSummary) {
-      // Create HTML content for PDF
-      const htmlContent = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px;">
-          <div style="border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 25px;">
-            <h1 style="margin: 0; font-size: 28px; color: #333;">${selectedSummary.healthTitle || 'Health Summary'}</h1>
-            <p style="margin: 8px 0; color: #666; font-size: 14px;">Exam Date: ${selectedSummary.examDate || 'N/A'}</p>
-            <p style="margin: 8px 0; color: #666; font-size: 14px;">From: ${selectedSummary.sentFrom || 'N/A'}</p>
-            <p style="margin: 8px 0; color: #666; font-size: 14px;">Generated: ${new Date().toLocaleDateString()}</p>
-          </div>
-          <div>
-            <div style="margin-bottom: 25px; page-break-inside: avoid;">
-              <h3 style="font-size: 18px; margin-bottom: 12px; color: #2563eb; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Visual Acuity</h3>
-              <p style="margin: 0; line-height: 1.6;">Right Eye: 20/20, Left Eye: 20/25</p>
-            </div>
-            <div style="margin-bottom: 25px; page-break-inside: avoid;">
-              <h3 style="font-size: 18px; margin-bottom: 12px; color: #2563eb; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Prescription</h3>
-              <p style="margin: 0; line-height: 1.6;">OD: -1.25 -0.50 x 180<br>OS: -1.00 -0.25 x 175</p>
-            </div>
-            <div style="margin-bottom: 25px; page-break-inside: avoid;">
-              <h3 style="font-size: 18px; margin-bottom: 12px; color: #2563eb; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Recommendations</h3>
-              <p style="margin: 0; line-height: 1.6;">Continue current prescription. Schedule follow-up in 12 months. Consider blue light filtering lenses for computer use.</p>
-            </div>
-            <div style="margin-bottom: 25px; page-break-inside: avoid;">
-              <h3 style="font-size: 18px; margin-bottom: 12px; color: #2563eb; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Notes</h3>
-              <p style="margin: 0; line-height: 1.6;">Patient reports occasional eye strain. Recommended 20-20-20 rule and proper lighting when using digital devices.</p>
-            </div>
-          </div>
-        </div>
-      `;
+    // Check if health summary details exist
+    if (!healthSummaryDetails?.healthSummaryAttachment) {
+      alert('No attachments found for this health summary.');
+      return;
+    }
 
-      // Create a temporary iframe for PDF generation
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'absolute';
-      iframe.style.left = '-9999px';
-      iframe.style.width = '210mm';
-      iframe.style.height = '297mm';
-      document.body.appendChild(iframe);
+    // Find PDF attachment
+    const pdfAttachment = healthSummaryDetails.healthSummaryAttachment.find(
+      (attachment: any) => attachment.attachmentType?.toLowerCase() === 'pdf'
+    );
 
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (iframeDoc) {
-        iframeDoc.open();
-        iframeDoc.write(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <title>Health Summary PDF</title>
-            <style>
-              @page {
-                size: A4;
-                margin: 20mm;
-              }
-              body {
-                margin: 0;
-                font-family: Arial, sans-serif;
-                font-size: 12px;
-                line-height: 1.4;
-              }
-              .page-break {
-                page-break-before: always;
-              }
-            </style>
-          </head>
-          <body>
-            ${htmlContent}
-          </body>
-          </html>
-        `);
-        iframeDoc.close();
+    if (!pdfAttachment) {
+      alert('No PDF attachment found for this health summary.');
+      return;
+    }
 
-        // Wait for content to load, then trigger download
-        setTimeout(() => {
-          try {
-            iframe.contentWindow?.print();
+    // Check if base64 content exists
+    if (!pdfAttachment.attachmentBase64FileContent) {
+      alert('PDF content is not available for download.');
+      return;
+    }
 
-            // Alternative method: Create downloadable HTML file that opens as PDF
-            const blob = new Blob([`
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="UTF-8">
-                <title>Health Summary PDF</title>
-                <style>
-                  @media print {
-                    @page { size: A4; margin: 20mm; }
-                    body { margin: 0; }
-                  }
-                  body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; }
-                </style>
-                <script>
-                  window.onload = function() {
-                    setTimeout(() => window.print(), 500);
-                  };
-                </script>
-              </head>
-              <body>
-                ${htmlContent}
-              </body>
-              </html>
-            `], { type: 'text/html' });
+    // Remove or modify the file size check - this is likely causing your issue
+    // Option 1: Remove the check entirely
+    // Option 2: Check if the base64 content has actual data
+    if (!pdfAttachment.attachmentBase64FileContent.trim()) {
+      alert('PDF content appears to be empty.');
+      return;
+    }
 
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `HealthSummary_${selectedSummary.healthSummaryId || 'unknown'}_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.html`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+    // Option 3: More robust file size check
+    // if (pdfAttachment.attachmentFileSize !== undefined && pdfAttachment.attachmentFileSize <= 0) {
+    //   alert('PDF file appears to be empty (0 bytes).');
+    //   return;
+    // }
 
-          } catch (error) {
-            console.error('PDF generation failed:', error);
-
-            // Fallback: Download as HTML file
-            const fallbackBlob = new Blob([htmlContent], { type: 'text/html' });
-            const fallbackUrl = URL.createObjectURL(fallbackBlob);
-            const fallbackLink = document.createElement('a');
-            fallbackLink.href = fallbackUrl;
-            fallbackLink.download = `HealthSummary_${selectedSummary.healthSummaryId || 'unknown'}_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.html`;
-            document.body.appendChild(fallbackLink);
-            fallbackLink.click();
-            document.body.removeChild(fallbackLink);
-            URL.revokeObjectURL(fallbackUrl);
-          }
-
-          // Clean up
-          document.body.removeChild(iframe);
-        }, 1000);
+    try {
+      // Convert base64 to blob
+      const byteCharacters = atob(pdfAttachment.attachmentBase64FileContent);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = pdfAttachment.attachmentFileName || 'health-summary.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log('PDF download initiated successfully');
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Failed to download PDF. Please try again.');
     }
   };
-  // Enhanced PDF download with jsPDF (requires: npm install jspdf html2canvas)
-  const handleDownloadPDFWithLibrary = async () => {
-    if (selectedSummary) {
-      try {
-        // Dynamic import to avoid bundling if not needed
-        const jsPDF = (await import('jspdf')).default;
 
-        const doc = new jsPDF();
-
-        // Add title
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text(selectedSummary.healthTitle || 'Health Summary', 20, 30);
-
-        // Add metadata
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Exam Date: ${selectedSummary.examDate || 'N/A'}`, 20, 45);
-        doc.text(`From: ${selectedSummary.sentFrom || 'N/A'}`, 20, 55);
-        doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 65);
-
-        // Add line separator
-        doc.line(20, 75, 190, 75);
-
-        let yPosition = 90;
-
-        // Add sections
-        const sections = [
-          { title: 'Visual Acuity', content: 'Right Eye: 20/20, Left Eye: 20/25' },
-          { title: 'Prescription', content: 'OD: -1.25 -0.50 x 180\nOS: -1.00 -0.25 x 175' },
-          { title: 'Recommendations', content: 'Continue current prescription. Schedule follow-up in 12 months. Consider blue light filtering lenses for computer use.' },
-          { title: 'Notes', content: 'Patient reports occasional eye strain. Recommended 20-20-20 rule and proper lighting when using digital devices.' }
-        ];
-
-        sections.forEach(section => {
-          doc.setFontSize(14);
-          doc.setFont('helvetica', 'bold');
-          doc.text(section.title, 20, yPosition);
-
-          doc.setFontSize(11);
-          doc.setFont('helvetica', 'normal');
-          const splitContent = doc.splitTextToSize(section.content, 170);
-          doc.text(splitContent, 20, yPosition + 10);
-
-          yPosition += 10 + (splitContent.length * 5) + 15;
-
-          // Add new page if needed
-          if (yPosition > 250) {
-            doc.addPage();
-            yPosition = 30;
-          }
-        });
-
-        // Save the PDF
-        doc.save(`HealthSummary_${selectedSummary.healthSummaryId || 'unknown'}_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.pdf`);
-
-      } catch (error) {
-        console.error('PDF generation with jsPDF failed:', error);
-        // Fallback to the previous method
-        handleDownloadPDF();
-      }
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 w-screen">
@@ -537,11 +338,10 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
                   <div
                     key={summary.healthSummaryId}
                     onClick={() => handleSummarySelect(summary)}
-                    className={`p-1 cursor-pointer hover:bg-gray-100 transition-colors duration-200 ${
-                      selectedSummary?.healthSummaryId === summary.healthSummaryId
-                        ? 'bg-blue-100 border-r-2 border-blue-500'
-                        : summary.isSeen ? 'bg-white' : 'bg-green-100'
-                    }`}
+                    className={`p-1 cursor-pointer hover:bg-gray-100 transition-colors duration-200 ${selectedSummary?.healthSummaryId === summary.healthSummaryId
+                      ? 'bg-blue-100 border-r-2 border-blue-500'
+                      : summary.isSeen ? 'bg-white' : 'bg-green-100'
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-gray-700">
@@ -624,7 +424,7 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
                           tooltip
                           tooltipTitle="Download PDF"
                           tooltipPlacement="bottom"
-                          onClick={handleDownloadPDFWithLibrary}
+                          onClick={handleDownloadPDF}
                         />
                       </div>
 
@@ -642,46 +442,35 @@ export const HealthSummary: React.FC<HealthSummaryProps> = () => {
                         </div>
                       ) : selectedSummary ? (
                         <div className="space-y-4">
-                          <div>
-                            <h4 className="font-medium text-gray-800">Health Summary</h4>
-                            <p className="text-gray-600 mt-1">
-                              {selectedSummary.healthTitle || 'No title available'}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="font-medium text-gray-800">Exam Date</h4>
-                            <p className="text-gray-600 mt-1">
-                              {selectedSummary.examDate ? new Date(selectedSummary.examDate).toLocaleDateString() : 'N/A'}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="font-medium text-gray-800">Provider</h4>
-                            <p className="text-gray-600 mt-1">
-                              {selectedSummary.sentFrom || 'N/A'}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h4 className="font-medium text-gray-800">Date Received</h4>
-                            <p className="text-gray-600 mt-1">
-                              {selectedSummary.sentDate || 'N/A'}
-                            </p>
-                          </div>
-
+                          {/* Summary Data Display - Flutter InAppWebView equivalent */}
                           {healthSummaryDetails && healthSummaryDetails.summaryData && (
-                            <div>
-                              <h4 className="font-medium text-gray-800">Summary Data</h4>
-                              <div 
-                                className="prose prose-sm max-w-none mt-1" // Add prose classes here
-                                dangerouslySetInnerHTML={{ __html: healthSummaryDetails.summaryData }}
-                              />
+                            <div className="border border-gray-200 rounded-lg overflow-hidden">
+                              <div className="relative">
+                                <iframe
+                                  srcDoc={healthSummaryDetails.summaryData}
+                                  className="w-full border-0"
+                                  style={{
+                                    minHeight: '800px',
+                                    height: '800px',
+                                    backgroundColor: 'white'
+                                  }}
+                                  sandbox="allow-same-origin allow-scripts allow-popups"
+                                  title="Health Summary Content"
+                                  onLoad={() => console.log('Iframe loaded successfully')}
+                                  onError={() => console.error('Iframe failed to load')}
+                                />
+                              </div>
                             </div>
                           )}
                         </div>
                       ) : (
-                        <p className="text-gray-500">Select a health summary to view details</p>
+                        <div className="p-4 text-center text-gray-500">
+                          {healthSummaryDetails ? (
+                            <p>No summary data available for this health summary.</p>
+                          ) : (
+                            <p>Loading summary data...</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

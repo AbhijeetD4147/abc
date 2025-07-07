@@ -3,6 +3,7 @@ import { AuthenticationService } from '../authentication/UserService';
 import { baseWebService } from '../common/BaseWebService';
 import { ApiPath } from '../../utils/constants';
 import { GlobalParams } from '../../utils/GlobalParameters';
+import { HealthSummaryXMLParser, ParsedHealthSummary } from '../../utils/HealthSummaryXMLParser';
 
 export class HealthSummaryService {
     private healthSummaryThreadModel: HealthSummaryThreadModel | null = null;
@@ -96,6 +97,24 @@ export class HealthSummaryService {
         }
     }
 
+    /**
+     * Parse the XML content from summaryData field
+     * @param summaryData - XML/HTML content from backend
+     * @returns Parsed health summary object
+     */
+    parseHealthSummaryXML(summaryData: string): ParsedHealthSummary | null {
+        return HealthSummaryXMLParser.parseHealthSummaryXML(summaryData);
+    }
+
+    /**
+     * Get formatted plain text from XML content
+     * @param summaryData - XML/HTML content from backend
+     * @returns Plain text content
+     */
+    getPlainTextSummary(summaryData: string): string {
+        return HealthSummaryXMLParser.extractPlainText(summaryData);
+    }
+
     async getHealthSummaryThread(id: number): Promise<HealthSummaryThreadModel | null> {
         try {
             this.data = {
@@ -120,9 +139,19 @@ export class HealthSummaryService {
                 this.response_Status_Code_API_2 = 205;
                 return null;
             } else if (response.status === 200) {
-                this.healthSummaryThreadModel = new HealthSummaryThreadModel(JSON.parse(response.data));
+                // Use fromJson() method instead of constructor to handle the API typo
+                const threadModel = HealthSummaryThreadModel.fromJson(response.data);
+                
+                // Parse the XML content if available
+                if (threadModel.summaryData) {
+                    const parsedSummary = this.parseHealthSummaryXML(threadModel.summaryData);
+                    // You can store the parsed data in the model or use it separately
+                    console.log('Parsed health summary:', parsedSummary);
+                }
+                
+                this.healthSummaryThreadModel = threadModel;
                 this.response_Status_Code_API_2 = response.status;
-                return this.healthSummaryThreadModel;
+                return threadModel;
             } else {
                 this.maximum_Calling_API_2 = this.maximum_Calling_API_2 + 1;
                 if (this.maximum_Calling_API_2 < ApiPath.MaxAPICalling) {

@@ -279,11 +279,6 @@ const UpdateDemographics: React.FC = () => {
         { label: "Dr", val: "dr" },
         { label: "Prof", val: "prof" }
     ];
-    const phoneTypeList = [
-        { label: "Mobile", val: "mobile" },
-        { label: "Home", val: "home" },
-        { label: "Work", val: "work" }
-    ]
     const handleTitleSelection = (event: React.MouseEvent<HTMLLIElement>, val: string) => {
         setTitle(val);
         if (errors.title) {
@@ -503,15 +498,6 @@ const UpdateDemographics: React.FC = () => {
                                                     <option value="Home">Home</option>
                                                     <option value="Work">Work</option>
                                                 </select>
-                                                <DropdownList
-                                                    borderDropdown
-                                                    isPlaceholder
-                                                    onClick={handleTitleSelection}
-                                                    showSelectedOption
-                                                    listItems={phoneTypeList}
-                                                    placeholder="Select"
-                                                    className={errors.title ? "border-red-500" : ""}
-                                                />
                                             </td>
 
                                             <td className="px-6 py-0 whitespace-nowrap">

@@ -53,6 +53,7 @@ import { AddAuthorizedIndividualRequestModel } from '../../../model/authenticati
 import { ValidatePatientForAddIndividualResponse } from '../../../model/patient_portal/ValidatePatientForAddIndividualResponse';
 
 const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
+    const [value, ] = useState('');
     const navigate = useNavigate();
     const [theme, setTheme] = useState<any>({});
     const [isLoading, setIsLoading] = useState(false);
@@ -222,6 +223,7 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                 <div className="mb-0">
                     <Input
                         inputType="text"
+                        label
                         placeholder="Legal First Name"
                         value={firstController.field.value}
                         onChange={firstController.field.onChange}
@@ -232,7 +234,8 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                 {/* Last Name */}
                 <div className="mb-0">
                     <Input
-                        label="Last Name"
+                        label
+                        name='Last Name'
                         inputType="text"
                         placeholder="Last Name"
                         value={lastController.field.value}
@@ -246,13 +249,15 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                 <div className="mb-0">
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <Input
-                            label="Country Code"
+                            label
+                            name='Mobile Number'
                             value={countryCodeController.field.value}
                             readonly
                             className="border rounded sm:w-1/6 w-full py-2 px-1 text-gray-700 focus:outline-none focus:shadow-outline"
                         />
                         <Input
-                            label="Mobile Number"
+                            label
+                            name=''
                             inputType="text"
                             placeholder="(000) 000-0000"
                             value={mobileController.field.value}
@@ -274,7 +279,8 @@ const AddAuthorizedIndividual: React.FC<SignUpPageProps> = (props) => {
                 {/* Email */}
                 <div className="mb-4">
                     <Input
-                        label="Email"
+                        label
+                        name='Email'
                         inputType="text"
                         placeholder="Email"
                         value={emailController.field.value}

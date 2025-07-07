@@ -2,18 +2,11 @@ import { FC, useEffect, useState, useCallback } from "react";
 import dayjs from "dayjs";
 import WarningPopup from '../../components/ui/WarningPopup';
 import { toast } from "react-toastify";
-// import {
-//   CalendarX2Icon,
-//   Settings,
-//   X,
-// } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { Icon, Loader } from "@ketan_nimase/ui";
+import { useNavigate } from "react-router-dom";
+import { Button, Icon, Loader } from "@ketan_nimase/ui";
 import { AppointmentService } from "../../services/appointment/AppointmentService";
 import HomeService from "../../services/home/HomeService";
-// Change this import
 import GetModulePermissionServices from "../../services/common/ModuleServices";
-// Add this import
 import GetModulePermissionByPracticeServices from "../../services/common/ModulePracticeService";
 import { ModulePermissionByPracticeModel } from "../../model/common/ModulePermissionModel";
 import { AuthenticationAuthUserService } from "../../services/authentication/AuthUserService";
@@ -466,16 +459,18 @@ const DashboardPage: FC = () => {
     { label: "Update Demographics", href: "/update-demographics" },
     { label: "Update Insurance", href: "/update-insurance" },
     { label: "Communication Preferences", href: "/communication-preferences" },
-    { label: "Authorized Individuals", href: "/authorized-individual", onClick: (e) => {
-      e.preventDefault();
-      // Use navigate function instead of direct href
-      navigate("/authorized-individual", { replace: false });
-    }},
+    {
+      label: "Authorized Individuals", href: "/authorized-individual", onClick: (e) => {
+        e.preventDefault();
+        // Use navigate function instead of direct href
+        navigate("/authorized-individual", { replace: false });
+      }
+    },
     { label: "Activity Log", href: "/activity-logs" },
     { label: "Opt-Out", href: "/opt-out" },
     { label: "Logout", href: "/login?reason=logout" },
   ];
-  
+
   // Helper function to check if a route is active
   const isActiveRoute = (path: string) => {
     return window.location.pathname === path;
@@ -537,23 +532,23 @@ const DashboardPage: FC = () => {
               </div>
 
               {isOpen && (
-                  <ul className="absolute right-0 mt-2 min-w-max max-w-xs bg-white border border-gray-200 rounded shadow-md z-50">
-                    {fabItems.map(({ label, href, onClick }) => (
-                      <li 
-                        key={label} 
-                        className={`border-b last:border-b-0 border-gray-200 cursor-pointer ${isActiveRoute(href) ? "bg-red-50" : ""}`}
-                        onClick={(e) => onClick ? onClick(e) : navigate(href)}
-                      >
-                        <span className={`block px-4 py-2 font-normal no-underline transition-all duration-200 ${isActiveRoute(href)
-                          ? "text-red-600 bg-red-50 border-l-4 border-red-500"
-                          : "text-black hover:text-blue-500 hover:bg-gray-100"
-                          }`}>
-                          {label}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <ul className="absolute right-0 mt-2 min-w-max max-w-xs bg-white border border-gray-200 rounded shadow-md z-50">
+                  {fabItems.map(({ label, href, onClick }) => (
+                    <li
+                      key={label}
+                      className={`border-b last:border-b-0 border-gray-200 cursor-pointer ${isActiveRoute(href) ? "bg-red-50" : ""}`}
+                      onClick={(e) => onClick ? onClick(e) : navigate(href)}
+                    >
+                      <span className={`block px-4 py-2 font-normal no-underline transition-all duration-200 ${isActiveRoute(href)
+                        ? "text-red-600 bg-red-50 border-l-4 border-red-500"
+                        : "text-black hover:text-blue-500 hover:bg-gray-100"
+                        }`}>
+                        {label}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>
@@ -742,12 +737,14 @@ const DashboardPage: FC = () => {
                     width="24px"
                   />
                   <p className="text-xl text-gray-500 mb-8 text-center">No upcoming appointments</p>
-                  <button
+                  <Button
+                    style="filled"
+                    colorVariant="primary"
                     className="bg-blue-500 text-white text-lg px-8 py-3 rounded w-full max-w-sm hover:bg-blue-600 transition"
                     onClick={() => navigate("/request-appointment")}
                   >
                     Request New Appointment
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -813,12 +810,12 @@ const DashboardPage: FC = () => {
                 {isOpen && (
                   <ul className="absolute right-0 mt-3 p-0 min-w-max max-w-sm bg-white border border-gray-200 rounded shadow-md z-100">
                     {fabItems.map(({ label, href, onClick }) => (
-                      <li 
-                        key={label} 
+                      <li
+                        key={label}
                         className={`border-b last:border-b-0 border-gray-200 cursor-pointer pl-6 ${isActiveRoute(href) ? "bg-red-50" : ""}`}
                         onClick={(e) => onClick ? onClick(e) : navigate(href)}
                       >
-                        <span 
+                        <span
                           className={`block pr-14 py-2 font-normal text-lg no-underline transition-all duration-200 ${isActiveRoute(href)
                             ? "text-red-600 bg-red-50 border-l-4 border-red-500"
                             : "text-black hover:text-blue-500 hover:bg-gray-100"
@@ -1019,12 +1016,14 @@ const DashboardPage: FC = () => {
                       width="24px"
                     />
                     <p className="text-2xl text-gray-500 mb-6">No upcoming appointment</p>
-                    <button
+                    <Button
+                      style="filled"
+                      colorVariant="primary"
                       className="bg-blue-500 text-white text-lg px-20 py-2 rounded w-full max-w-sm hover:bg-blue-600 transition"
                       onClick={() => navigate("/request-appointment")}
                     >
                       Request New Appointment
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
