@@ -39,18 +39,20 @@ export class AuthenticationAuthUserService {
             const queryString = new URLSearchParams(customerData).toString();
             const url = `${ApiPath.baseApi}api/PatientPortal/ValidateAuthorizedIndividual`;
             const requestUrl = `${url}?${queryString}`;
-
+    
             const response = await baseWebService.getWebAPI({
                 requestUrl: requestUrl,
                 token: GlobalParams.TOKEN,
                 practiceName: GlobalParams.PRACTICE_NAME
             });
-
+    
             if (response.status === 200 && response.data === "SESSION INVALID") {
                 this.response_Status_Code_API_1 = 205;
             } else if (response.status === 200) {
+                // Fix: Check if response.data is already an object
+                const responseData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
                 this.validatePatientForAddIndividualResponse =
-                    await ValidatePatientForAddIndividualResponse.fromJson(JSON.parse(response.data));
+                    await ValidatePatientForAddIndividualResponse.fromJson(responseData);
                 this.response_Status_Code_API_1 = response.status;
             } else {
                 this.maximum_Calling_API_1 = this.maximum_Calling_API_1 + 1;

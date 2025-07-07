@@ -26,7 +26,7 @@ export const Navbar: React.FC = () => {
         { label: "Update Demographics", href: "/update-demographics" },
         { label: "Update Insurance", href: "/update-insurance" },
         { label: "Communication Preferences", href: "/communication-preferences" },
-        { label: "Authorized Individuals", href: "/authorized-individuals" },
+        { label: "Authorized Individuals", href: "/authorized-individual" },
         { label: "Activity Log", href: "/activity-logs" },
         { label: "Opt-Out", href: "/opt-out" },
         { label: "Logout", href: "/logout" },

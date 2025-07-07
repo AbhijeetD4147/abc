@@ -21,7 +21,7 @@ const AuthRecordMatchFound: React.FC = () => {
     };
 
     const handleTryAgain = () => {
-        navigate('/signup');
+        navigate('/add-authorized-individual');
     };
 
     const handleSendMessage = () => {

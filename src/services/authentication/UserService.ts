@@ -554,7 +554,7 @@ export class AuthenticationService {
         }
     }
 
-    async getAuthPatientList(): Promise<void> {
+    async getAuthPatientList(): Promise<AuthorizedPatientResponse[]> {
         const userId = GlobalParams.USER_ID;
         try {
             const customerData = {
@@ -579,6 +579,8 @@ export class AuthenticationService {
             } else if (response.status === 200) {
                 this.authorizedPatientList = this.parseMessage(response.data);
                 this.response_Status_Code_API_9 = response.status;
+                return this.authorizedPatientList || [];
+
             } else {
                 this.maximum_Calling_API_9 = this.maximum_Calling_API_9 + 1;
                 if (this.maximum_Calling_API_9 < ApiPath.MaxAPICalling) {
@@ -599,9 +601,10 @@ export class AuthenticationService {
         }
     }
 
-    parseMessage(responseBody: string): AuthorizedPatientResponse[] {
-        const parsed = JSON.parse(responseBody);
-        return parsed.map((json: any) => AuthorizedPatientResponse.fromJson(json));
+    parseMessage(responseBody: any): AuthorizedPatientResponse[] {
+        // Check if responseBody is already an object
+        const data = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
+        return data.map((json: any) => AuthorizedPatientResponse.fromJson(json));
     }
 
     async verifyGuidForResetPassword(forgotUsernameGuidRequestModel: any): Promise<void> {
@@ -799,9 +802,7 @@ export class AuthenticationService {
                 this.response_Status_Code_API_14 = 205;
             } else if (response.status === 200) {
                 this.insertAuthorizedIndividualModel =
-                    InsertAuthorizedIndividualModel.fromJson(
-                        JSON.parse(response.data)
-                    );
+                    InsertAuthorizedIndividualModel.fromJson(response.data);
                 this.response_Status_Code_API_14 = response.status;
             } else {
                 this.maximum_Calling_API_14 = this.maximum_Calling_API_14 + 1;
@@ -870,7 +871,7 @@ export class AuthenticationService {
 
     async acceptTermsForExistingPatient(
         existingPatientTermsRequestModel: any
-    ): Promise<void> {
+    ): Promise<any> {
         try {
             const url = `${ApiPath.baseApi}api/PatientPortal/ExistingPatientSaveTermsAndConditions?PracticeName=${GlobalParams.PRACTICE_NAME}`;
 
@@ -887,6 +888,7 @@ export class AuthenticationService {
                         JSON.parse(response.data)
                     );
                 this.response_Status_Code_API_16 = response.status;
+                return response.data;
             } else {
                 this.maximum_Calling_API_16 = this.maximum_Calling_API_16 + 1;
                 if (this.maximum_Calling_API_16 < ApiPath.MaxAPICalling) {

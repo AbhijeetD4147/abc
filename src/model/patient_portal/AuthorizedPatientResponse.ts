@@ -1,5 +1,3 @@
-// ... existing code ...
-
 export interface IAuthorizedPatientResponse {
   authId?: number;
   authName?: string;

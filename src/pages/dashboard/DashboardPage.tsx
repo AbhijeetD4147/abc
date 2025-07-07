@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 //   Settings,
 //   X,
 // } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Icon, Loader } from "@ketan_nimase/ui";
 import { AppointmentService } from "../../services/appointment/AppointmentService";
 import HomeService from "../../services/home/HomeService";
@@ -466,11 +466,20 @@ const DashboardPage: FC = () => {
     { label: "Update Demographics", href: "/update-demographics" },
     { label: "Update Insurance", href: "/update-insurance" },
     { label: "Communication Preferences", href: "/communication-preferences" },
-    { label: "Authorized Individuals", href: "/authorized-individuals" },
+    { label: "Authorized Individuals", href: "/authorized-individual", onClick: (e) => {
+      e.preventDefault();
+      // Use navigate function instead of direct href
+      navigate("/authorized-individual", { replace: false });
+    }},
     { label: "Activity Log", href: "/activity-logs" },
     { label: "Opt-Out", href: "/opt-out" },
     { label: "Logout", href: "/login?reason=logout" },
   ];
+  
+  // Helper function to check if a route is active
+  const isActiveRoute = (path: string) => {
+    return window.location.pathname === path;
+  };
   const navigationPaths = [
     '/messages',
     '/appointment',
@@ -528,19 +537,23 @@ const DashboardPage: FC = () => {
               </div>
 
               {isOpen && (
-                <ul className="absolute right-0 mt-2 min-w-max max-w-xs bg-white border border-gray-200 rounded shadow-md z-50">
-                  {fabItems.map(({ label, href }) => (
-                    <li key={label} className="border-b last:border-b-0 border-gray-200 cursor-pointer">
-                      <a
-                        href={href}
-                        className="block px-4 py-2 font-normal no-underline hover:text-blue-500 hover:bg-gray-100 text-black transition-all duration-200"
+                  <ul className="absolute right-0 mt-2 min-w-max max-w-xs bg-white border border-gray-200 rounded shadow-md z-50">
+                    {fabItems.map(({ label, href, onClick }) => (
+                      <li 
+                        key={label} 
+                        className={`border-b last:border-b-0 border-gray-200 cursor-pointer ${isActiveRoute(href) ? "bg-red-50" : ""}`}
+                        onClick={(e) => onClick ? onClick(e) : navigate(href)}
                       >
-                        {label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                        <span className={`block px-4 py-2 font-normal no-underline transition-all duration-200 ${isActiveRoute(href)
+                          ? "text-red-600 bg-red-50 border-l-4 border-red-500"
+                          : "text-black hover:text-blue-500 hover:bg-gray-100"
+                          }`}>
+                          {label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
             </div>
           </div>
         </div>
@@ -597,7 +610,7 @@ const DashboardPage: FC = () => {
                       onCancel={() => setShowConfirmPopup(false)}
                     />
                   )}
-                  
+
                   <div className="text-center py-4">
                     {!hasArrived ? (
                       <>
@@ -607,7 +620,7 @@ const DashboardPage: FC = () => {
                           <br />
                           Reason: {appointmentData.appointmentReason || "Annual Checkup"}
                         </p>
-                        
+
                         {/* Mobile Action Buttons */}
                         <div className="flex justify-center gap-4 mb-8">
                           <div className="flex flex-col items-center cursor-pointer group" onClick={cancelAppointment}>
@@ -799,14 +812,20 @@ const DashboardPage: FC = () => {
 
                 {isOpen && (
                   <ul className="absolute right-0 mt-3 p-0 min-w-max max-w-sm bg-white border border-gray-200 rounded shadow-md z-100">
-                    {fabItems.map(({ label, href }) => (
-                      <li key={label} className="border-b last:border-b-0 border-gray-200 cursor-pointer pl-6">
-                        <a
-                          href={href}
-                          className="block pr-14 py-2 font-normal text-lg no-underline hover:text-blue-500 hover:bg-gray-100 text-black transition-all duration-200"
+                    {fabItems.map(({ label, href, onClick }) => (
+                      <li 
+                        key={label} 
+                        className={`border-b last:border-b-0 border-gray-200 cursor-pointer pl-6 ${isActiveRoute(href) ? "bg-red-50" : ""}`}
+                        onClick={(e) => onClick ? onClick(e) : navigate(href)}
+                      >
+                        <span 
+                          className={`block pr-14 py-2 font-normal text-lg no-underline transition-all duration-200 ${isActiveRoute(href)
+                            ? "text-red-600 bg-red-50 border-l-4 border-red-500"
+                            : "text-black hover:text-blue-500 hover:bg-gray-100"
+                            }`}
                         >
                           {label}
-                        </a>
+                        </span>
                       </li>
                     ))}
                   </ul>

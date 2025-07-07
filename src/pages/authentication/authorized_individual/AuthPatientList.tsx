@@ -1,27 +1,75 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Navbar } from "../../../components/ui/Navbar";
 import "react-datepicker/dist/react-datepicker.css";
-import { Header, Icon } from "@ketan_nimase/ui";
+import { Header, Icon, Loader } from "@ketan_nimase/ui";
 import { useNavigate } from "react-router-dom";
+import { AuthenticationService } from "../../../services/authentication/UserService";
+import { AuthorizedPatientResponse } from "../../../model/patient_portal/AuthorizedPatientResponse";
 
 const AuthPatientList: React.FC = () => {
-    const logs = [
-        { name: "Auth 1", expiry: "06/12/2025" },
-        { name: "Auth 2", expiry: "06/12/2025" },
-        { name: "Auth 3", expiry: "06/12/2025" },
-    ];
+    const [authPatients, setAuthPatients] = useState<AuthorizedPatientResponse[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+    const [selectedAuthId, setSelectedAuthId] = useState<number | null>(null);
+    
     const navigate = useNavigate();
+    const authenticationService = new AuthenticationService();
 
+    // Fetch authorized patients on component mount
+    useEffect(() => {
+        fetchAuthPatients();
+    }, []);
 
+    // Function to fetch authorized patients
+    const fetchAuthPatients = async () => {
+        setLoading(true);
+        try {
+            const response = await authenticationService.getAuthPatientList();
+            if (response && Array.isArray(response)) {
+                setAuthPatients(response);
+            } else {
+                setAuthPatients([]);
+            }
+        } catch (error) {
+            console.error('Error fetching authorized patients:', error);
+            setAuthPatients([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    // Function to handle delete confirmation
+    const handleDeleteConfirm = (authId: number) => {
+        setSelectedAuthId(authId);
+        setShowDeleteConfirm(true);
+    };
 
-    function hamdleAddAuthIndividual(event: React.MouseEvent<HTMLElement>): void {
-        navigate('/add-authorized-individual')
+    // Function to delete authorized patient
+    const deleteAuthIndividualUser = async () => {
+        if (!selectedAuthId) return;
+        
+        setDeleteLoading(true);
+        try {
+            await authenticationService.deleteAuthPatient(selectedAuthId);
+            // Refresh the list after successful deletion
+            await fetchAuthPatients();
+            // Close the confirmation dialog
+            setShowDeleteConfirm(false);
+            setSelectedAuthId(null);
+        } catch (error) {
+            console.error('Error deleting authorized patient:', error);
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
+    function handleAddAuthIndividual(event: React.MouseEvent<HTMLElement>): void {
+        navigate('/add-authorized-individual');
     }
 
     return (
         <>
-
             <div className="min-h-screen w-screen flex flex-col items-center bg-white">
                 <Navbar />
                 <div className="w-full border-b text-center py-2 justify-center ">
@@ -54,7 +102,7 @@ const AuthPatientList: React.FC = () => {
                                 height="14px"
                                 width="14px"
                                 isCursorPointer
-                                onClick={hamdleAddAuthIndividual}
+                                onClick={handleAddAuthIndividual}
                                 name="plus"
                                 stroke
                                 fill
@@ -64,75 +112,82 @@ const AuthPatientList: React.FC = () => {
 
                     {/* Table */}
                     <div className="border border-gray-300 rounded overflow-hidden">
-                        <table className="min-w-full text-sm border-collapse">
-                            <thead className="bg-gray-300 text-gray-800">
-                                <tr>
-                                    <th className="border px-4 py-2 text-left font-semibold">Name</th>
-                                    <th className="border px-4 py-2 text-left font-semibold">Expires</th>
-                                    <th className="border px-2 py-2 text-center font-semibold"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {logs.length > 0 ? (
-                                    logs.map((log, idx) => (
-                                        <tr key={idx} className="even:bg-white odd:bg-gray-100">
-                                            <td className="border px-4 py-2">{log.name}</td>
-                                            <td className="border px-4 py-2">{log.expiry}</td>
-                                            <td className="border px-2 py-2 justify-center items-center"><Icon
-                                                colorVariant="dark"
-                                                height="25px"
-                                                isCursorPointer
-                                                name="delete"
-                                                stroke
-                                                width="25px"
-                                            /></td>
-                                        </tr>
-                                    ))
-                                ) : (
+                        {loading ? (
+                            <div className="flex justify-center items-center py-10">
+                                <Loader size="medium" />
+                            </div>
+                        ) : (
+                            <table className="min-w-full text-sm border-collapse">
+                                <thead className="bg-gray-300 text-gray-800">
                                     <tr>
-                                        <td colSpan={3} className="text-center text-gray-500 py-4">
-                                            No activity logs found.
-                                        </td>
+                                        <th className="border px-4 py-2 text-left font-semibold">Name</th>
+                                        <th className="border px-4 py-2 text-left font-semibold">Expires</th>
+                                        <th className="border px-2 py-2 text-center font-semibold"></th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {authPatients.length > 0 ? (
+                                        authPatients.map((patient) => (
+                                            <tr key={patient.authId} className={`even:bg-white odd:bg-gray-100 ${patient.isExpired ? 'text-red-500' : ''}`}>
+                                                <td className="border px-4 py-2">{patient.authName}</td>
+                                                <td className="border px-4 py-2">{patient.expiryDate}</td>
+                                                <td className="border px-2 py-2 flex justify-center items-center">
+                                                    <Icon
+                                                        colorVariant="dark"
+                                                        height="25px"
+                                                        isCursorPointer
+                                                        name="delete"
+                                                        stroke
+                                                        width="25px"
+                                                        onClick={() => handleDeleteConfirm(patient.authId || 0)}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={3} className="text-center text-gray-500 py-4">
+                                                No authorized individuals found.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
-
-                    {/* Pagination */}
-                    {/* <div className="flex justify-center items-center mt-4 gap-2 text-gray-600">
-                        <button
-                            className="text-xl"
-                            onClick={() => setCurrentPage(1)}
-                            disabled={currentPage === 1}
-                        >
-                            «
-                        </button>
-                        <button
-                            className="text-xl"
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                        >
-                            ‹
-                        </button>
-                        <span className="text-sm px-2 py-1 rounded bg-gray-200">{currentPage}</span>
-                        <button
-                            className="text-xl text-blue-600"
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            ›
-                        </button>
-                        <button
-                            className="text-xl text-blue-600"
-                            onClick={() => setCurrentPage(totalPages)}
-                            disabled={currentPage === totalPages}
-                        >
-                            »
-                        </button>
-                    </div> */}
                 </div>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                        <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+                        <p className="mb-6">Are you sure you want to remove this authorized individual?</p>
+                        <div className="flex justify-end space-x-3">
+                            <button 
+                                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+                                onClick={() => setShowDeleteConfirm(false)}
+                                disabled={deleteLoading}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center"
+                                onClick={deleteAuthIndividualUser}
+                                disabled={deleteLoading}
+                            >
+                                {deleteLoading ? (
+                                    <>
+                                        <Loader size="small" />
+                                        Deleting...
+                                    </>
+                                ) : 'Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

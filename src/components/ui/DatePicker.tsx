@@ -225,6 +225,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
             return (
               <button
+              type="button"
                 key={date.toString()}
                 disabled={isDisabled}
                 className={cn(
